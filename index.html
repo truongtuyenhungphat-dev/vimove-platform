@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIWORK — Vimove Operations Platform</title>
+  <meta name="description" content="Nền tảng quản lý vận hành & luồng công việc chính cho Vimove — theo dõi real-time mọi CVC trong dự án 150 tỷ." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css?v=2.0" />
+  <link rel="stylesheet" href="css/components.css?v=2.0" />
+  <link rel="stylesheet" href="css/workflow.css?v=2.0" />
+  <link rel="stylesheet" href="css/sprint1.css?v=2.0" />
+  <link rel="manifest" href="manifest.json" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-bg-grid"></div>
+  <div class="login-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">
+        <!-- Vimove Logo: Pinwheel + Arrow -->
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+          <!-- Blade 1 -->
+          <path d="M18 20 L5 15 L8 24 Z" fill="#5AB800"/>
+          <!-- Blade 2 -->
+          <path d="M19 22 L10 33 L20 30 Z" fill="#5AB800" opacity="0.85"/>
+          <!-- Blade 3 -->
+          <path d="M22 22 L24 35 L31 27 Z" fill="#5AB800" opacity="0.75"/>
+          <!-- Blade 4 -->
+          <path d="M23 19 L34 14 L30 22 Z" fill="#5AB800" opacity="0.90"/>
+          <!-- Blade 5 -->
+          <path d="M20 18 L22 6 L14 11 Z" fill="#5AB800" opacity="0.80"/>
+          <!-- Blade 6 (small) -->
+          <path d="M20 21 L11 19 L14 26 Z" fill="#5AB800" opacity="0.70"/>
+          <!-- Center dot -->
+          <circle cx="21" cy="21" r="3" fill="#3D9900"/>
+          <!-- Arrow cursor (charcoal) -->
+          <path d="M26 8 L26 24 L30 19 L33 27 L36 26 L33 18 L38 18 Z" fill="#3D3D3D"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">VIWORK</span>
+        <span class="logo-sub">by Vimove</span>
+      </div>
+    </div>
+    <h1 class="login-title">Chào mừng trở lại 👋</h1>
+    <p class="login-desc">Đăng nhập để theo dõi luồng công việc chính</p>
+    <div class="form-group">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" placeholder="you@vimove.vn" autocomplete="email" />
+    </div>
+    <div class="form-group">
+      <label for="loginPass">Mật khẩu</label>
+      <div class="input-with-icon">
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" />
+        <button class="toggle-pass" onclick="togglePassword()" title="Hiện/ẩn mật khẩu">👁</button>
+      </div>
+    </div>
+    <div class="demo-accounts">
+      <span>Demo nhanh:</span>
+      <button class="demo-btn" onclick="quickLogin('admin')">👑 Admin</button>
+      <button class="demo-btn" onclick="quickLogin('manager')">🎯 Manager</button>
+      <button class="demo-btn" onclick="quickLogin('staff')">👤 Nhân viên</button>
+    </div>
+    <button id="loginBtn" class="btn-login" onclick="handleLogin()">
+      <span>Đăng nhập</span>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 12H19M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div id="mainApp" class="app-layout hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark">
+        <!-- Vimove Logo small -->
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+          <path d="M13 15 L4 11 L6 18 Z" fill="#5AB800"/>
+          <path d="M14 17 L7 25 L15 22 Z" fill="#5AB800" opacity="0.85"/>
+          <path d="M16 17 L18 26 L23 20 Z" fill="#5AB800" opacity="0.75"/>
+          <path d="M17 14 L25 10 L22 17 Z" fill="#5AB800" opacity="0.90"/>
+          <path d="M15 13 L16 5 L10 8 Z" fill="#5AB800" opacity="0.80"/>
+          <circle cx="15" cy="16" r="2.2" fill="#3D9900"/>
+          <!-- Arrow -->
+          <path d="M19 6 L19 17 L22 14 L24 19 L26 18 L24 13 L27 13 Z" fill="#3D3D3D"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">VIWORK</div>
+        <div class="brand-sub">Vimove Platform</div>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Thu/mở sidebar">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Tổng quan</div>
+      <a class="nav-item active" id="nav-dashboard" onclick="showModule('dashboard')" href="#">
+        <span class="nav-icon">⚡</span>
+        <span class="nav-label">Command Center</span>
+        <span class="nav-badge" id="badge-alert">0</span>
+      </a>
+
+      <div class="nav-section-label">Luồng CVC</div>
+      <a class="nav-item" id="nav-workflow" onclick="showModule('workflow')" href="#">
+        <span class="nav-icon">🔄</span>
+        <span class="nav-label">Workflow Board</span>
+        <span class="nav-badge" id="badge-tasks">0</span>
+      </a>
+      <a class="nav-item" id="nav-mytasks" onclick="showModule('mytasks')" href="#">
+        <span class="nav-icon">✅</span>
+        <span class="nav-label">Việc của tôi</span>
+        <span class="nav-badge urgent" id="badge-mine">0</span>
+      </a>
+      <a class="nav-item" id="nav-requests" onclick="showModule('requests')" href="#">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Đề xuất & Duyệt</span>
+        <span class="nav-badge urgent" id="badge-requests"></span>
+      </a>
+
+      <div class="nav-section-label">Quan hệ KH</div>
+      <a class="nav-item" id="nav-crm" onclick="showModule('crm')" href="#">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">CRM Khách hàng</span>
+      </a>
+
+      <div class="nav-section-label">Hiệu suất</div>
+      <a class="nav-item" id="nav-performance" onclick="showModule('performance')" href="#">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">KPI & Doanh thu</span>
+      </a>
+      <a class="nav-item" id="nav-team" onclick="showModule('team')" href="#">
+        <span class="nav-icon">🏆</span>
+        <span class="nav-label">Đội ngũ</span>
+      </a>
+
+      <div class="nav-section-label manager-up">Hệ thống</div>
+      <a class="nav-item manager-up" id="nav-settings" onclick="showModule('settings')" href="#">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Cài đặt</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card" id="sidebarUser">
+        <div class="user-avatar" id="sidebarAvatar">VM</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarName">Loading...</div>
+          <div class="user-role" id="sidebarRole">—</div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()" title="Đăng xuất">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <div class="page-breadcrumb">
+          <span id="pageTitle">Command Center</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="text" id="globalSearch" placeholder="Tìm CVC, khách hàng..." oninput="handleSearch(this.value)" />
+        </div>
+        <button class="icon-btn" id="notifBtn" onclick="toggleNotifications()" title="Thông báo">
+          🔔
+          <span class="notif-dot" id="notifDot"></span>
+        </button>
+        <button class="btn-primary" onclick="openNewTaskModal()" id="addTaskBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Tạo CVC mới
+        </button>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION PANEL -->
+    <div class="notif-panel hidden" id="notifPanel">
+      <div class="notif-header">
+        <span>Thông báo</span>
+        <button onclick="markAllRead()">Đánh dấu đã đọc</button>
+      </div>
+      <div id="notifList"></div>
+    </div>
+
+    <!-- PAGES -->
+    <div class="page-container">
+
+      <!-- ===== DASHBOARD PAGE ===== -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <h1 class="page-h1">Command Center</h1>
+            <p class="page-sub" id="dashGreeting">Chào buổi sáng! Hôm nay có <strong>0</strong> CVC cần xử lý.</p>
+          </div>
+          <div class="page-actions">
+            <select id="dashPeriod" onchange="refreshDashboard()" class="select-input">
+              <option value="today">Hôm nay</option>
+              <option value="week" selected>Tuần này</option>
+              <option value="month">Tháng này</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- METRIC CARDS -->
+        <div class="metrics-grid">
+          <div class="metric-card" id="mc-total">
+            <div class="metric-icon" style="background:linear-gradient(135deg,#7C3AED,#5B21B6)">🔄</div>
+            <div class="metric-body">
+              <div class="metric-value" id="m-totalCVC">0</div>
+              <div class="metric-label">Tổng CVC đang chạy</div>
+            </div>
+            <div class="metric-trend up" id="mt-total">↑</div>
+          </div>
+          <div class="metric-card" id="mc-overdue">
+            <div class="metric-icon" style="background:linear-gradient(135deg,#EF4444,#DC2626)">⚠️</div>
+            <div class="metric-body">
+              <div class="metric-value" id="m-overdue">0</div>
+              <div class="metric-label">Trễ deadline</div>
+            </div>
+            <div class="metric-trend down" id="mt-overdue">—</div>
+          </div>
+          <div class="metric-card" id="mc-done">
+            <div class="metric-icon" style="background:linear-gradient(135deg,#10B981,#059669)">✅</div>
+            <div class="metric-body">
+              <div class="metric-value" id="m-done">0</div>
+              <div class="metric-label">Hoàn thành tuần này</div>
+            </div>
+            <div class="metric-trend up" id="mt-done">↑</div>
+          </div>
+          <div class="metric-card revenue-card" id="mc-revenue">
+            <div class="metric-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706)">💰</div>
+            <div class="metric-body">
+              <div class="metric-value" id="m-revenue">0 tỷ</div>
+              <div class="metric-label">Doanh thu tích lũy</div>
+            </div>
+            <div class="metric-trend up">🎯 /150 tỷ</div>
+          </div>
+        </div>
+
+        <!-- REVENUE PROGRESS -->
+        <div class="revenue-section">
+          <div class="revenue-card">
+            <div class="revenue-header">
+              <div>
+                <h3>🎯 Tiến độ mục tiêu 150 tỷ</h3>
+                <p>17 tháng vận hành · <span id="monthsLeft">17</span> tháng còn lại</p>
+              </div>
+              <div class="revenue-pct" id="revenuePct">0%</div>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="revenueBar" style="width:0%"></div>
+                <div class="progress-milestone" style="left:33.3%" title="50 tỷ">|</div>
+                <div class="progress-milestone" style="left:66.6%" title="100 tỷ">|</div>
+              </div>
+              <div class="progress-labels">
+                <span>0</span><span>50 tỷ</span><span>100 tỷ</span><span>150 tỷ</span>
+              </div>
+            </div>
+            <div class="revenue-stats">
+              <div class="rev-stat"><span class="rev-val" id="revActual">0 tỷ</span><span class="rev-lbl">Thực tế</span></div>
+              <div class="rev-stat"><span class="rev-val" id="revTarget">8.8 tỷ</span><span class="rev-lbl">Mục tiêu/tháng</span></div>
+              <div class="rev-stat"><span class="rev-val" id="revForecast">—</span><span class="rev-lbl">Dự báo tháng này</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHARTS + WORKFLOW STATUS -->
+        <div class="dashboard-grid">
+          <div class="dash-card" id="workflowStatusCard">
+            <div class="dash-card-header">
+              <h3>🔄 Trạng thái Luồng CVC</h3>
+              <button class="link-btn" onclick="showModule('workflow')">Xem tất cả →</button>
+            </div>
+            <div class="workflow-status-list" id="workflowStatusList">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3>📈 Hiệu suất đội ngũ</h3>
+            </div>
+            <canvas id="teamChart" height="220"></canvas>
+          </div>
+        </div>
+
+        <!-- HOT TASKS -->
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <h3>🔥 CVC cần chú ý ngay</h3>
+            <span class="badge-count" id="hotCount">0</span>
+          </div>
+          <div class="hot-tasks-list" id="hotTasksList"></div>
+        </div>
+      </div>
+
+      <!-- ===== WORKFLOW PAGE ===== -->
+      <div class="page hidden" id="page-workflow">
+        <div class="page-header">
+          <div>
+            <h1 class="page-h1">Workflow Board</h1>
+            <p class="page-sub">Theo dõi tất cả Luồng Công Việc Chính (CVC) của Vimove</p>
+          </div>
+          <div class="page-actions">
+            <select id="wfFilter" onchange="filterWorkflow()" class="select-input">
+              <option value="all">Tất cả CVC</option>
+              <option value="mine">Của tôi</option>
+              <option value="overdue">Trễ hạn</option>
+              <option value="urgent">Khẩn cấp</option>
+            </select>
+            <select id="wfCategory" onchange="filterWorkflow()" class="select-input">
+              <option value="all">Mọi danh mục</option>
+              <option value="sales">Bán hàng</option>
+              <option value="marketing">Marketing</option>
+              <option value="ops">Vận hành</option>
+              <option value="hr">Nhân sự</option>
+              <option value="finance">Tài chính</option>
+            </select>
+            <div class="view-toggle">
+              <button class="view-btn active" id="vBtn-kanban" onclick="setView('kanban')" title="Kanban">⊞</button>
+              <button class="view-btn" id="vBtn-list" onclick="setView('list')" title="Danh sách">☰</button>
+              <button class="view-btn" id="vBtn-timeline" onclick="setView('timeline')" title="Timeline">📅</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KANBAN VIEW -->
+        <div id="kanbanView" class="kanban-board">
+          <!-- Columns rendered by JS -->
+        </div>
+
+        <!-- LIST VIEW -->
+        <div id="listView" class="list-view hidden">
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th>CVC</th>
+                <th>Danh mục</th>
+                <th>Người phụ trách</th>
+                <th>Giai đoạn</th>
+                <th>Deadline</th>
+                <th>Ưu tiên</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="listViewBody"></tbody>
+          </table>
+        </div>
+
+        <!-- TIMELINE VIEW -->
+        <div id="timelineView" class="timeline-view hidden">
+          <div class="timeline-header-row" id="timelineHeader"></div>
+          <div class="timeline-rows" id="timelineRows"></div>
+        </div>
+      </div>
+
+      <!-- ===== MY TASKS PAGE ===== -->
+      <div class="page hidden" id="page-mytasks">
+        <div class="page-header">
+          <div>
+            <h1 class="page-h1">Việc của tôi</h1>
+            <p class="page-sub">Tất cả CVC được giao cho bạn</p>
+          </div>
+        </div>
+        <div class="my-tasks-grid">
+          <div class="tasks-column">
+            <div class="column-header urgent-col">🔴 Khẩn cấp (<span id="cnt-urgent">0</span>)</div>
+            <div id="my-urgent" class="tasks-list"></div>
+          </div>
+          <div class="tasks-column">
+            <div class="column-header today-col">🟡 Hôm nay (<span id="cnt-today">0</span>)</div>
+            <div id="my-today" class="tasks-list"></div>
+          </div>
+          <div class="tasks-column">
+            <div class="column-header regular-col">🔵 Sắp tới (<span id="cnt-upcoming">0</span>)</div>
+            <div id="my-upcoming" class="tasks-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CRM PAGE ===== -->
+      <div class="page hidden" id="page-crm">
+        <div class="page-header">
+          <div>
+            <h1 class="page-h1">CRM Khách hàng</h1>
+            <p class="page-sub">Quản lý quan hệ khách hàng trên Facebook, Zalo, TikTok</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-primary" onclick="openNewLeadModal()">+ Thêm khách hàng</button>
+          </div>
+        </div>
+        <div class="crm-pipeline" id="crmPipeline">
+          <!-- pipeline rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ===== PERFORMANCE PAGE ===== -->
+      <div class="page hidden" id="page-performance">
+        <div class="page-header">
+          <div>
+            <h1 class="page-h1">KPI & Hiệu suất</h1>
+            <p class="page-sub">Bảng điều khiển đo lường hướng tới mục tiêu 150 tỷ</p>
+          </div>
+        </div>
+        <div class="perf-grid">
+          <div class="perf-card">
+            <h3>📊 Doanh thu theo tháng</h3>
+            <canvas id="revenueChart" height="250"></canvas>
+          </div>
+          <div class="perf-card">
+            <h3>🎯 KPI cá nhân tháng này</h3>
+            <div id="kpiList"></div>
+          </div>
+          <div class="perf-card">
+            <h3>📱 Hiệu quả kênh</h3>
+            <canvas id="channelChart" height="250"></canvas>
+          </div>
+          <div class="perf-card">
+            <h3>🔄 Tỉ lệ chuyển đổi Workflow</h3>
+            <canvas id="conversionChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TEAM PAGE ===== -->
+      <div class="page hidden" id="page-team">
+        <div class="page-header">
+          <div>
+            <h1 class="page-h1">Đội ngũ Vimove</h1>
+            <p class="page-sub">Hiệu suất và bảng xếp hạng đội bán hàng</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn-primary manager-up" onclick="openAddMemberModal()">+ Thêm thành viên</button>
+          </div>
+        </div>
+        <div class="team-leaderboard" id="teamLeaderboard"></div>
+      </div>
+
+      <!-- ===== REQUESTS PAGE ===== -->
+      <div class="page hidden" id="page-requests">
+        <!-- Rendered entirely by JS -->
+      </div>
+
+      <!-- ===== SETTINGS PAGE ===== -->
+      <div class="page hidden" id="page-settings">
+        <div class="page-header">
+          <h1 class="page-h1">Cài đặt hệ thống</h1>
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>🏢 Thông tin doanh nghiệp</h3>
+            <div class="form-group">
+              <label>Tên công ty</label>
+              <input type="text" id="companyName" value="Vimove" class="settings-input" />
+            </div>
+            <div class="form-group">
+              <label>Mục tiêu doanh thu (tỷ đồng)</label>
+              <input type="number" id="revenueTarget" value="150" class="settings-input" />
+            </div>
+            <div class="form-group">
+              <label>Số tháng vận hành</label>
+              <input type="number" id="opMonths" value="17" class="settings-input" />
+            </div>
+            <button class="btn-primary" onclick="saveSettings()">Lưu cài đặt</button>
+          </div>
+          <div class="settings-card">
+            <h3>🔄 Quản lý giai đoạn CVC</h3>
+            <div id="stagesManager"></div>
+            <button class="btn-outline" onclick="addStage()">+ Thêm giai đoạn</button>
+          </div>
+          <div class="settings-card">
+            <h3>👥 Danh mục công việc</h3>
+            <div id="categoriesManager"></div>
+            <button class="btn-outline" onclick="addCategory()">+ Thêm danh mục</button>
+          </div>
+          <div class="settings-card" id="userManagerCard" style="border-color:rgba(90,184,0,0.3)">
+            <h3 style="color:#5AB800">👤 Quản lý người dùng</h3>
+            <div id="userManager" style="margin-bottom:12px"></div>
+            <button id="btnAddUserMain" class="btn-outline" onclick="openAddUserModal()" style="width:100%;justify-content:center">+ Thêm người dùng</button>
+          </div>
+          <div class="settings-card" style="border-color:rgba(239,68,68,0.3)">
+            <h3 style="color:#FCA5A5">⚠️ Vùng nguy hiểm</h3>
+            <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Reset toàn bộ dữ liệu về trạng thái demo ban đầu. Dùng khi muốn thử lại từ đầu.</p>
+            <button class="btn-danger" onclick="resetAllData()" style="width:100%;justify-content:center">
+              🗑️ Reset toàn bộ dữ liệu
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end page-container -->
+  </main>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- New Task Modal -->
+<div class="modal-overlay hidden" id="newTaskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>➕ Tạo Luồng Công Việc Chính (CVC) Mới</h2>
+      <button class="modal-close" onclick="closeModal('newTaskModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-group full-width">
+          <label>Tên CVC <span class="req">*</span></label>
+          <input type="text" id="taskTitle" placeholder="VD: Chiến dịch ra mắt sản phẩm X tháng 5" />
+        </div>
+        <div class="form-group">
+          <label>Danh mục</label>
+          <select id="taskCategory">
+            <option value="sales">🛒 Bán hàng</option>
+            <option value="marketing">📣 Marketing</option>
+            <option value="ops">⚙️ Vận hành</option>
+            <option value="hr">👥 Nhân sự</option>
+            <option value="finance">💰 Tài chính</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ưu tiên</label>
+          <select id="taskPriority">
+            <option value="low">🟢 Thấp</option>
+            <option value="medium" selected>🟡 Trung bình</option>
+            <option value="high">🔴 Cao</option>
+            <option value="urgent">🚨 Khẩn cấp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Người phụ trách</label>
+          <select id="taskAssignee"></select>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="taskDeadline" />
+        </div>
+        <div class="form-group">
+          <label>Giá trị kỳ vọng (triệu đ)</label>
+          <input type="number" id="taskValue" placeholder="0" min="0" />
+        </div>
+        <div class="form-group full-width">
+          <label>Mô tả chi tiết</label>
+          <textarea id="taskDesc" rows="3" placeholder="Mô tả mục tiêu, phạm vi, kết quả kỳ vọng..."></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Kênh thực hiện</label>
+          <div class="channel-tags">
+            <label class="channel-tag"><input type="checkbox" value="facebook"/> 📘 Facebook</label>
+            <label class="channel-tag"><input type="checkbox" value="zalo"/> 💬 Zalo</label>
+            <label class="channel-tag"><input type="checkbox" value="tiktok"/> 🎵 TikTok</label>
+            <label class="channel-tag"><input type="checkbox" value="instagram"/> 📸 Instagram</label>
+            <label class="channel-tag"><input type="checkbox" value="shopee"/> 🛍️ Shopee</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('newTaskModal')">Hủy</button>
+      <button class="btn-primary" onclick="saveNewTask()">Tạo CVC</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div class="modal-overlay hidden" id="taskDetailModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="detailTaskTitle">Chi tiết CVC</h2>
+      <div class="detail-actions">
+        <button class="btn-outline sm" onclick="editTask(currentTaskId)">✏️ Sửa</button>
+        <button class="btn-danger sm admin-only" onclick="deleteTask(currentTaskId)">🗑️ Xóa</button>
+        <button class="modal-close" onclick="closeModal('taskDetailModal')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body detail-body">
+      <div class="detail-main">
+        <div class="detail-meta" id="detailMeta"></div>
+        <div class="detail-desc" id="detailDesc"></div>
+        <div class="detail-progress">
+          <h4>📍 Tiến độ giai đoạn</h4>
+          <div class="stage-progress" id="stageProgress"></div>
+        </div>
+        <!-- SPRINT 1: Checklist -->
+        <div id="detailChecklist"></div>
+        <!-- SPRINT 1: Sub-tasks -->
+        <div id="detailSubtasks"></div>
+        <div class="detail-comments">
+          <h4>💬 Nhật ký hoạt động</h4>
+          <div id="commentsList"></div>
+          <div class="comment-input">
+            <textarea id="newComment" rows="2" placeholder="Cập nhật tiến độ, ghi chú..."></textarea>
+            <button class="btn-primary sm" onclick="addComment()">Gửi</button>
+          </div>
+        </div>
+      </div>
+      <div class="detail-sidebar">
+        <div class="detail-info-card">
+          <div class="info-row"><span>Giai đoạn:</span><span class="stage-badge" id="detailStage">—</span></div>
+          <div class="info-row"><span>Ưu tiên:</span><span id="detailPriority">—</span></div>
+          <div class="info-row"><span>Phụ trách:</span><span id="detailAssignee">—</span></div>
+          <div class="info-row"><span>Deadline:</span><span id="detailDeadline">—</span></div>
+          <div class="info-row"><span>Giá trị:</span><span id="detailValue">—</span></div>
+          <div class="info-row"><span>Kênh:</span><span id="detailChannels">—</span></div>
+        </div>
+        <!-- SPRINT 1: SLA Detail -->
+        <div id="detailSLA"></div>
+        <div class="stage-actions" id="stageActions">
+          <h4>Chuyển giai đoạn</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Lead Modal -->
+<div class="modal-overlay hidden" id="newLeadModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>👤 Thêm Khách Hàng Mới</h2>
+      <button class="modal-close" onclick="closeModal('newLeadModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-group"><label>Họ tên <span class="req">*</span></label><input type="text" id="leadName" placeholder="Nguyễn Văn A" /></div>
+        <div class="form-group"><label>Số điện thoại</label><input type="tel" id="leadPhone" placeholder="0901234567" /></div>
+        <div class="form-group"><label>Kênh tiếp cận</label>
+          <select id="leadChannel">
+            <option value="facebook">📘 Facebook</option>
+            <option value="zalo">💬 Zalo</option>
+            <option value="tiktok">🎵 TikTok</option>
+            <option value="instagram">📸 Instagram</option>
+            <option value="referral">🤝 Giới thiệu</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Sản phẩm quan tâm</label><input type="text" id="leadProduct" placeholder="VD: Gói Premium" /></div>
+        <div class="form-group full-width"><label>Ghi chú</label><textarea id="leadNote" rows="2" placeholder="Thông tin thêm..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('newLeadModal')">Hủy</button>
+      <button class="btn-primary" onclick="saveNewLead()">Thêm khách hàng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Request Detail Modal -->
+<div class="modal-overlay hidden" id="requestDetailModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>📋 Chi tiết đề xuất</h2>
+      <button class="modal-close" onclick="closeModal('requestDetailModal')">✕</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- New Request Modal -->
+<div class="modal-overlay hidden" id="newRequestModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📋 Tạo đề xuất mới</h2>
+      <button class="modal-close" onclick="closeModal('newRequestModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="req-type-grid">
+        <button class="req-type-btn" data-type="budget" onclick="selectReqType('budget')">
+          <span class="rt-icon">💰</span>
+          <span class="rt-name">Duyệt ngân sách</span>
+        </button>
+        <button class="req-type-btn" data-type="order" onclick="selectReqType('order')">
+          <span class="rt-icon">📦</span>
+          <span class="rt-name">Đặt hàng / Nhập kho</span>
+        </button>
+        <button class="req-type-btn" data-type="hr" onclick="selectReqType('hr')">
+          <span class="rt-icon">👤</span>
+          <span class="rt-name">Nhân sự</span>
+        </button>
+        <button class="req-type-btn" data-type="kpi" onclick="selectReqType('kpi')">
+          <span class="rt-icon">🎯</span>
+          <span class="rt-name">Đăng ký KPI</span>
+        </button>
+        <button class="req-type-btn" data-type="leave" onclick="selectReqType('leave')">
+          <span class="rt-icon">🏖️</span>
+          <span class="rt-name">Xin nghỉ phép</span>
+        </button>
+      </div>
+      <div class="form-group">
+        <label>Tiêu đề đề xuất <span class="req">*</span></label>
+        <input type="text" id="reqTitle" placeholder="VD: Ngân sách Facebook Ads tháng 5 — 50 triệu" />
+      </div>
+      <div class="form-group">
+        <label>Mô tả chi tiết</label>
+        <textarea id="reqDesc" rows="3" placeholder="Lý do, mục tiêu, chi tiết đề xuất..."></textarea>
+      </div>
+      <div id="reqDynamicFields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('newRequestModal')">Hủy</button>
+      <button class="btn-primary" onclick="saveNewRequest()">Gửi đề xuất</button>
+    </div>
+  </div>
+</div>
+
+<!-- New User Modal -->
+<div class="modal-overlay hidden" id="newUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>👤 Thêm người dùng mới</h2>
+      <button class="modal-close" onclick="closeModal('newUserModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Họ tên <span class="req">*</span></label>
+        <input type="text" id="newUserName" placeholder="Nguyễn Văn A" />
+      </div>
+      <div class="form-group">
+        <label>Email đăng nhập <span class="req">*</span></label>
+        <input type="email" id="newUserEmail" placeholder="nva@vimove.vn" />
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu <span class="req">*</span></label>
+        <input type="password" id="newUserPass" placeholder="••••••••" />
+      </div>
+      <div class="form-group">
+        <label>Phòng ban / Mảng <span style="font-size:11px;color:var(--c-text-3);font-weight:normal">(Có thể để trống để dùng tự động)</span></label>
+        <input type="text" id="newUserDept" placeholder="VD: Content, Digital, Kho..." />
+      </div>
+      <div class="form-group">
+        <label>Vai trò hệ thống</label>
+        <select id="newUserRole">
+          <option value="staff">👤 Nhân viên (Staff)</option>
+          <option value="manager">🎯 Quản lý (Team Lead)</option>
+          <option value="admin" class="admin-only-option">👑 Quản trị hệ thống (Admin)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('newUserModal')">Hủy</button>
+      <button class="btn-primary" onclick="saveNewUser()">Cấp tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="js/data.js?v=2.4"></script>
+<script src="js/auth.js?v=2.4"></script>
+<!-- Sprint 1 -->
+<script src="js/sla.js?v=2.4"></script>
+<script src="js/checklist.js?v=2.4"></script>
+<script src="js/request.js?v=2.4"></script>
+<!-- Core modules -->
+<script src="js/workflow.js?v=2.4"></script>
+<script src="js/crm.js?v=2.4"></script>
+<script src="js/performance.js?v=2.4"></script>
+<script src="js/team.js?v=2.4"></script>
+<script src="js/dashboard.js?v=2.4"></script>
+<script src="js/app.js?v=2.4"></script>
+</body>
+</html>

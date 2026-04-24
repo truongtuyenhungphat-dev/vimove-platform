@@ -1,0 +1,392 @@
+/* ================================================
+   VIWORK — Workflow Board CSS
+   Kanban, List, Timeline Views
+   ================================================ */
+
+/* ================================================
+   KANBAN BOARD
+   ================================================ */
+.kanban-board {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  align-items: flex-start;
+  min-height: calc(100vh - 220px);
+}
+
+.kanban-column {
+  flex-shrink: 0;
+  width: 280px;
+  background: var(--c-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-border-subtle);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 200px);
+}
+
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--c-border-subtle);
+  flex-shrink: 0;
+}
+
+.col-stage-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.col-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-count {
+  background: var(--c-surface-3);
+  border-radius: var(--r-full);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-2);
+  flex-shrink: 0;
+}
+
+.col-add-btn {
+  width: 24px; height: 24px;
+  background: var(--c-surface-2);
+  border-radius: var(--r-sm);
+  color: var(--c-text-3);
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--dur-fast);
+  flex-shrink: 0;
+}
+.col-add-btn:hover { background: var(--c-primary); color: white; }
+
+.kanban-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Drag over effect */
+.kanban-column.drag-over {
+  border-color: var(--c-primary);
+  background: rgba(90,184,0,0.05);
+}
+
+/* ---- TASK CARD ---- */
+.task-card {
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-md);
+  padding: 12px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 0;
+  transition: background var(--dur-fast);
+}
+
+.task-card.priority-low::before    { background: #10B981; }
+.task-card.priority-medium::before { background: #F59E0B; }
+.task-card.priority-high::before   { background: #EF4444; }
+.task-card.priority-urgent::before { background: #EF4444; animation: pulse 1.5s infinite; }
+
+.task-card:hover {
+  border-color: var(--c-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.task-card.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg) scale(0.98);
+  border-color: var(--c-primary);
+}
+
+.tc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.tc-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--c-text);
+}
+.tc-priority {
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tc-desc {
+  font-size: 12px;
+  color: var(--c-text-2);
+  line-height: 1.5;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tc-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.tc-tag {
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.tc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tc-assignee {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--c-text-2);
+}
+
+.tc-deadline {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tc-channels {
+  display: flex;
+  gap: 3px;
+}
+.tc-channel-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+
+.tc-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-success);
+}
+
+/* Overdue indicator */
+.task-card.overdue {
+  border-color: rgba(239,68,68,0.3);
+}
+.task-card.overdue .tc-deadline { color: var(--c-danger); font-weight: 600; }
+
+/* ================================================
+   VIEW TOGGLE
+   ================================================ */
+.view-toggle {
+  display: flex;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.view-btn {
+  padding: 6px 10px;
+  background: none;
+  color: var(--c-text-3);
+  font-size: 14px;
+  transition: all var(--dur-fast);
+  border-right: 1px solid var(--c-border-subtle);
+}
+.view-btn:last-child { border-right: none; }
+.view-btn.active { background: var(--c-primary); color: white; }
+.view-btn:hover:not(.active) { background: var(--c-surface-2); color: var(--c-text); }
+
+/* ================================================
+   LIST VIEW
+   ================================================ */
+.list-view { overflow-x: auto; }
+.list-view .task-table { min-width: 800px; }
+
+/* ================================================
+   TIMELINE VIEW
+   ================================================ */
+.timeline-view {
+  overflow-x: auto;
+  min-width: 100%;
+}
+
+.timeline-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid var(--c-border-subtle);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  position: sticky;
+  top: 0;
+  background: var(--c-bg);
+  z-index: 10;
+}
+
+.tl-task-col {
+  min-width: 200px;
+  width: 200px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--c-text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tl-day {
+  flex: 1;
+  min-width: 30px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--c-text-3);
+  font-weight: 500;
+  border-left: 1px solid var(--c-border-subtle);
+  padding: 2px 0;
+}
+.tl-day.today { color: var(--c-primary-light); font-weight: 700; }
+
+.timeline-rows { display: flex; flex-direction: column; gap: 4px; }
+
+.tl-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 12px;
+  min-height: 36px;
+}
+
+.tl-task-label {
+  min-width: 200px;
+  width: 200px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.tl-grid {
+  flex: 1;
+  display: flex;
+  position: relative;
+  align-items: center;
+  height: 36px;
+}
+
+.tl-cell {
+  flex: 1;
+  min-width: 30px;
+  height: 100%;
+  border-left: 1px solid var(--c-border-subtle);
+}
+.tl-cell.today-col { background: rgba(90,184,0,0.05); }
+
+.tl-bar {
+  position: absolute;
+  height: 20px;
+  border-radius: var(--r-full);
+  background: var(--grad-primary);
+  opacity: 0.85;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 4px;
+  transition: opacity var(--dur-fast);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  overflow: hidden;
+}
+.tl-bar:hover { opacity: 1; box-shadow: 0 0 10px rgba(90,184,0,0.4); }
+.tl-bar-text { font-size: 10px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+.tl-bar.cat-sales     { background: linear-gradient(90deg, #6366F1, #4F46E5); }
+.tl-bar.cat-marketing { background: linear-gradient(90deg, #F59E0B, #D97706); }
+.tl-bar.cat-ops       { background: linear-gradient(90deg, #10B981, #059669); }
+.tl-bar.cat-hr        { background: linear-gradient(90deg, #3B82F6, #2563EB); }
+.tl-bar.cat-finance   { background: linear-gradient(90deg, #EF4444, #DC2626); }
+
+/* ================================================
+   EMPTY STATES
+   ================================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--c-text-3);
+}
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state p { font-size: 13px; }
+
+/* ================================================
+   COLUMN EMPTY STATE
+   ================================================ */
+.col-empty {
+  text-align: center;
+  padding: 20px 10px;
+  color: var(--c-text-3);
+  font-size: 12px;
+  border: 2px dashed var(--c-border-subtle);
+  border-radius: var(--r-md);
+}
+
+/* ================================================
+   SEARCH HIGHLIGHT
+   ================================================ */
+.hl { background: rgba(245,158,11,0.3); border-radius: 2px; }
+
+/* ================================================
+   KANBAN DRAG PLACEHOLDER
+   ================================================ */
+.drag-placeholder {
+  background: rgba(90,184,0,0.08);
+  border: 2px dashed var(--c-primary);
+  border-radius: var(--r-md);
+  min-height: 80px;
+}
+
+

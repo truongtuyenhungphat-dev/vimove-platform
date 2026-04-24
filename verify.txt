@@ -1,0 +1,1 @@
+['Command Center', 'Workflow Board', 'Việc của tôi', 'Đề xuất & Duyệt', 'CRM Khách hàng', 'KPI & Doanh thu', 'Đội ngũ', 'Cài đặt']

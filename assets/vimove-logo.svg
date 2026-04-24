@@ -1,0 +1,21 @@
+<!-- Vimove Logo SVG — Pinwheel + Arrow cursor symbol -->
+<!-- Primary green: #5AB800 | Dark charcoal: #3D3D3D -->
+<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pinwheel blades (green) -->
+  <g transform="translate(17,17)">
+    <!-- Blade 1 - left big -->
+    <path d="M-3,-2 L-12,-5 L-10,3 Z" fill="#5AB800" opacity="0.95"/>
+    <!-- Blade 2 - bottom left -->
+    <path d="M-2,3 L-7,12 L3,10 Z" fill="#5AB800" opacity="0.85"/>
+    <!-- Blade 3 - bottom -->
+    <path d="M2,3 L3,13 L9,7 Z" fill="#5AB800" opacity="0.75"/>
+    <!-- Blade 4 - right small -->
+    <path d="M3,-1 L10,-4 L8,4 Z" fill="#5AB800" opacity="0.90"/>
+    <!-- Blade 5 - top -->
+    <path d="M0,-3 L2,-12 L-5,-8 Z" fill="#5AB800" opacity="0.80"/>
+  </g>
+  <!-- Arrow cursor (dark charcoal) -->
+  <g transform="translate(21,6) rotate(0)">
+    <path d="M3,0 L3,14 L7,10 L10,17 L12,16 L9,9 L14,9 Z" fill="#3D3D3D"/>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "name": "VIWORK",
+  "short_name": "VIWORK",
+  "description": "Vimove Operations Platform - Quản lý luồng công việc chính",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#7C3AED",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
