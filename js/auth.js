@@ -41,18 +41,6 @@ function handleLogin() {
   }, 800);
 }
 
-function quickLogin(role) {
-  const map = {
-    admin:   { email: 'ngan@vimove.vn',   pass: 'ngan123'   }, // Quản trị chính
-    manager: { email: 'tuyen@vimove.vn',  pass: 'tuyen123'  }, // Kỹ thuật
-    staff:   { email: 'trang@vimove.vn',  pass: 'trang123'  },
-  };
-  const creds = map[role];
-  if (!creds) return;
-  document.getElementById('loginEmail').value = creds.email;
-  document.getElementById('loginPass').value  = creds.pass;
-  handleLogin();
-}
 
 function loginSuccess() {
   // Apply role class
