@@ -596,42 +596,65 @@ const STORAGE_KEY = 'viwork_data';
   }
 })();
 
-// ============ INIT DATA ============
+// ============ INIT DATA (CLOUD FIRESTORE) ============
 function initData() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      appState.tasks = parsed.tasks || [...INITIAL_TASKS];
-      appState.leads = parsed.leads || [...INITIAL_LEADS];
-    } catch(e) {
-      appState.tasks = [...INITIAL_TASKS];
-      appState.leads = [...INITIAL_LEADS];
-    }
+  if (window.firebaseDB) {
+    // 1. Kiểm tra và bơm dữ liệu nếu mây rỗng
+    window.fbCheckAndSeed();
+
+    // 2. Lắng nghe Dữ liệu Công việc (Tasks)
+    window.fbListenTasks(tasks => {
+      appState.tasks = tasks;
+      appState.tasks.sort((a,b) => b.order - a.order); // Giữ đúng thứ tự Kanban
+      if (typeof renderWorkflow === 'function') renderWorkflow();
+      if (typeof renderMyTasks === 'function') renderMyTasks();
+      if (typeof renderDashboard === 'function') renderDashboard();
+      if (typeof updateBadges === 'function') updateBadges();
+      generateNotifications();
+    });
+
+    // 3. Lắng nghe Dữ liệu CRM (Leads)
+    window.fbListenLeads(leads => {
+      appState.leads = leads;
+      if (typeof renderCRM === 'function') renderCRM();
+      if (typeof renderDashboard === 'function') renderDashboard();
+    });
+
+    // 4. Lắng nghe Dữ liệu Đề xuất (Requests)
+    window.fbListenRequests(reqs => {
+      if (typeof requestState !== 'undefined') {
+        requestState.requests = reqs;
+      }
+      if (typeof renderRequests === 'function') renderRequests();
+      if (typeof updateRequestBadge === 'function') updateRequestBadge();
+    });
+
+    // 5. Lắng nghe Dữ liệu Người dùng (Users)
+    window.fbListenUsers(users => {
+      // Ghi đè vào biến DEMO_USERS gốc để dùng cho toàn app
+      Object.keys(users).forEach(k => DEMO_USERS[k] = users[k]);
+      if (typeof renderUserManager === 'function' && document.getElementById('userManager')) {
+        renderUserManager();
+      }
+      if (typeof renderTeam === 'function' && document.getElementById('teamLeaderboard')) {
+        renderTeam();
+      }
+    });
   } else {
+    // Dự phòng khi mất kết nối Firebase, sài Data tĩnh
     appState.tasks = [...INITIAL_TASKS];
     appState.leads = [...INITIAL_LEADS];
+    generateNotifications();
   }
-  generateNotifications();
 }
 
 function resetAllData() {
-  if (!confirm('⚠️ Xóa toàn bộ dữ liệu và reset về mặc định? Không thể hoàn tác!')) return;
-  localStorage.clear();
-  appState.tasks = [...INITIAL_TASKS];
-  appState.leads = [...INITIAL_LEADS];
-  saveData();
-  if (typeof initRequests === 'function') initRequests();
-  renderDashboard();
-  renderWorkflow();
-  showToast('✅ Đã reset toàn bộ dữ liệu về mặc định!', 'success');
+  if (!confirm('Vùng nguy hiểm: Tính năng Xóa Cloud chưa được mở.')) return;
 }
 
+// Bỏ saveData local
 function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    tasks: appState.tasks,
-    leads: appState.leads,
-  }));
+  // Không làm gì nữa vì Firebase tự động xử lý write ở hàm riêng (fbSaveTask)
 }
 
 function generateNotifications() {

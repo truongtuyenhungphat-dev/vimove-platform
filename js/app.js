@@ -162,16 +162,11 @@ function addCategory() { showToast('🔧 Tính năng thêm danh mục sẽ có t
  * Tải danh sách user từ localStorage (merge với DEMO_USERS)
  */
 function getAppUsers() {
-  try {
-    const saved = localStorage.getItem('viwork_users');
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
-  // Fallback: convert DEMO_USERS to array
   return Object.entries(DEMO_USERS).map(([email, u]) => ({ ...u, email }));
 }
 
 function saveAppUsers(users) {
-  localStorage.setItem('viwork_users', JSON.stringify(users));
+  // Lược bỏ localStorage vì đã đẩy bằng API riêng rẻ lên Firebase
 }
 
 function renderUserManager() {
@@ -272,6 +267,7 @@ function saveNewUser() {
   // Add to TEAM_MEMBERS
   TEAM_MEMBERS.push({ id: newUser.id, name, role, avatar: newUser.avatar, department, kpi: 0, revenue: 0, tasks: 0 });
 
+  if (window.fbSaveUser) window.fbSaveUser(newUser);
   saveAppUsers(users);
 
   // Clear form
@@ -298,6 +294,7 @@ function deleteUser(userId) {
   if (!confirm(`Xóa tài khoản "${target.name}"?`)) return;
 
   const updated = users.filter(u => u.id !== userId);
+  if (window.fbDeleteUser && target.email) window.fbDeleteUser(target.email);
   saveAppUsers(updated);
   // Remove from DEMO_USERS
   const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);

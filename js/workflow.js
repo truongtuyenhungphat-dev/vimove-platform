@@ -260,6 +260,7 @@ function onDrop(e, stageId) {
     text: `Chuyển từ giai đoạn "${getStageById(oldStage).name}" → "${getStageById(stageId).name}"`,
     date: new Date().toISOString().split('T')[0]
   });
+  if (window.fbSaveTask) window.fbSaveTask(task);
   saveData();
   renderWorkflow();
   renderDashboard();
@@ -364,6 +365,7 @@ function moveStage(taskId, stageId) {
     text: `Chuyển giai đoạn: "${old}" → "${getStageById(stageId).name}"`,
     date: new Date().toISOString().split('T')[0]
   });
+  if (window.fbSaveTask) window.fbSaveTask(task);
   saveData();
   openTaskDetail(taskId); // refresh
   renderWorkflow();
@@ -401,6 +403,7 @@ function addComment() {
     date: new Date().toISOString().split('T')[0]
   });
   document.getElementById('newComment').value = '';
+  if (window.fbSaveTask) window.fbSaveTask(task);
   saveData();
   renderComments(task);
 }
@@ -447,6 +450,7 @@ function saveNewTask() {
   };
 
   appState.tasks.push(task);
+  if (window.fbSaveTask) window.fbSaveTask(task);
   saveData();
 
   // Reset form
@@ -465,6 +469,7 @@ function deleteTask(taskId) {
   if (!isAdmin()) { showToast('❌ Chỉ Admin mới có thể xóa!', 'error'); return; }
   if (!confirm('Xóa CVC này?')) return;
   appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+  if (window.fbDeleteTask) window.fbDeleteTask(taskId);
   saveData();
   closeModal('taskDetailModal');
   renderWorkflow();
@@ -529,6 +534,7 @@ function saveEditTask(taskId) {
     date: new Date().toISOString().split('T')[0]
   });
 
+  if (window.fbSaveTask) window.fbSaveTask(task);
   saveData();
 
   // Reset modal back to create mode

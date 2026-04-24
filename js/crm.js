@@ -204,6 +204,7 @@ function addContactHistory(leadId) {
   lead.contactHistory = lead.contactHistory || [];
   lead.contactHistory.push({ note, date: new Date().toISOString().split('T')[0], by: currentUser?.id });
   document.getElementById(`crm-note-input-${leadId}`).value = '';
+  if (window.fbSaveLead) window.fbSaveLead(lead);
   saveData();
 
   const histEl = document.getElementById(`crm-history-${leadId}`);
@@ -224,6 +225,7 @@ function updateLeadInfo(leadId) {
   const newDealVal  = parseFloat(document.getElementById(`dealvalue-input-${leadId}`)?.value) || 0;
   if (newFollowUp) lead.followUpDate = newFollowUp;
   lead.dealValue = newDealVal;
+  if (window.fbSaveLead) window.fbSaveLead(lead);
   saveData();
   closeModal('requestDetailModal');
   renderCRM();
@@ -241,6 +243,7 @@ function setLeadStage(leadId, stageId) {
     date: new Date().toISOString().split('T')[0],
     by: currentUser?.id
   });
+  if (window.fbSaveLead) window.fbSaveLead(lead);
   saveData();
   closeModal('requestDetailModal');
   renderCRM();
@@ -273,6 +276,7 @@ function saveNewLead() {
   };
 
   appState.leads.push(lead);
+  if (window.fbSaveLead) window.fbSaveLead(lead);
   saveData();
 
   ['leadName','leadPhone','leadProduct','leadNote'].forEach(id => document.getElementById(id).value = '');
@@ -295,6 +299,7 @@ function moveLeadStage(leadId) {
 function deleteLead(leadId) {
   if (!confirm('Xóa khách hàng này?')) return;
   appState.leads = appState.leads.filter(l => l.id !== leadId);
+  if (window.fbDeleteLead) window.fbDeleteLead(leadId);
   saveData();
   renderCRM();
   showToast('🗑️ Đã xóa khách hàng', 'info');

@@ -110,7 +110,7 @@ function initRequests() {
 }
 
 function saveRequests() {
-  localStorage.setItem('viwork_requests', JSON.stringify(requestState.requests));
+  // Lược bỏ localStorage vì đã đẩy bằng API riêng rẻ lên Firebase
 }
 
 // ============ RENDER REQUEST PAGE ============
@@ -396,6 +396,7 @@ function approveRequest(reqId) {
   const allDone = req.approvalSteps.every(s => s.status === 'approved');
   if (allDone) req.status = 'approved';
 
+  if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
   closeModal('requestDetailModal');
   renderRequests();
@@ -416,6 +417,7 @@ function rejectRequest(reqId) {
   step.at         = new Date().toISOString().split('T')[0];
   req.status      = 'rejected';
 
+  if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
   closeModal('requestDetailModal');
   renderRequests();
@@ -431,6 +433,7 @@ function addRequestComment(reqId) {
   req.comments = req.comments || [];
   req.comments.push({ author: currentUser?.id, text, date: new Date().toISOString().split('T')[0] });
   document.getElementById('req-comment-input').value = '';
+  if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
   const commEl = document.getElementById('req-comments-' + reqId);
   if (commEl) {
@@ -516,6 +519,7 @@ function saveNewRequest() {
   };
 
   requestState.requests.push(req);
+  if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
   closeModal('newRequestModal');
   renderRequests();
