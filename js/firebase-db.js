@@ -11,6 +11,7 @@ window.fbCheckAndSeed = async () => {
     await window.fbSeedTasks(INITIAL_TASKS);
     await window.fbSeedLeads(INITIAL_LEADS);
     if(typeof INITIAL_REQUESTS !== 'undefined') await window.fbSeedRequests(INITIAL_REQUESTS);
+    if(typeof INITIAL_ASSIGNMENTS !== 'undefined') await window.fbSeedAssignments(INITIAL_ASSIGNMENTS);
     console.log('[⚡ VIWORK] Đã đẩy Data gốc lên Cloud thành công!');
   }
 };
@@ -86,6 +87,24 @@ window.fbDeleteRequest = async (reqId) => {
   return getDB().collection('viwork_requests').doc(reqId).delete();
 };
 
+// ============ VIWORK_ASSIGNMENTS ============
+window.fbSeedAssignments = async (asgnArray) => {
+  const db = getDB();
+  const batch = db.batch();
+  for (const a of asgnArray) {
+    batch.set(db.collection('viwork_assignments').doc(a.id), a);
+  }
+  await batch.commit();
+};
+
+window.fbSaveAssignment = async (asgnObj) => {
+  return getDB().collection('viwork_assignments').doc(asgnObj.id).set(asgnObj);
+};
+
+window.fbDeleteAssignment = async (asgnId) => {
+  return getDB().collection('viwork_assignments').doc(asgnId).delete();
+};
+
 // ============ LISTENERS ============
 window.fbListenTasks = (callback) => {
   return getDB().collection('viwork_tasks').onSnapshot(snapshot => {
@@ -117,6 +136,14 @@ window.fbListenUsers = (callback) => {
 
 window.fbListenRequests = (callback) => {
   return getDB().collection('viwork_requests').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
+};
+
+window.fbListenAssignments = (callback) => {
+  return getDB().collection('viwork_assignments').onSnapshot(snapshot => {
     const arr = [];
     snapshot.forEach(doc => arr.push(doc.data()));
     callback(arr);

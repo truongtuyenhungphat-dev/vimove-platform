@@ -13,7 +13,7 @@ const APP_CONFIG = {
 };
 
 // Tăng số này mỗi khi muốn xóa data cũ trong browser
-const DATA_VERSION = 'viwork_v2.4';
+const DATA_VERSION = 'viwork_v2.5';
 
 // ============ STAGES (Giai đoạn luồng CVC) ============
 const STAGES = [
@@ -508,6 +508,129 @@ const INITIAL_LEADS = [
   { id: 'l006', name: 'Chị Nga Bùi', phone: '0956789012', email: '', channel: 'instagram', product: 'Gói Basic', stage: 'nurturing', note: 'Follow IG, like nhiều bài', date: getPastDate(4), followUpDate: getPastDate(1), dealValue: 8, assigneeId: 'u003', contactHistory: [], tags: ['cold'] },
 ];
 
+// ============ INITIAL ASSIGNMENTS (Giao việc demo) ============
+const INITIAL_ASSIGNMENTS = [
+  {
+    id: 'asgn001',
+    title: 'Thiết kế banner TikTok tuần 18 (Vali Basic)',
+    desc: 'Tạo 3 banner ảnh 1080x1920 cho TikTok ra mắt vali Basic. Style trẻ trung, màu xanh Vimove, font Manrope.',
+    assignedTo: 'u011',   // Phạm Thanh Mai
+    assignedBy: 'u002',   // Ngân
+    priority: 'urgent',
+    category: 'marketing',
+    deadline: getFutureDate(2),
+    dueTime: '17:00',
+    status: 'accepted',
+    note: '',
+    createdAt: getPastDate(1) + 'T08:00:00.000Z',
+    updatedAt: getPastDate(0) + 'T09:00:00.000Z',
+    completedAt: null,
+    comments: [
+      { author: 'u002', text: 'Việc được giao mới.', date: getPastDate(1) },
+      { author: 'u011', text: 'Đã nhận việc, đang lên concept.', date: getPastDate(0) },
+    ],
+  },
+  {
+    id: 'asgn002',
+    title: 'Lên lịch Content Calendar tháng 5 — TikTok + Facebook',
+    desc: 'Lập Content Calendar cho T5/2026: 30 bài TikTok + 20 bài Facebook. Mỗi bài cần có chủ đề, format, CTA rõ ràng.',
+    assignedTo: 'u009',   // Lê Thị Ngân
+    assignedBy: 'u005',   // Phương
+    priority: 'high',
+    category: 'marketing',
+    deadline: getFutureDate(4),
+    dueTime: '18:00',
+    status: 'in_progress',
+    note: '',
+    createdAt: getPastDate(3) + 'T09:00:00.000Z',
+    updatedAt: getPastDate(1) + 'T10:00:00.000Z',
+    completedAt: null,
+    comments: [
+      { author: 'u005', text: 'Việc được giao mới.', date: getPastDate(3) },
+      { author: 'u009', text: 'Đã bắt đầu lên lịch, khoảng 40% xong.', date: getPastDate(1) },
+    ],
+  },
+  {
+    id: 'asgn003',
+    title: 'Chụp ảnh sản phẩm vali Basic (bộ ảnh background trắng)',
+    desc: 'Chụp full bộ ảnh vali Basic cho website + Shopee: 10 góc khác nhau, background trắng, ảnh chi tiết khóa/bánh xe.',
+    assignedTo: 'u012',   // Khuất Thị Dung
+    assignedBy: 'u002',   // Ngân
+    priority: 'high',
+    category: 'ops',
+    deadline: getFutureDate(5),
+    dueTime: '12:00',
+    status: 'pending',
+    note: '',
+    createdAt: getPastDate(0) + 'T14:00:00.000Z',
+    updatedAt: getPastDate(0) + 'T14:00:00.000Z',
+    completedAt: null,
+    comments: [
+      { author: 'u002', text: 'Việc được giao mới.', date: getPastDate(0) },
+    ],
+  },
+  {
+    id: 'asgn004',
+    title: 'Đăng tin tuyển dụng lên Facebook Groups + JobStreet',
+    desc: 'Viết và đăng tin tuyển 2 nhân viên Live TikTok trên các nhóm FB tuyển dụng TPHCM và JobStreet.',
+    assignedTo: 'u003',   // Trang
+    assignedBy: 'u002',   // Ngân
+    priority: 'medium',
+    category: 'hr',
+    deadline: getFutureDate(1),
+    dueTime: '09:00',
+    status: 'done',
+    note: 'Đã đăng 5 nhóm Facebook + JobStreet, nhận được 12 CV.',
+    createdAt: getPastDate(5) + 'T08:00:00.000Z',
+    updatedAt: getPastDate(2) + 'T11:00:00.000Z',
+    completedAt: getPastDate(2) + 'T11:00:00.000Z',
+    comments: [
+      { author: 'u002', text: 'Việc được giao mới.', date: getPastDate(5) },
+      { author: 'u003', text: 'Đã đăng đầy đủ. Nhận 12 CV, đang sắp xếp phỏng vấn.', date: getPastDate(2) },
+    ],
+  },
+  {
+    id: 'asgn005',
+    title: 'Viết 5 video script style Taki cho @anhchuvali',
+    desc: 'Viết kịch bản 5 video TikTok theo phong cách Taki (kể chuyện, hài hước, có hook đầu mạnh) cho kênh @anhchuvali.',
+    assignedTo: 'u010',   // Lê Thị Anh Thái
+    assignedBy: 'u005',   // Phương
+    priority: 'medium',
+    category: 'marketing',
+    deadline: getFutureDate(3),
+    dueTime: '17:00',
+    status: 'accepted',
+    note: '',
+    createdAt: getPastDate(2) + 'T10:00:00.000Z',
+    updatedAt: getPastDate(1) + 'T15:00:00.000Z',
+    completedAt: null,
+    comments: [
+      { author: 'u005', text: 'Việc được giao mới.', date: getPastDate(2) },
+      { author: 'u010', text: 'Đã nhận, đang nghiên cứu kênh Taki để lấy cảm hứng.', date: getPastDate(1) },
+    ],
+  },
+  {
+    id: 'asgn006',
+    title: 'Setup Meta Pixel + TikTok Pixel lên website',
+    desc: 'Cài đặt và xác minh Meta Pixel, TikTok Pixel trên website Vimove. Test event: PageView, AddToCart, Purchase.',
+    assignedTo: 'u004',   // Dương Minh Đức
+    assignedBy: 'u001',   // Tuyền
+    priority: 'urgent',
+    category: 'ops',
+    deadline: getFutureDate(2),
+    dueTime: '12:00',
+    status: 'in_progress',
+    note: '',
+    createdAt: getPastDate(2) + 'T08:00:00.000Z',
+    updatedAt: getPastDate(0) + 'T08:00:00.000Z',
+    completedAt: null,
+    comments: [
+      { author: 'u001', text: 'Việc được giao mới.', date: getPastDate(2) },
+      { author: 'u004', text: 'Đã cài Meta Pixel xong, đang test TikTok Pixel.', date: getPastDate(0) },
+    ],
+  },
+];
+
 // ============ REVENUE DATA (Monthly) ============
 const MONTHLY_REVENUE = [
   { month: 'T1', target: 8.8, actual: 7.2  },
@@ -574,6 +697,7 @@ let appState = {
   currentUser: null,
   tasks: [],
   leads: [],
+  assignments: [],
   notifications: [],
   currentView: 'kanban',
   currentFilter: 'all',
@@ -640,10 +764,20 @@ function initData() {
         renderTeam();
       }
     });
+
+    // 6. Lắng nghe Dữ liệu Giao việc (Assignments)
+    window.fbListenAssignments(asgns => {
+      appState.assignments = asgns;
+      if (typeof renderAssignments === 'function' && document.getElementById('page-assignments')?.classList.contains('active')) {
+        renderAssignments();
+      }
+      if (typeof updateAsgnBadge === 'function') updateAsgnBadge();
+    });
   } else {
     // Dự phòng khi mất kết nối Firebase, sài Data tĩnh
     appState.tasks = [...INITIAL_TASKS];
     appState.leads = [...INITIAL_LEADS];
+    appState.assignments = typeof INITIAL_ASSIGNMENTS !== 'undefined' ? [...INITIAL_ASSIGNMENTS] : [];
     generateNotifications();
   }
 }

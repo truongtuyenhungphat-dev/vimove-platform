@@ -38,6 +38,8 @@ function initApp() {
   renderMyTasks();
   updateBadges();
   updateRequestBadge();
+  // Sprint 2: Assignments badge
+  updateAsgnBadge();
   // Settings panel
   renderSettingsPanel();
   // Gap 6: start notification interval
@@ -62,6 +64,7 @@ function showModule(module) {
     performance: 'KPI & Hiệu suất',
     team:        'Đội ngũ Vimove',
     requests:    'Đề xuất & Phê duyệt',
+    assignments: 'Quản lý Giao việc',
     settings:    'Cài đặt hệ thống',
   };
   document.getElementById('pageTitle').textContent = titles[module] || module;
@@ -86,6 +89,7 @@ function showModule(module) {
     case 'performance': renderPerformance(); break;
     case 'team':        renderTeam();        break;
     case 'requests':    renderRequests();    break;
+    case 'assignments': renderAssignments(); break;
     case 'settings':    renderSettingsPanel(); break;
   }
 

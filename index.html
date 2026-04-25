@@ -128,6 +128,11 @@
         <span class="nav-label">Đề xuất & Duyệt</span>
         <span class="nav-badge urgent" id="badge-requests"></span>
       </a>
+      <a class="nav-item" id="nav-assignments" onclick="showModule('assignments')" href="#">
+        <span class="nav-icon">📌</span>
+        <span class="nav-label">Giao việc</span>
+        <span class="nav-badge urgent" id="badge-assignments"></span>
+      </a>
 
       <div class="nav-section-label">Quan hệ KH</div>
       <a class="nav-item" id="nav-crm" onclick="showModule('crm')" href="#">
@@ -461,6 +466,11 @@
         <!-- Rendered entirely by JS -->
       </div>
 
+      <!-- ===== ASSIGNMENTS PAGE ===== -->
+      <div class="page hidden" id="page-assignments">
+        <!-- Rendered entirely by JS -->
+      </div>
+
       <!-- ===== SETTINGS PAGE ===== -->
       <div class="page hidden" id="page-settings">
         <div class="page-header">
@@ -674,6 +684,80 @@
   </div>
 </div>
 
+<!-- Assignment Form Modal -->
+<div class="modal-overlay hidden" id="asgnModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="asgnFormTitle">📌 Giao việc mới</h2>
+      <button class="modal-close" onclick="closeModal('asgnModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-group full-width">
+          <label>Tiêu đề công việc <span class="req">*</span></label>
+          <input type="text" id="asgnTitle" placeholder="VD: Thiết kế banner TikTok tuần 18" />
+        </div>
+        <div class="form-group">
+          <label>Người nhận việc <span class="req">*</span></label>
+          <select id="asgnAssignee"></select>
+        </div>
+        <div class="form-group">
+          <label>Danh mục</label>
+          <select id="asgnCategory">
+            <option value="sales">🛒 Bán hàng</option>
+            <option value="marketing">📣 Marketing</option>
+            <option value="ops" selected>⚙️ Vận hành</option>
+            <option value="hr">👥 Nhân sự</option>
+            <option value="finance">💰 Tài chính</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mức ưu tiên</label>
+          <select id="asgnPriority">
+            <option value="low">🟢 Thấp</option>
+            <option value="medium" selected>🟡 Trung bình</option>
+            <option value="high">🔴 Cao</option>
+            <option value="urgent">🚨 Khẩn cấp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="asgnDeadline" />
+        </div>
+        <div class="form-group">
+          <label>Giờ hết hạn</label>
+          <input type="time" id="asgnDueTime" value="17:00" />
+        </div>
+        <div class="form-group full-width">
+          <label>Mô tả chi tiết</label>
+          <textarea id="asgnDesc" rows="3" placeholder="Mô tả rõ yêu cầu, đầu ra kỳ vọng, tài liệu liên quan..."></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Ghi chú thêm</label>
+          <input type="text" id="asgnNote" placeholder="VD: Gửi file qua Zalo sau khi hoàn thành" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('asgnModal')">Hủy</button>
+      <button class="btn-primary" onclick="saveAssignment()">📌 Giao việc</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assignment Detail Modal -->
+<div class="modal-overlay hidden" id="asgnDetailModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>📌 Chi tiết Giao việc</h2>
+      <button class="modal-close" onclick="closeModal('asgnDetailModal')">✕</button>
+    </div>
+    <div class="modal-body" id="asgnDetailContent">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</div>
+
 <!-- New Request Modal -->
 <div class="modal-overlay hidden" id="newRequestModal">
   <div class="modal">
@@ -767,20 +851,22 @@
 <!-- Scripts -->
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=2.4"></script>
-<script src="js/firebase-db.js?v=2.4"></script>
-<script src="js/data.js?v=2.4"></script>
-<script src="js/auth.js?v=2.4"></script>
+<script src="js/firebase-config.js?v=2.5"></script>
+<script src="js/firebase-db.js?v=2.5"></script>
+<script src="js/data.js?v=2.5"></script>
+<script src="js/auth.js?v=2.5"></script>
 <!-- Sprint 1 -->
-<script src="js/sla.js?v=2.4"></script>
-<script src="js/checklist.js?v=2.4"></script>
-<script src="js/request.js?v=2.4"></script>
+<script src="js/sla.js?v=2.5"></script>
+<script src="js/checklist.js?v=2.5"></script>
+<script src="js/request.js?v=2.5"></script>
 <!-- Core modules -->
-<script src="js/workflow.js?v=2.4"></script>
-<script src="js/crm.js?v=2.4"></script>
-<script src="js/performance.js?v=2.4"></script>
-<script src="js/team.js?v=2.4"></script>
-<script src="js/dashboard.js?v=2.4"></script>
-<script src="js/app.js?v=2.4"></script>
+<script src="js/workflow.js?v=2.5"></script>
+<script src="js/crm.js?v=2.5"></script>
+<script src="js/performance.js?v=2.5"></script>
+<script src="js/team.js?v=2.5"></script>
+<script src="js/dashboard.js?v=2.5"></script>
+<!-- Sprint 2: Assignments -->
+<script src="js/assignments.js?v=2.5"></script>
+<script src="js/app.js?v=2.5"></script>
 </body>
 </html>
