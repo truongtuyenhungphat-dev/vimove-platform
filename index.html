@@ -508,9 +508,9 @@
             <div id="userManager" style="margin-bottom:12px"></div>
             <button id="btnAddUserMain" class="btn-outline" onclick="openAddUserModal()" style="width:100%;justify-content:center">+ Thêm người dùng</button>
           </div>
-          <div class="settings-card" style="border-color:rgba(239,68,68,0.3)">
-            <h3 style="color:#FCA5A5">⚠️ Vùng nguy hiểm</h3>
-            <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Reset toàn bộ dữ liệu về trạng thái demo ban đầu. Dùng khi muốn thử lại từ đầu.</p>
+          <div class="settings-card" id="dangerZoneCard" style="border-color:rgba(239,68,68,0.3);display:none">
+            <h3 style="color:#DC2626">⚠️ Vùng nguy hiểm</h3>
+            <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Reset toàn bộ dữ liệu về trạng thái demo ban đầu. Chỉ dành cho Admin kỹ thuật.</p>
             <button class="btn-danger" onclick="resetAllData()" style="width:100%;justify-content:center">
               🗑️ Reset toàn bộ dữ liệu
             </button>

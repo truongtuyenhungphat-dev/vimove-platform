@@ -152,8 +152,14 @@ function renderSettingsPanel() {
       </div>
     `).join('');
   }
-  // User manager (Gap 5 — Admin only)
+  // User manager (Admin only)
   renderUserManager();
+
+  // ⚠️ Vùng nguy hiểm — CHỈ hiển thị với Tech Admin u001 (tuyen@vimove.vn)
+  const dangerCard = document.getElementById('dangerZoneCard');
+  if (dangerCard) {
+    dangerCard.style.display = currentUser?.id === 'u001' ? '' : 'none';
+  }
 }
 
 function addStage() { showToast('🔧 Tính năng thêm giai đoạn sẽ có trong bản tiếp theo!', 'info'); }
