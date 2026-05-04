@@ -44,6 +44,8 @@ function initApp() {
   renderSettingsPanel();
   // Gap 6: start notification interval
   startNotificationWatcher();
+  // Sprint 3: Attendance
+  initAttendance();
 }
 
 // ============ MODULE NAVIGATION ============
@@ -65,6 +67,7 @@ function showModule(module) {
     team:        'Đội ngũ Vimove',
     requests:    'Đề xuất & Phê duyệt',
     assignments: 'Quản lý Giao việc',
+    attendance:  'Chấm công',
     settings:    'Cài đặt hệ thống',
   };
   document.getElementById('pageTitle').textContent = titles[module] || module;
@@ -90,6 +93,7 @@ function showModule(module) {
     case 'team':        renderTeam();        break;
     case 'requests':    renderRequests();    break;
     case 'assignments': renderAssignments(); break;
+    case 'attendance':  renderAttendance();  break;
     case 'settings':    renderSettingsPanel(); break;
   }
 
@@ -163,7 +167,35 @@ function renderSettingsPanel() {
 }
 
 function addStage() { showToast('🔧 Tính năng thêm giai đoạn sẽ có trong bản tiếp theo!', 'info'); }
-function removeStage(id) { showToast('⚠️ Không thể xóa giai đoạn đang có CVC!', 'error'); }
+
+function removeStage(id) {
+  // Chỉ Admin mới được xóa giai đoạn
+  if (!isAdmin()) {
+    showToast('⚠️ Chỉ Admin mới có thể xóa giai đoạn!', 'error');
+    return;
+  }
+
+  // Kiểm tra có CVC nào đang dùng giai đoạn này không
+  const inUse = appState.tasks.filter(t => t.stage === id);
+  if (inUse.length > 0) {
+    showToast(`⚠️ Không thể xóa — có ${inUse.length} CVC đang ở giai đoạn này!`, 'error');
+    return;
+  }
+
+  // Tìm giai đoạn cần xóa
+  const stage = STAGES.find(s => s.id === id);
+  if (!stage) { showToast('⚠️ Không tìm thấy giai đoạn!', 'error'); return; }
+
+  if (!confirm(`Xóa giai đoạn "${stage.icon} ${stage.name}"?`)) return;
+
+  // Xóa khỏi mảng STAGES
+  const idx = STAGES.findIndex(s => s.id === id);
+  if (idx > -1) STAGES.splice(idx, 1);
+
+  renderSettingsPanel();
+  showToast(`🗑️ Đã xóa giai đoạn "${stage.name}"`, 'info');
+}
+
 function addCategory() { showToast('🔧 Tính năng thêm danh mục sẽ có trong bản tiếp theo!', 'info'); }
 
 // ============ USER MANAGEMENT (Gap 5) ============

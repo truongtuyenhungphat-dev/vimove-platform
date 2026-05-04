@@ -1,0 +1,467 @@
+/* ================================================
+   VIWORK — Attendance Styles
+   Module chấm công
+   ================================================ */
+
+/* ============ WIDGET CHẤM CÔNG ============ */
+.att-widget-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.att-widget-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(90,184,0,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* -- Status variants -- */
+.att-widget-status.idle .att-clock-display { color: var(--c-text-2); }
+.att-widget-status.working .att-clock-display { color: #5AB800; }
+.att-widget-status.done .att-done-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* Clock */
+.att-clock-display {
+  font-family: 'Manrope', monospace;
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.att-status-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--c-text-1);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.att-config-info {
+  font-size: 13px;
+  color: var(--c-text-3);
+  margin-top: 4px;
+}
+
+.att-checkin-info {
+  font-size: 14px;
+  color: var(--c-text-2);
+  margin-top: 6px;
+}
+
+.att-checkin-info strong {
+  color: var(--c-text-1);
+}
+
+/* Location tags */
+.online-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(59,130,246,0.15);
+  color: #3B82F6;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.office-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(90,184,0,0.12);
+  color: #5AB800;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.att-late-tag {
+  background: rgba(245,158,11,0.15);
+  color: #F59E0B;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.att-ontime-tag {
+  background: rgba(16,185,129,0.12);
+  color: #10B981;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============ BUTTONS ============ */
+.att-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.att-buttons.single {
+  grid-template-columns: 1fr;
+  max-width: 380px;
+}
+
+.att-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+  text-align: left;
+  background: var(--c-surface-2);
+}
+
+.att-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+
+.att-btn-icon { font-size: 28px; }
+
+.att-btn-text { display: flex; flex-direction: column; gap: 2px; }
+.att-btn-text strong { font-size: 15px; font-weight: 700; color: var(--c-text-1); }
+.att-btn-text small  { font-size: 12px; color: var(--c-text-3); }
+
+/* Office check-in */
+.att-btn.checkin-office {
+  border-color: rgba(90,184,0,0.4);
+  background: linear-gradient(135deg, rgba(90,184,0,0.08), rgba(90,184,0,0.03));
+}
+.att-btn.checkin-office:hover {
+  border-color: #5AB800;
+  background: linear-gradient(135deg, rgba(90,184,0,0.15), rgba(90,184,0,0.05));
+}
+.att-btn.checkin-office strong { color: #5AB800; }
+
+/* Online check-in */
+.att-btn.checkin-online {
+  border-color: rgba(59,130,246,0.35);
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.02));
+}
+.att-btn.checkin-online:hover {
+  border-color: #3B82F6;
+  background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+}
+.att-btn.checkin-online strong { color: #3B82F6; }
+
+/* Check-out */
+.att-btn.checkout {
+  border-color: rgba(239,68,68,0.35);
+  background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02));
+}
+.att-btn.checkout:hover {
+  border-color: #EF4444;
+  background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+}
+.att-btn.checkout strong { color: #EF4444; }
+
+/* ============ DONE STATE ============ */
+.att-widget-status.done {
+  text-align: center;
+}
+
+.att-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.att-sum-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.att-sum-label { font-size: 11px; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+.att-sum-val   { font-size: 22px; font-weight: 700; color: var(--c-text-1); }
+.att-sum-val.highlight { color: #5AB800; font-size: 26px; }
+.att-sum-sep   { font-size: 20px; color: var(--c-border); }
+
+/* ============ STATS ============ */
+.att-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .att-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .att-buttons   { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .att-stats-row { grid-template-columns: 1fr 1fr; }
+  .att-clock-display { font-size: 36px; }
+}
+
+.att-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.att-stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+.att-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.att-stat-val { font-size: 24px; font-weight: 800; color: var(--c-text-1); line-height: 1; }
+.att-stat-lbl { font-size: 12px; color: var(--c-text-3); margin-top: 2px; }
+
+/* ============ SECTION ============ */
+.att-section {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.att-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.att-section-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-text-1);
+  margin: 0;
+}
+
+/* ============ TEAM SUMMARY CHIPS ============ */
+.att-team-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.att-sum-chip {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+.att-sum-chip.present { background: rgba(16,185,129,0.12); color: #10B981; }
+.att-sum-chip.working  { background: rgba(59,130,246,0.12); color: #3B82F6; }
+.att-sum-chip.online   { background: rgba(99,102,241,0.12); color: #6366F1; }
+.att-sum-chip.absent   { background: rgba(239,68,68,0.10); color: #EF4444; }
+
+/* ============ TABLE ============ */
+.att-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+}
+
+.att-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.att-table thead th {
+  background: var(--c-surface-2);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+
+.att-table tbody tr {
+  border-bottom: 1px solid var(--c-border);
+  transition: background 0.15s;
+}
+.att-table tbody tr:last-child { border-bottom: none; }
+.att-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+.att-table td {
+  padding: 10px 14px;
+  color: var(--c-text-2);
+  vertical-align: middle;
+}
+
+/* Row color coding */
+.att-table tbody tr.ontime { border-left: 3px solid #10B981; }
+.att-table tbody tr.late   { border-left: 3px solid #F59E0B; }
+.att-table tbody tr.absent { border-left: 3px solid #EF4444; opacity: 0.7; }
+.att-table tbody tr.working { border-left: 3px solid #3B82F6; }
+
+.att-date {
+  font-weight: 500;
+  color: var(--c-text-1) !important;
+  white-space: nowrap;
+  min-width: 170px;
+}
+
+.att-time {
+  font-family: 'Manrope', monospace;
+  font-weight: 600;
+  font-size: 14px !important;
+  color: var(--c-text-1) !important;
+}
+
+.att-dur {
+  font-weight: 600;
+  color: #5AB800 !important;
+}
+
+/* ============ BADGES ============ */
+.att-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.att-badge.ontime  { background: rgba(16,185,129,0.12);  color: #10B981; }
+.att-badge.late    { background: rgba(245,158,11,0.15);  color: #D97706; }
+.att-badge.working { background: rgba(59,130,246,0.12);  color: #3B82F6; }
+.att-badge.absent  { background: rgba(239,68,68,0.10);   color: #EF4444; }
+
+/* ============ USER CELL ============ */
+.att-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.att-user-name { font-size: 13px; font-weight: 600; color: var(--c-text-1); }
+.att-user-dept { font-size: 11px; color: var(--c-text-3); }
+
+.att-loc-tag {
+  font-size: 12px;
+  color: var(--c-text-2);
+}
+
+.att-loc { font-size: 16px; }
+
+/* ============ EMPTY STATE ============ */
+.att-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--c-text-3);
+  font-size: 14px;
+}
+
+/* ============ PULSE ANIMATION ============ */
+@keyframes attPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+.att-widget-status.working .att-clock-display {
+  animation: attPulse 2s ease-in-out infinite;
+}
+
+/* ============ LEAVE & REMOTE STATES ============ */
+.att-widget-status.leave {
+  text-align: center;
+  padding: 12px 0;
+}
+
+/* Badges mới */
+.att-badge.leave  { background: rgba(139,92,246,0.12); color: #7C3AED; }
+.att-badge.remote { background: rgba(59,130,246,0.12);  color: #3B82F6; }
+
+/* Row màu nghỉ phép */
+.att-table tbody tr.leave          { border-left: 3px solid #8B5CF6; background: rgba(139,92,246,0.04); }
+.att-table tbody tr.remote_approved { border-left: 3px solid #3B82F6; background: rgba(59,130,246,0.04); }
+
+/* Banner remote được duyệt (hiện trên widget check-in) */
+.att-remote-approved-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(99,102,241,0.06));
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3B82F6;
+  margin-bottom: 14px;
+  margin-top: 8px;
+}
+
+/* Nút check-in online khi đã được duyệt remote */
+.att-btn.checkin-online.approved {
+  border-color: rgba(59,130,246,0.6);
+  background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(59,130,246,0.06));
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+.att-btn.checkin-online.approved strong { color: #2563EB; }
+
+/* Sync note trong form đề xuất */
+.att-sync-note {
+  font-size: 12px;
+  color: #7C3AED;
+  background: rgba(139,92,246,0.08);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+}
+.att-sync-note.remote {
+  color: #2563EB;
+  background: rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.2);
+}
+
+/* Icon class cho request type mới */
+.req-icon-remote { background: rgba(59,130,246,0.12); color: #3B82F6; }
+

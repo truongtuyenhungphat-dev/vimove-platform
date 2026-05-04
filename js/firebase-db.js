@@ -105,6 +105,32 @@ window.fbDeleteAssignment = async (asgnId) => {
   return getDB().collection('viwork_assignments').doc(asgnId).delete();
 };
 
+// ============ VIWORK_ATTENDANCE ============
+window.fbSaveAttendance = async (record) => {
+  return getDB().collection('viwork_attendance').doc(record.id).set(record);
+};
+
+window.fbDeleteAttendance = async (recordId) => {
+  return getDB().collection('viwork_attendance').doc(recordId).delete();
+};
+
+window.fbSeedAttendance = async (arr) => {
+  const db = getDB();
+  const batch = db.batch();
+  for (const r of arr) {
+    batch.set(db.collection('viwork_attendance').doc(r.id), r);
+  }
+  await batch.commit();
+};
+
+window.fbListenAttendance = (callback) => {
+  return getDB().collection('viwork_attendance').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
+};
+
 // ============ LISTENERS ============
 window.fbListenTasks = (callback) => {
   return getDB().collection('viwork_tasks').onSnapshot(snapshot => {
@@ -150,4 +176,4 @@ window.fbListenAssignments = (callback) => {
   });
 };
 
-console.log('[⚡ VIWORK] Firebase Database Services (Compat) loaded!');
+console.log('[⚡ VIWORK] Firebase Database Services (Compat) loaded — incl. Attendance!');

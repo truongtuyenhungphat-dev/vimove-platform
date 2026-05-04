@@ -4,10 +4,12 @@
    ================================================ */
 
 let teamChartInst = null;
+let dashSelectedMember = 'all';   // 'all' | userId
 
 function renderDashboard() {
   updateMetrics();
   renderRevenueProgress();
+  renderMemberSelector();
   renderWorkflowStatus();
   renderHotTasks();
   renderTeamChart();
@@ -83,16 +85,83 @@ function renderRevenueProgress() {
   }, 300);
 }
 
+// ============ MEMBER SELECTOR ============
+function renderMemberSelector() {
+  const container = document.getElementById('dashMemberSelector');
+  if (!container) return;
+
+  const allUsers = getAppUsers();
+  const options  = allUsers.map(u =>
+    `<option value="${u.id}" ${dashSelectedMember === u.id ? 'selected' : ''}>${u.name}</option>`
+  ).join('');
+
+  container.innerHTML = `
+    <div class="dash-member-filter">
+      <label class="dmf-label">👤 Xem theo nhân sự:</label>
+      <select id="memberFilterSelect" class="select-input" onchange="onMemberFilterChange(this.value)">
+        <option value="all" ${dashSelectedMember === 'all' ? 'selected' : ''}>👥 Tất cả thành viên</option>
+        ${options}
+      </select>
+    </div>
+    ${dashSelectedMember !== 'all' ? renderMemberSummaryBar(dashSelectedMember) : ''}
+  `;
+}
+
+function onMemberFilterChange(memberId) {
+  dashSelectedMember = memberId;
+  renderMemberSelector();
+  renderWorkflowStatus();
+  renderHotTasks();
+  renderTeamChart();
+  // Cập nhật tiêu đề card hiệu suất
+  const chartTitle = document.getElementById('teamChartTitle');
+  if (chartTitle) {
+    if (memberId !== 'all') {
+      const u = getUserById(memberId);
+      chartTitle.textContent = `👤 Hồ sơ: ${u.name.split(' ').pop()}`;
+    } else {
+      chartTitle.textContent = '📈 Hiệu suất đội ngũ';
+    }
+  }
+}
+
+function renderMemberSummaryBar(userId) {
+  const user     = getUserById(userId);
+  const tasks    = appState.tasks.filter(t => t.assigneeId === userId);
+  const active   = tasks.filter(t => t.stage !== 'done').length;
+  const overdue  = tasks.filter(t => isOverdue(t)).length;
+  const done     = tasks.filter(t => t.stage === 'done').length;
+  const urgent   = tasks.filter(t => t.priority === 'urgent' || t.priority === 'high').length;
+
+  return `
+    <div class="dash-member-summary">
+      <div class="dms-avatar">${user.avatar}</div>
+      <div class="dms-name">${escHtml(user.name)} <span class="dms-dept">${escHtml(user.department||'')}</span></div>
+      <div class="dms-stats">
+        <div class="dms-stat"><span class="dms-val">${active}</span><span class="dms-lbl">Đang chạy</span></div>
+        <div class="dms-stat overdue"><span class="dms-val" style="color:#EF4444">${overdue}</span><span class="dms-lbl">Trễ hạn</span></div>
+        <div class="dms-stat"><span class="dms-val" style="color:#10B981">${done}</span><span class="dms-lbl">Hoàn thành</span></div>
+        <div class="dms-stat"><span class="dms-val" style="color:#F59E0B">${urgent}</span><span class="dms-lbl">Ũu tiên cao</span></div>
+      </div>
+      <button class="dms-clear" onclick="onMemberFilterChange('all')" title="Xóa bộ lọc">× Tất cả</button>
+    </div>
+  `;
+}
+
 function renderWorkflowStatus() {
   const el = document.getElementById('workflowStatusList');
   if (!el) return;
 
-  const total = appState.tasks.length || 1;
+  const tasks = dashSelectedMember === 'all'
+    ? appState.tasks
+    : appState.tasks.filter(t => t.assigneeId === dashSelectedMember);
+
+  const total = tasks.length || 1;
   el.innerHTML = STAGES.map(s => {
-    const count = appState.tasks.filter(t => t.stage === s.id).length;
+    const count = tasks.filter(t => t.stage === s.id).length;
     const pct   = Math.round((count / total) * 100);
     return `
-      <div class="wf-status-row">
+      <div class="wf-status-row" style="cursor:default">
         <div style="width:100px;font-size:12px;font-weight:500">${s.icon} ${s.name}</div>
         <div class="wf-status-bar">
           <div class="wf-status-fill" style="width:${pct}%;background:${s.color}"></div>
@@ -101,20 +170,47 @@ function renderWorkflowStatus() {
       </div>
     `;
   }).join('');
+
+  // Cập nhật tiêu đề card
+  const cardTitle = document.querySelector('#workflowStatusCard .dash-card-header h3');
+  if (cardTitle) {
+    const user = dashSelectedMember !== 'all' ? getUserById(dashSelectedMember) : null;
+    cardTitle.textContent = user
+      ? `🔄 Workflow của ${user.name.split(' ').pop()}`
+      : '🔄 Trạng thái Luồng CVC';
+  }
 }
 
 function renderHotTasks() {
   const el = document.getElementById('hotTasksList');
   if (!el) return;
 
-  const hot = appState.tasks.filter(t =>
+  let sourceTasks = appState.tasks;
+  if (dashSelectedMember !== 'all') {
+    sourceTasks = sourceTasks.filter(t => t.assigneeId === dashSelectedMember);
+  }
+
+  const hot = sourceTasks.filter(t =>
     (isOverdue(t) || t.priority === 'urgent' || t.priority === 'high') && t.stage !== 'done'
   ).slice(0, 6);
 
   document.getElementById('hotCount').textContent = hot.length;
 
+  // Tiêu đề của card
+  const hotHeader = document.querySelector('.hot-tasks-card-title');
+  if (hotHeader) {
+    const user = dashSelectedMember !== 'all' ? getUserById(dashSelectedMember) : null;
+    hotHeader.textContent = user
+      ? `🔥 CVC cần chú ý — ${user.name.split(' ').pop()}`
+      : '🔥 CVC cần chú ý ngay';
+  }
+
   if (hot.length === 0) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><p>Tuyệt vời! Không có CVC nào cần chú ý ngay.</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><p>${
+      dashSelectedMember !== 'all'
+        ? 'Nhân sự này không có CVC nào cần chú ý!'
+        : 'Tuyệt vời! Không có CVC nào cần chú ý ngay.'
+    }</p></div>`;
     return;
   }
 
@@ -134,7 +230,7 @@ function renderHotTasks() {
           </div>
         </div>
         <div class="assignee-badge">
-          <div class="avatar-sm">${user.avatar}</div>
+          <div class="avatar-sm" title="${escHtml(user.name)}">${user.avatar}</div>
         </div>
         <span class="tag priority-${t.priority}">${PRIORITIES[t.priority]?.name}</span>
       </div>
@@ -143,52 +239,180 @@ function renderHotTasks() {
 }
 
 function renderTeamChart() {
+  const container = document.getElementById('teamChartContainer');
+  if (!container) return;
+
+  // Nếu đang lọc 1 nhân sự → hiện card chi tiết
+  if (dashSelectedMember !== 'all') {
+    renderMemberDetailCard(dashSelectedMember);
+    return;
+  }
+
+  // Toàn đội → bar chart KPI thực tế
+  container.innerHTML = `<canvas id="teamChart" height="220"></canvas>`;
   const ctx = document.getElementById('teamChart');
   if (!ctx) return;
-  if (teamChartInst) teamChartInst.destroy();
+  if (teamChartInst) { teamChartInst.destroy(); teamChartInst = null; }
 
-  const members = TEAM_MEMBERS.slice(0, 6);
+  const members  = [...TEAM_MEMBERS].sort((a, b) => b.kpi - a.kpi).slice(0, 7);
+  const names    = members.map(m => m.name.split(' ').pop());
+  const kpis     = members.map(m => m.kpi);
+  const revenues = members.map(m => m.revenue);
+
   teamChartInst = new Chart(ctx, {
-    type: 'radar',
+    type: 'bar',
     data: {
-      labels: ['Doanh thu', 'KPI', 'CVC xử lý', 'Khách hàng', 'Đúng hạn', 'Chất lượng'],
-      datasets: members.slice(0, 4).map((m, i) => {
-        const colors = ['rgba(124,58,237,', 'rgba(16,185,129,', 'rgba(245,158,11,', 'rgba(239,68,68,'];
-        return {
-          label: m.name.split(' ').pop(),
-          data: [
-            Math.round((m.revenue / 30) * 100),
-            m.kpi,
-            Math.round((m.tasks / 35) * 100),
-            Math.round(Math.random() * 30 + 60),
-            Math.round(Math.random() * 25 + 70),
-            Math.round(Math.random() * 20 + 75),
-          ],
-          backgroundColor: colors[i] + '0.08)',
-          borderColor:     colors[i] + '0.8)',
-          pointBackgroundColor: colors[i] + '1)',
-          borderWidth: 2,
-          pointRadius: 3,
-        };
-      })
+      labels: names,
+      datasets: [
+        {
+          label: 'KPI (%)',
+          data: kpis,
+          backgroundColor: kpis.map(k =>
+            k >= 90 ? 'rgba(16,185,129,0.75)'
+            : k >= 70 ? 'rgba(90,184,0,0.75)'
+            : 'rgba(245,158,11,0.75)'
+          ),
+          borderRadius: 6,
+          yAxisID: 'yKpi',
+        },
+        {
+          label: 'Doanh thu (tỷ)',
+          data: revenues,
+          backgroundColor: 'rgba(99,102,241,0.55)',
+          borderRadius: 6,
+          yAxisID: 'yRev',
+          type: 'bar',
+        },
+      ],
     },
     options: {
       responsive: true,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { labels: { color: '#94A3B8', font: { size: 11 }, padding: 8, boxWidth: 12 } }
+        legend: {
+          labels: {
+            color: '#64748B',
+            font: { size: 11 },
+            padding: 12,
+            boxWidth: 12,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.dataset.label === 'KPI (%)') return ` KPI: ${ctx.raw}%`;
+              return ` Doanh thu: ${ctx.raw} tỷ`;
+            },
+          },
+        },
       },
       scales: {
-        r: {
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { display: false },
-          pointLabels: { color: '#94A3B8', font: { size: 11 } },
-          min: 0, max: 100,
-          angleLines: { color: 'rgba(255,255,255,0.05)' }
-        }
-      }
-    }
+        x: {
+          ticks: { color: '#64748B', font: { size: 11 } },
+          grid:  { display: false },
+        },
+        yKpi: {
+          type: 'linear',
+          position: 'left',
+          min: 0, max: 130,
+          ticks: { color: '#10B981', font: { size: 10 }, callback: v => v + '%' },
+          grid: { color: 'rgba(0,0,0,0.05)' },
+        },
+        yRev: {
+          type: 'linear',
+          position: 'right',
+          min: 0,
+          ticks: { color: '#6366F1', font: { size: 10 }, callback: v => v + 'B' },
+          grid: { display: false },
+        },
+      },
+    },
   });
 }
+
+function renderMemberDetailCard(userId) {
+  const container = document.getElementById('teamChartContainer');
+  if (!container) return;
+  if (teamChartInst) { teamChartInst.destroy(); teamChartInst = null; }
+
+  const m = TEAM_MEMBERS.find(x => x.id === userId);
+  if (!m) { container.innerHTML = '<div class="att-empty">Không tìm thấy dữ liệu.</div>'; return; }
+
+  const tasks    = appState.tasks.filter(t => t.assigneeId === userId);
+  const done     = tasks.filter(t => t.stage === 'done').length;
+  const active   = tasks.filter(t => t.stage !== 'done').length;
+  const overdue  = tasks.filter(t => isOverdue(t)).length;
+
+  const kpiColor = m.kpi >= 90 ? '#10B981' : m.kpi >= 70 ? '#5AB800' : '#F59E0B';
+  const kpiPct   = Math.min(m.kpi, 130);
+
+  // Attendance tháng này (nếu có module)
+  let attHTML = '';
+  if (typeof ATTENDANCE_RECORDS !== 'undefined') {
+    const now  = new Date();
+    const recs = ATTENDANCE_RECORDS.filter(r => {
+      return r.userId === userId && r.date && r.date.startsWith(
+        `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+      );
+    });
+    const ontime = recs.filter(r => !r.isLate && r.checkIn && !r.isLeave).length;
+    const late   = recs.filter(r => r.isLate).length;
+    const leaves = recs.filter(r => r.isLeave).length;
+    attHTML = `
+      <div class="mdc-row">
+        <span class="mdc-label">⏱ Chấm công</span>
+        <span class="mdc-val">✅ ${ontime} đúng giờ · 🟡 ${late} muộn · 🏖️ ${leaves} nghỉ</span>
+      </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="member-detail-card">
+      <div class="mdc-header">
+        <div class="mdc-avatar">${m.avatar}</div>
+        <div>
+          <div class="mdc-name">${escHtml(m.name)}</div>
+          <div class="mdc-dept">${escHtml(m.department || '—')} · ${getRoleLabel(m.role)}</div>
+        </div>
+      </div>
+
+      <div class="mdc-kpi-row">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:12px;font-weight:500;color:var(--c-text-2)">KPI tháng này</span>
+          <span style="font-size:13px;font-weight:700;color:${kpiColor}">${m.kpi}%</span>
+        </div>
+        <div class="kpi-bar-wrap"><div class="kpi-bar" style="width:${kpiPct}%;background:${kpiColor}"></div></div>
+      </div>
+
+      <div class="mdc-stats-grid">
+        <div class="mdc-stat-box">
+          <div class="mdc-stat-val" style="color:#10B981">${m.revenue} tỷ</div>
+          <div class="mdc-stat-lbl">Doanh thu</div>
+        </div>
+        <div class="mdc-stat-box">
+          <div class="mdc-stat-val">${active}</div>
+          <div class="mdc-stat-lbl">CVC đang chạy</div>
+        </div>
+        <div class="mdc-stat-box">
+          <div class="mdc-stat-val" style="color:#10B981">${done}</div>
+          <div class="mdc-stat-lbl">Hoàn thành</div>
+        </div>
+        <div class="mdc-stat-box">
+          <div class="mdc-stat-val" style="color:${overdue > 0 ? '#EF4444' : 'var(--c-text)'}">${overdue}</div>
+          <div class="mdc-stat-lbl">Trễ hạn</div>
+        </div>
+      </div>
+
+      <div class="mdc-info-rows">
+        <div class="mdc-row">
+          <span class="mdc-label">📋 Tổng CVC</span>
+          <span class="mdc-val">${tasks.length} CVC (${m.tasks} theo KPI)</span>
+        </div>
+        ${attHTML}
+      </div>
+    </div>
+  `;
+}
+
 
 function refreshDashboard() { renderDashboard(); }
 

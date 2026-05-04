@@ -11,6 +11,7 @@ const REQUEST_TYPES = {
   hr:      { id:'hr',      name:'Nhân sự',            icon:'👤', iconClass:'req-icon-hr',      slaH:48, approvers:['admin'] },
   kpi:     { id:'kpi',     name:'Đăng ký KPI',        icon:'🎯', iconClass:'req-icon-kpi',     slaH:24, approvers:['admin'] },
   leave:   { id:'leave',   name:'Xin nghỉ phép',      icon:'🏖️', iconClass:'req-icon-leave',   slaH:4,  approvers:['admin'] },
+  remote:  { id:'remote',  name:'Làm việc Online',    icon:'🌐', iconClass:'req-icon-remote',  slaH:2,  approvers:['manager_or_admin'] },
 };
 
 // ============ INITIAL REQUESTS (Demo data — v2.2) ============
@@ -355,7 +356,10 @@ function openRequestDetail(reqId) {
 function renderApprovalChain(req) {
   return req.approvalSteps.map((step, i) => {
     const approver = step.approverId ? getUserById(step.approverId) : null;
-    const roleLabel = step.role === 'admin' ? '👑 Quản trị viên' : step.role === 'manager' ? '🎯 Quản lý' : '👤 Nhân viên';
+    const roleLabel = step.role === 'admin' ? '👑 Quản trị viên'
+      : step.role === 'manager' ? '🎯 Quản lý'
+      : step.role === 'manager_or_admin' ? '🎯 Lead Team / 👑 Admin'
+      : '👤 Nhân viên';
     const statusIcon = { approved:'✅', rejected:'❌', pending:'⏳' }[step.status] || '⏳';
     const statusClass = step.status === 'pending' && i === req.approvalSteps.findIndex(s=>s.status==='pending') ? 'active' : step.status;
 
@@ -379,6 +383,10 @@ function canApproveRequest(req) {
   if (req.status !== 'pending') return false;
   const nextStep = req.approvalSteps?.find(s => s.status === 'pending');
   if (!nextStep) return false;
+  // manager_or_admin: cả admin và manager (Lead team) đều duyệt được
+  if (nextStep.role === 'manager_or_admin') {
+    return currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  }
   return nextStep.role === currentUser?.role;
 }
 
@@ -394,7 +402,11 @@ function approveRequest(reqId) {
 
   // Check if all steps approved
   const allDone = req.approvalSteps.every(s => s.status === 'approved');
-  if (allDone) req.status = 'approved';
+  if (allDone) {
+    req.status = 'approved';
+    // ====== ĐỒNG BỘ VỚI CHẤM CÔNG ======
+    syncApprovalToAttendance(req, 'approved');
+  }
 
   if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
@@ -417,12 +429,132 @@ function rejectRequest(reqId) {
   step.at         = new Date().toISOString().split('T')[0];
   req.status      = 'rejected';
 
+  // ====== ĐỒNG BỘ VỚI CHẤM CÔNG: xóa bản ghi nếu có ======
+  syncApprovalToAttendance(req, 'rejected');
+
   if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
   closeModal('requestDetailModal');
   renderRequests();
   updateRequestBadge();
   showToast(`❌ Đã từ chối: "${req.title}"`, 'info');
+}
+
+// ============ SYNC APPROVAL → ATTENDANCE ============
+/**
+ * Khi đề xuất leave/remote được duyệt hoặc từ chối,
+ * tự động tạo/xóa bản ghi attendance tương ứng.
+ */
+async function syncApprovalToAttendance(req, decision) {
+  if (req.type !== 'leave' && req.type !== 'remote') return;
+
+  // Lấy danh sách ngày từ req.dateFrom → req.dateTo
+  const dates = getDateRange(req.dateFrom, req.dateTo);
+  if (!dates.length) return;
+
+  const requester = getUserById(req.requesterId);
+
+  for (const dateKey of dates) {
+    if (req.type === 'leave') {
+      if (decision === 'approved') {
+        // Tạo bản ghi 'leave' — không có check-in/out
+        const existing = typeof ATTENDANCE_RECORDS !== 'undefined'
+          ? ATTENDANCE_RECORDS.find(r => r.userId === req.requesterId && r.date === dateKey)
+          : null;
+        if (existing) {
+          // Cập nhật nếu đã có
+          const updated = { ...existing, status: 'leave', isLeave: true, leaveReqId: req.id, isOnline: false };
+          const idx = ATTENDANCE_RECORDS.findIndex(r => r.id === existing.id);
+          if (idx > -1) ATTENDANCE_RECORDS[idx] = updated;
+          if (window.fbSaveAttendance) await window.fbSaveAttendance(updated);
+        } else {
+          // Tạo mới
+          const record = {
+            id:          generateId('att'),
+            userId:      req.requesterId,
+            userName:    requester.name,
+            date:        dateKey,
+            checkIn:     null,
+            checkOut:    null,
+            duration:    null,
+            isOnline:    false,
+            isLeave:     true,
+            leaveReqId:  req.id,
+            note:        `Nghỉ phép được duyệt: ${req.title}`,
+            status:      'leave',
+            isLate:      false,
+          };
+          if (typeof ATTENDANCE_RECORDS !== 'undefined') ATTENDANCE_RECORDS.push(record);
+          if (window.fbSaveAttendance) await window.fbSaveAttendance(record);
+        }
+      } else if (decision === 'rejected') {
+        // Xóa bản ghi leave nếu tồn tại (chưa check-in)
+        if (typeof ATTENDANCE_RECORDS !== 'undefined') {
+          const toRemove = ATTENDANCE_RECORDS.find(r =>
+            r.userId === req.requesterId && r.date === dateKey && r.isLeave && r.leaveReqId === req.id
+          );
+          if (toRemove) {
+            ATTENDANCE_RECORDS = ATTENDANCE_RECORDS.filter(r => r.id !== toRemove.id);
+            if (window.fbDeleteAttendance) await window.fbDeleteAttendance(toRemove.id);
+          }
+        }
+      }
+    }
+
+    if (req.type === 'remote' && decision === 'approved') {
+      // Đánh dấu ngày đó là pre-approved remote
+      // Nếu đã có bản ghi thì cập nhật isOnline, nếu chưa tạo placeholder
+      if (typeof ATTENDANCE_RECORDS !== 'undefined') {
+        const existing = ATTENDANCE_RECORDS.find(r => r.userId === req.requesterId && r.date === dateKey);
+        if (existing && !existing.checkIn) {
+          // Chưa check-in → cập nhật flag
+          const updated = { ...existing, remoteApproved: true, remoteReqId: req.id };
+          const idx = ATTENDANCE_RECORDS.findIndex(r => r.id === existing.id);
+          if (idx > -1) ATTENDANCE_RECORDS[idx] = updated;
+          if (window.fbSaveAttendance) await window.fbSaveAttendance(updated);
+        } else if (!existing) {
+          // Tạo placeholder remote-approved
+          const record = {
+            id:              generateId('att'),
+            userId:          req.requesterId,
+            userName:        requester.name,
+            date:            dateKey,
+            checkIn:         null,
+            checkOut:        null,
+            duration:        null,
+            isOnline:        false,
+            isLeave:         false,
+            remoteApproved:  true,
+            remoteReqId:     req.id,
+            note:            `Làm online được duyệt: ${req.title}`,
+            status:          'remote_approved',
+            isLate:          false,
+          };
+          ATTENDANCE_RECORDS.push(record);
+          if (window.fbSaveAttendance) await window.fbSaveAttendance(record);
+        }
+      }
+    }
+  }
+
+  // Re-render attendance nếu đang xem trang đó
+  const attPage = document.getElementById('page-attendance');
+  if (attPage && !attPage.classList.contains('hidden') && typeof renderAttendance === 'function') {
+    renderAttendance();
+  }
+}
+
+/** Lấy danh sách tất cả ngày trong khoảng dateFrom → dateTo (yyyy-mm-dd) */
+function getDateRange(from, to) {
+  if (!from) return [];
+  const result = [];
+  const end = to ? new Date(to) : new Date(from);
+  const cur = new Date(from);
+  while (cur <= end) {
+    result.push(getDateKey(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
 }
 
 function addRequestComment(reqId) {
@@ -480,10 +612,51 @@ function selectReqType(typeId) {
     `;
   }
   if (typeId === 'leave') {
+    const today = new Date().toISOString().split('T')[0];
     extra = `
       <div class="form-grid-2">
-        <div class="form-group"><label>Ngày bắt đầu</label><input type="date" id="reqDateFrom" class="settings-input"/></div>
-        <div class="form-group"><label>Ngày kết thúc</label><input type="date" id="reqDateTo" class="settings-input"/></div>
+        <div class="form-group">
+          <label>Ngày bắt đầu <span class="req">*</span></label>
+          <input type="date" id="reqDateFrom" class="settings-input" min="${today}" />
+        </div>
+        <div class="form-group">
+          <label>Ngày kết thúc</label>
+          <input type="date" id="reqDateTo" class="settings-input" min="${today}" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Loại nghỉ</label>
+        <select id="reqLeaveType" class="settings-input">
+          <option value="annual">📅 Nghỉ phép năm</option>
+          <option value="sick">🤒 Nghỉ bệnh</option>
+          <option value="personal">🏠 Nghỉ việc riêng</option>
+          <option value="unpaid">💸 Nghỉ không lương</option>
+        </select>
+      </div>
+      <div class="att-sync-note">
+        ⏱ Khi được duyệt, chấm công các ngày này sẽ tự động ghi nhận <strong>Nghỉ phép</strong>.
+      </div>
+    `;
+  }
+  if (typeId === 'remote') {
+    const today = new Date().toISOString().split('T')[0];
+    extra = `
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Ngày bắt đầu <span class="req">*</span></label>
+          <input type="date" id="reqDateFrom" class="settings-input" min="${today}" />
+        </div>
+        <div class="form-group">
+          <label>Ngày kết thúc</label>
+          <input type="date" id="reqDateTo" class="settings-input" min="${today}" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:4px">
+        <label>Địa điểm làm việc</label>
+        <input type="text" id="reqRemoteLocation" class="settings-input" placeholder="VD: Tại nhà, Cafe, Tỉnh khác..." />
+      </div>
+      <div class="att-sync-note remote">
+        🌐 Khi được duyệt, bạn có thể <strong>Check-in Online</strong> trong ngày này mà không cần xin phép lại.
       </div>
     `;
   }
@@ -498,21 +671,33 @@ function saveNewRequest() {
   if (!title) { showToast('⚠️ Vui lòng nhập tiêu đề đề xuất!', 'error'); return; }
   if (!type)  { showToast('⚠️ Vui lòng chọn loại đề xuất!', 'error'); return; }
 
+  // Validate ngày cho leave/remote
+  const dateFrom = document.getElementById('reqDateFrom')?.value || null;
+  const dateTo   = document.getElementById('reqDateTo')?.value   || dateFrom;
+  if ((type === 'leave' || type === 'remote') && !dateFrom) {
+    showToast('⚠️ Vui lòng chọn ngày bắt đầu!', 'error');
+    return;
+  }
+
   const typeConfig = REQUEST_TYPES[type];
   const slaH      = typeConfig.slaH;
   const slaDate   = new Date(Date.now() + slaH * 3600000);
 
   const req = {
-    id:          generateId('req'),
+    id:             generateId('req'),
     type,
     title,
     desc,
-    amount:      parseFloat(document.getElementById('reqAmount')?.value) || null,
-    requesterId: currentUser?.id,
-    status:      'pending',
-    createdAt:   new Date().toISOString().split('T')[0],
-    slaDeadline: slaDate.toISOString().split('T')[0],
-    approvalSteps: typeConfig.approvers.map(role => ({
+    amount:         parseFloat(document.getElementById('reqAmount')?.value) || null,
+    dateFrom,
+    dateTo,
+    leaveType:      document.getElementById('reqLeaveType')?.value || null,
+    remoteLocation: document.getElementById('reqRemoteLocation')?.value?.trim() || null,
+    requesterId:    currentUser?.id,
+    status:         'pending',
+    createdAt:      new Date().toISOString().split('T')[0],
+    slaDeadline:    slaDate.toISOString().split('T')[0],
+    approvalSteps:  typeConfig.approvers.map(role => ({
       role, approverId: null, status: 'pending', note: '', at: null
     })),
     comments: [],
@@ -524,7 +709,9 @@ function saveNewRequest() {
   closeModal('newRequestModal');
   renderRequests();
   updateRequestBadge();
-  showToast(`🎉 Đề xuất "${title}" đã được gửi!`, 'success');
+
+  const dateInfo = dateFrom ? ` (${dateFrom}${dateTo && dateTo !== dateFrom ? ' → ' + dateTo : ''})` : '';
+  showToast(`🎉 Đã gửi đề xuất "${title}"${dateInfo}`, 'success');
 }
 
 // ============ BADGE UPDATE ============

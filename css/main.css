@@ -763,6 +763,151 @@ img { max-width: 100%; }
   color: var(--c-text-2);
 }
 
+/* ============ DASHBOARD MEMBER FILTER ============ */
+#dashMemberSelector { margin-bottom: 14px; }
+
+.dash-member-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-lg);
+  padding: 10px 16px;
+}
+.dmf-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  white-space: nowrap;
+}
+.dash-member-filter .select-input { min-width: 200px; }
+
+/* Summary bar khi chọn nhân sự */
+.dash-member-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(90,184,0,0.06), rgba(90,184,0,0.02));
+  border: 1px solid rgba(90,184,0,0.2);
+  border-radius: var(--r-lg);
+  padding: 12px 18px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.dms-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--grad-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+.dms-name {
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+  min-width: 100px;
+}
+.dms-dept {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--c-text-3);
+  margin-left: 6px;
+}
+.dms-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.dms-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dms-val { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; }
+.dms-lbl { font-size: 10px; color: var(--c-text-3); margin-top: 2px; white-space: nowrap; }
+.dms-clear {
+  padding: 5px 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-full);
+  font-size: 12px;
+  color: var(--c-text-2);
+  transition: all var(--dur-fast);
+  white-space: nowrap;
+}
+.dms-clear:hover { background: var(--c-danger); color: white; border-color: var(--c-danger); }
+
+/* ============ MEMBER DETAIL CARD (Team Chart area) ============ */
+.member-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mdc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mdc-avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: var(--grad-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+.mdc-name { font-size: 15px; font-weight: 700; color: var(--c-text); }
+.mdc-dept { font-size: 12px; color: var(--c-text-3); margin-top: 2px; }
+
+.mdc-kpi-row { padding: 10px 0 0; }
+
+.mdc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.mdc-stat-box {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px;
+  text-align: center;
+}
+.mdc-stat-val {
+  font-family: 'Manrope', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--c-text);
+}
+.mdc-stat-lbl {
+  font-size: 10px;
+  color: var(--c-text-3);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+.mdc-info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--c-border-subtle);
+  padding-top: 10px;
+}
+.mdc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  gap: 8px;
+}
+.mdc-label { color: var(--c-text-3); white-space: nowrap; }
+.mdc-val   { font-weight: 500; color: var(--c-text-2); text-align: right; }
+
+
 /* ================================================
    TOAST NOTIFICATIONS
    ================================================ */

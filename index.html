@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/components.css?v=3.0" />
   <link rel="stylesheet" href="css/workflow.css?v=3.0" />
   <link rel="stylesheet" href="css/sprint1.css?v=3.0" />
+  <link rel="stylesheet" href="css/attendance.css?v=1.0" />
   <link rel="manifest" href="manifest.json" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -148,6 +149,11 @@
       <a class="nav-item" id="nav-team" onclick="showModule('team')" href="#">
         <span class="nav-icon">🏆</span>
         <span class="nav-label">Đội ngũ</span>
+      </a>
+      <a class="nav-item" id="nav-attendance" onclick="showModule('attendance')" href="#">
+        <span class="nav-icon">⏱</span>
+        <span class="nav-label">Chấm công</span>
+        <span class="nav-badge" id="badge-attendance" style="display:none"></span>
       </a>
 
       <div class="nav-section-label manager-up">Hệ thống</div>
@@ -289,6 +295,9 @@
           </div>
         </div>
 
+        <!-- MEMBER SELECTOR -->
+        <div id="dashMemberSelector"></div>
+
         <!-- CHARTS + WORKFLOW STATUS -->
         <div class="dashboard-grid">
           <div class="dash-card" id="workflowStatusCard">
@@ -303,16 +312,18 @@
 
           <div class="dash-card">
             <div class="dash-card-header">
-              <h3>📈 Hiệu suất đội ngũ</h3>
+              <h3 id="teamChartTitle">📈 Hiệu suất đội ngũ</h3>
             </div>
-            <canvas id="teamChart" height="220"></canvas>
+            <div id="teamChartContainer">
+              <canvas id="teamChart" height="220"></canvas>
+            </div>
           </div>
         </div>
 
         <!-- HOT TASKS -->
         <div class="dash-card">
           <div class="dash-card-header">
-            <h3>🔥 CVC cần chú ý ngay</h3>
+            <h3 class="hot-tasks-card-title">🔥 CVC cần chú ý ngay</h3>
             <span class="badge-count" id="hotCount">0</span>
           </div>
           <div class="hot-tasks-list" id="hotTasksList"></div>
@@ -468,6 +479,11 @@
 
       <!-- ===== ASSIGNMENTS PAGE ===== -->
       <div class="page hidden" id="page-assignments">
+        <!-- Rendered entirely by JS -->
+      </div>
+
+      <!-- ===== ATTENDANCE PAGE ===== -->
+      <div class="page hidden" id="page-attendance">
         <!-- Rendered entirely by JS -->
       </div>
 
@@ -787,6 +803,10 @@
           <span class="rt-icon">🏖️</span>
           <span class="rt-name">Xin nghỉ phép</span>
         </button>
+        <button class="req-type-btn" data-type="remote" onclick="selectReqType('remote')">
+          <span class="rt-icon">🌐</span>
+          <span class="rt-name">Làm việc Online</span>
+        </button>
       </div>
       <div class="form-group">
         <label>Tiêu đề đề xuất <span class="req">*</span></label>
@@ -845,6 +865,57 @@
   </div>
 </div>
 
+<!-- Edit Member Modal -->
+<div class="modal-overlay hidden" id="editMemberModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="editMemberModalTitle">✏️ Chỉnh sửa thành viên</h2>
+      <button class="modal-close" onclick="closeModal('editMemberModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editMemberId" />
+      <div class="form-grid-2">
+        <div class="form-group full-width">
+          <label>Họ tên <span class="req">*</span></label>
+          <input type="text" id="editMemberName" placeholder="Nguyễn Văn A" />
+        </div>
+        <div class="form-group">
+          <label>Email đăng nhập <span style="font-size:11px;color:var(--c-text-3);font-weight:normal">(không đổi được)</span></label>
+          <input type="email" id="editMemberEmail" disabled style="opacity:0.5;cursor:not-allowed" />
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu mới <span style="font-size:11px;color:var(--c-text-3);font-weight:normal">(để trống = giữ nguyên)</span></label>
+          <input type="password" id="editMemberPass" placeholder="••••••••" />
+        </div>
+        <div class="form-group full-width">
+          <label>Phòng ban / Mảng phụ trách</label>
+          <input type="text" id="editMemberDept" placeholder="VD: Content, Digital, Thiết kế..." />
+        </div>
+        <div class="form-group">
+          <label>Vai trò hệ thống</label>
+          <select id="editMemberRole">
+            <option value="staff">👤 Nhân viên (Staff)</option>
+            <option value="manager">🎯 Quản lý (Team Lead)</option>
+            <option value="admin">👑 Quản trị (Admin)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>KPI tháng này (%)</label>
+          <input type="number" id="editMemberKpi" min="0" max="200" placeholder="0–200" />
+        </div>
+        <div class="form-group">
+          <label>Doanh thu (Tỷ đồng)</label>
+          <input type="number" id="editMemberRevenue" min="0" step="0.1" placeholder="0.0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('editMemberModal')">Hủy</button>
+      <button class="btn-primary" onclick="saveEditMember()">💾 Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toastContainer" class="toast-container"></div>
 
@@ -867,6 +938,8 @@
 <script src="js/dashboard.js?v=2.5"></script>
 <!-- Sprint 2: Assignments -->
 <script src="js/assignments.js?v=2.5"></script>
+<!-- Sprint 3: Attendance -->
+<script src="js/attendance.js?v=1.0"></script>
 <script src="js/app.js?v=2.5"></script>
 </body>
 </html>
