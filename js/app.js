@@ -275,17 +275,75 @@ function canDeleteUser(u) {
 
 function openAddUserModal() {
   const modal = document.getElementById('newUserModal');
-  if (modal) modal.classList.remove('hidden');
+  if (!modal) return;
+
+  // Populate position dropdown tu POSITIONS
+  const sel = document.getElementById('newUserPosition');
+  if (sel && typeof POSITIONS !== 'undefined') {
+    sel.innerHTML = '<option value="">— Chọn vị trí —</option>';
+    POSITIONS.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.icon} ${p.name}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  // Reset form
+  ['newUserName','newUserEmail','newUserPass','newUserDept','newUserJobTitle'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const roleEl = document.getElementById('newUserRole');
+  if (roleEl) roleEl.value = 'staff';
+  const descEl = document.getElementById('newUserPositionDesc');
+  if (descEl) descEl.textContent = '';
+
+  modal.classList.remove('hidden');
+}
+
+/** Khi chọn vị trí: tự điền phòng ban + gợi ý vai trò */
+function onNewUserPositionChange() {
+  const posId = document.getElementById('newUserPosition')?.value;
+  if (!posId || typeof POSITIONS === 'undefined') return;
+
+  const pos = POSITIONS.find(p => p.id === posId);
+  if (!pos) return;
+
+  // Auto-fill department
+  const deptEl = document.getElementById('newUserDept');
+  if (deptEl && !deptEl.value) deptEl.value = pos.name;
+
+  // Auto-fill job title gợi ý
+  const jdEl = document.getElementById('newUserJobTitle');
+  if (jdEl && !jdEl.value) jdEl.placeholder = `VD: ${pos.name}`;
+
+  // Gợi ý role dựa vào level vị trí
+  const roleEl = document.getElementById('newUserRole');
+  if (roleEl) {
+    if (pos.level === 0) roleEl.value = 'admin';
+    else if (pos.level === 1) roleEl.value = 'manager';
+    else roleEl.value = 'staff';
+  }
+
+  // Hiển thị mô tả vị trí
+  const descEl = document.getElementById('newUserPositionDesc');
+  if (descEl) {
+    const memberCount = pos.members?.length || 0;
+    descEl.innerHTML = `📄 ${pos.description?.slice(0, 80)}... &nbsp;·&nbsp; 👥 Hiện có ${memberCount} người`;
+  }
 }
 
 function saveNewUser() {
-  const name   = document.getElementById('newUserName')?.value.trim();
-  const email  = document.getElementById('newUserEmail')?.value.trim().toLowerCase();
-  const pass   = document.getElementById('newUserPass')?.value;
-  const dept   = document.getElementById('newUserDept')?.value.trim();
-  let   role   = document.getElementById('newUserRole')?.value || 'staff';
+  const name      = document.getElementById('newUserName')?.value.trim();
+  const email     = document.getElementById('newUserEmail')?.value.trim().toLowerCase();
+  const pass      = document.getElementById('newUserPass')?.value;
+  const dept      = document.getElementById('newUserDept')?.value.trim();
+  const positionId = document.getElementById('newUserPosition')?.value || '';
+  const jobTitle  = document.getElementById('newUserJobTitle')?.value.trim() || '';
+  let   role      = document.getElementById('newUserRole')?.value || 'staff';
 
-  if (!name || !email || !pass) { showToast('⚠️ Vui lòng điền đủ thông tin!', 'error'); return; }
+  if (!name || !email || !pass) { showToast('⚠️ Vui lòng điền đủ họ tên, email, mật khẩu!', 'error'); return; }
+  if (!positionId) { showToast('⚠️ Vui lòng chọn vị trí cho nhân viên!', 'error'); return; }
 
   // Phân quyền tạo: Manager không được tạo admin
   if (currentUser?.role === 'manager' && role === 'admin') {
@@ -296,45 +354,53 @@ function saveNewUser() {
   const users = getAppUsers();
   if (users.find(u => u.email === email)) { showToast('⚠️ Email đã tồn tại!', 'error'); return; }
 
-  // Nếu là manager tạo nhân viên và không điền department, tự động dùng department của manager
+  // Lấy tên vị trí để điền vào department nếu trống
+  const pos = (typeof POSITIONS !== 'undefined') ? POSITIONS.find(p => p.id === positionId) : null;
   const department = dept ||
+    pos?.name ||
     (currentUser?.role === 'manager' ? currentUser.department : null) ||
     (role === 'admin' ? 'Quản trị' : role === 'manager' ? 'Quản lý' : 'Nhân viên');
 
   const newUser = {
-    id:         generateId('u'),
+    id:          generateId('u'),
     name,
     email,
-    password:   pass,
+    password:    pass,
     role,
-    avatar:     getInitials(name),
+    avatar:      getInitials(name),
     department,
-    createdBy:  currentUser?.id,   // ghi lại người tạo
+    positionId,
+    jobTitle:    jobTitle || pos?.name || '',
+    createdBy:   currentUser?.id,
   };
 
   users.push(newUser);
-  // Add to DEMO_USERS so login works immediately
   DEMO_USERS[email] = { ...newUser };
-  // Add to TEAM_MEMBERS
   TEAM_MEMBERS.push({ id: newUser.id, name, role, avatar: newUser.avatar, department, kpi: 0, revenue: 0, tasks: 0 });
-  // Init phu cap mac dinh cho thanh vien moi
+
+  // Thêm vào POSITIONS.members
+  if (pos && !pos.members.includes(newUser.id)) {
+    pos.members.push(newUser.id);
+  }
+
+  // Init phụ cấp mặc định
   if (typeof USER_ALLOWANCES !== 'undefined' && !USER_ALLOWANCES[newUser.id]) {
     USER_ALLOWANCES[newUser.id] = { lunch: 700000, transport: 300000, phone: 200000, housing: 0, other: 0, note: '' };
   }
 
-  // Luu len Firebase (source of truth cho cross-device sync)
-  // newUser phai co email de fbSaveUser dung duoc
+  // Lưu Firebase
   const userWithEmail = { ...newUser, email };
   if (window.fbSaveUser) {
     window.fbSaveUser(userWithEmail).catch(e => console.warn('fbSaveUser error:', e));
   }
-  // Luu localStorage lam fallback offline
   saveAppUsers(users);
 
   // Clear form
-  ['newUserName','newUserEmail','newUserPass','newUserDept'].forEach(id => {
+  ['newUserName','newUserEmail','newUserPass','newUserDept','newUserJobTitle'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value='';
   });
+  const posEl = document.getElementById('newUserPosition');
+  if (posEl) posEl.value = '';
   closeModal('newUserModal');
 
   // Refresh view
