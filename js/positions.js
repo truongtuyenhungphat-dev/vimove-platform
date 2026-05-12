@@ -177,8 +177,9 @@ function showPositionPopup(posId) {
     <p class="org-popup-desc">${pos.description}</p>
     <div class="org-popup-members">
       ${members.map(m => {
-        const inc = calcIncome(m.id);
         const kpiColor = m.kpi >= 90 ? '#10B981' : m.kpi >= 70 ? '#F59E0B' : '#EF4444';
+        const canSeeIncome = currentUser?.role === 'admin' || currentUser?.role === 'manager' || m.id === currentUser?.id;
+        const inc = canSeeIncome ? calcIncome(m.id) : null;
         return `
           <div class="org-popup-member">
             <div class="org-popup-avatar">${m.avatar}</div>
@@ -204,7 +205,10 @@ function showPositionPopup(posId) {
       `).join('')}
     </div>
     <div style="margin-top:12px;font-size:12px;color:var(--c-text-3)">
-      💰 Lương cứng: ${fmtVND(pos.salary.base)} · Thưởng KPI tối đa: ${fmtVND(pos.salary.kpiBonus)}
+      ${(currentUser?.role === 'admin' || currentUser?.role === 'manager')
+        ? `💰 Lương cứng: ${fmtVND(pos.salary.base)} · Thưởng KPI tối đa: ${fmtVND(pos.salary.kpiBonus)}`
+        : `💰 Thưởng KPI tối đa theo KPI đạt`
+      }
     </div>
   `;
   popup.classList.remove('hidden');
@@ -262,7 +266,8 @@ function renderPositionDetail(pos) {
 
   const memberRows = members.map(m => {
     const kpiColor = m.kpi >= 90 ? '#10B981' : m.kpi >= 70 ? '#F59E0B' : '#EF4444';
-    const inc = calcIncome(m.id);
+    const canSeeIncome = currentUser?.role === 'admin' || currentUser?.role === 'manager' || m.id === currentUser?.id;
+    const inc = canSeeIncome ? calcIncome(m.id) : null;
     return `
       <div class="pos-member-row">
         <div class="pos-member-ava">${m.avatar}</div>
@@ -328,9 +333,10 @@ function renderPositionDetail(pos) {
       `).join('')}
     </div>
 
-    <!-- Thu nhập cấu trúc -->
+    <!-- Thu nhập cấu trúc — chỉ Admin/Manager thấy lương cứng -->
     <div class="pos-section">
       <div class="pos-section-title">💰 Cấu trúc thu nhập</div>
+      ${(currentUser?.role === 'admin' || currentUser?.role === 'manager') ? `
       <div class="pos-salary-grid">
         <div class="pos-sal-box">
           <div class="pos-sal-val">${fmtVND(pos.salary.base)}</div>
@@ -349,6 +355,21 @@ function renderPositionDetail(pos) {
           <div class="pos-sal-lbl">Tối đa/tháng (KPI 100%)</div>
         </div>
       </div>
+      ` : `
+      <div class="pos-salary-grid" style="grid-template-columns:1fr 1fr">
+        <div class="pos-sal-box">
+          <div class="pos-sal-val" style="color:#10B981">+${fmtVND(pos.salary.kpiBonus)}</div>
+          <div class="pos-sal-lbl">Thưởng KPI tối đa</div>
+        </div>
+        <div class="pos-sal-box">
+          <div class="pos-sal-val" style="color:#F59E0B">+${fmtVND(pos.salary.cvcBonus)}</div>
+          <div class="pos-sal-lbl">Thưởng/CVC vượt</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--c-text-3);margin-top:8px;padding:8px;background:var(--c-surface-2);border-radius:8px">
+        🔒 Thông tin lương cứng được bảo mật — xem thu nhập của bạn ở tab <strong>Thu nhập</strong>
+      </div>
+      `}
     </div>
   `;
 }
