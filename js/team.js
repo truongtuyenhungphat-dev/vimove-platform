@@ -205,10 +205,14 @@ async function doDeleteMember(memberId, member) {
     appState.tasks.forEach(t => { if (t.assigneeId === memberId) t.assigneeId = null; });
   }
 
-  // 5. Xóa localStorage
+  // 5. Xóa localStorage (users added list + deleted IDs list)
   try {
     const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
     localStorage.setItem('viwork_users', JSON.stringify(saved.filter(u => u.id !== memberId)));
+    // Luu ID da xoa de sau refresh khong load lai tu hardcoded data
+    const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
+    if (!deleted.includes(memberId)) deleted.push(memberId);
+    localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
   } catch(e) {}
 
   // 6. Xóa phụ cấp

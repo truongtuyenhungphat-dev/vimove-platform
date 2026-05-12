@@ -210,51 +210,82 @@ function openPayslip(userId, yearMonth) {
   modal.className = 'modal-overlay';
   modal.onclick = e => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `
-    <div class="modal-box payslip-box" style="max-width:580px">
-      <div class="modal-header">
-        <h3>💰 Phiếu lương — ${monthLabel}</h3>
+    <div class="modal-box payslip-box" style="max-width:520px;width:95vw">
+      <div class="modal-header" style="padding:18px 20px">
+        <div>
+          <div style="font-size:11px;color:var(--c-text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">PHIẾU LƯƠNG</div>
+          <h3 style="margin:0;font-size:17px">${monthLabel}</h3>
+        </div>
         <button class="modal-close" onclick="document.getElementById('payslipModal').remove()">✕</button>
       </div>
-      <div class="modal-body">
+
+      <div class="modal-body" style="padding:0 20px 20px;max-height:72vh;overflow-y:auto">
+
+        <!-- Employee header -->
         <div class="ps-emp-header">
           <div class="ps-avatar">${ps.member.avatar}</div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="ps-emp-name">${escHtml(ps.member.name)}</div>
             <div class="ps-emp-pos">${ps.pos.icon} ${ps.pos.name} · ${escHtml(ps.member.department||'')}</div>
           </div>
-          <div class="ps-kpi-badge" style="background:${ps.tier.emoji==='🌟'?'rgba(90,184,0,0.1)':ps.tier.emoji==='🟢'?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)'}">
-            <div style="font-size:20px">${ps.tier.emoji}</div>
-            <div style="font-weight:700;font-size:16px">${ps.kpiPct}%</div>
-            <div style="font-size:11px;color:var(--c-text-3)">${ps.tier.label}</div>
+          <div class="ps-kpi-badge" style="background:${ps.kpiPct>=90?'rgba(16,185,129,0.12)':ps.kpiPct>=70?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)'}">
+            <div style="font-size:18px">${ps.tier.emoji}</div>
+            <div style="font-weight:800;font-size:18px;line-height:1">${ps.kpiPct}%</div>
+            <div style="font-size:10px;color:var(--c-text-3);margin-top:2px">${ps.tier.label}</div>
           </div>
         </div>
-        <table class="ps-table">
-          <thead><tr><th>Khoản mục</th><th>Số tiền</th></tr></thead>
-          <tbody>
-            <tr class="ps-section-head"><td colspan="2">💼 Lương cơ bản</td></tr>
-            <tr><td>Lương cứng (hệ số ${ps.tier.baseMult})</td><td class="ps-money">${fmtVND(ps.basePaid)}</td></tr>
-            <tr class="ps-section-head"><td colspan="2">🏆 Thưởng KPI</td></tr>
-            <tr><td>Thưởng KPI (${ps.kpiPct}% → ${Math.round(ps.tier.bonusMult*100)}% bonus)</td><td class="ps-money ps-green">+${fmtVND(ps.kpiBonus)}</td></tr>
-            ${ps.excelBonus>0 ? `<tr><td>Bonus xuất sắc (KPI ≥ 100%)</td><td class="ps-money ps-green">+${fmtVND(ps.excelBonus)}</td></tr>` : ''}
-            ${ps.cvcBonus>0  ? `<tr><td>Thưởng CVC vượt (${ps.cvcOver} CVC)</td><td class="ps-money ps-green">+${fmtVND(ps.cvcBonus)}</td></tr>` : ''}
-            <tr class="ps-section-head"><td colspan="2">🎁 Phụ cấp</td></tr>
-            ${ps.allowance.lunch     ? `<tr><td>Phụ cấp ăn trưa</td><td class="ps-money">+${fmtVND(ps.allowance.lunch)}</td></tr>` : ''}
-            ${ps.allowance.transport ? `<tr><td>Phụ cấp đi lại</td><td class="ps-money">+${fmtVND(ps.allowance.transport)}</td></tr>` : ''}
-            ${ps.allowance.phone     ? `<tr><td>Phụ cấp điện thoại</td><td class="ps-money">+${fmtVND(ps.allowance.phone)}</td></tr>` : ''}
-            ${ps.allowance.housing   ? `<tr><td>Phụ cấp nhà ở</td><td class="ps-money">+${fmtVND(ps.allowance.housing)}</td></tr>` : ''}
-            ${ps.allowance.other     ? `<tr><td>Phụ cấp khác</td><td class="ps-money">+${fmtVND(ps.allowance.other)}</td></tr>` : ''}
-          </tbody>
-          <tfoot>
-            <tr class="ps-gross"><td>Thu nhập gộp</td><td class="ps-money">${fmtVND(ps.gross)}</td></tr>
-            ${ps.tax>0 ? `<tr><td>Thuế TNCN tạm tính (5%)</td><td class="ps-money ps-red">-${fmtVND(ps.tax)}</td></tr>` : ''}
-            <tr class="ps-net"><td>💵 Thực nhận</td><td class="ps-money ps-green">${fmtVND(ps.net)}</td></tr>
-          </tfoot>
-        </table>
-        <div style="font-size:11px;color:var(--c-text-3);margin-top:10px;text-align:center">
-          ${ps.kpi?.approved ? `✅ KPI đã phê duyệt · ${ps.kpi.approvedAt?.slice(0,10)||''}` : '⏳ KPI chưa phê duyệt — số liệu có thể thay đổi'}
+
+        <!-- Income breakdown -->
+        <div class="ps-breakdown-list">
+          <div class="ps-group-title">💼 Lương cơ bản</div>
+          <div class="ps-line">
+            <span>Lương cứng <span class="ps-tag">×${ps.tier.baseMult}</span></span>
+            <span class="ps-amount">${fmtVND(ps.basePaid)}</span>
+          </div>
+
+          <div class="ps-group-title">🏆 Thưởng KPI</div>
+          <div class="ps-line">
+            <span>Thưởng KPI — bậc "${ps.tier.label}"</span>
+            <span class="ps-amount ps-green">+${fmtVND(ps.kpiBonus)}</span>
+          </div>
+          ${ps.excelBonus>0 ? `<div class="ps-line"><span>Bonus xuất sắc (KPI ≥ 100%)</span><span class="ps-amount ps-green">+${fmtVND(ps.excelBonus)}</span></div>` : ''}
+          ${ps.cvcBonus>0  ? `<div class="ps-line"><span>Thưởng CVC vượt (${ps.cvcOver} CVC × ${fmtVND(ps.pos.salary.cvcBonus)})</span><span class="ps-amount ps-green">+${fmtVND(ps.cvcBonus)}</span></div>` : ''}
+
+          <div class="ps-group-title">🎁 Phụ cấp cá nhân</div>
+          ${ps.allowance.lunch     ? `<div class="ps-line"><span>Ăn trưa</span><span class="ps-amount">+${fmtVND(ps.allowance.lunch)}</span></div>` : ''}
+          ${ps.allowance.transport ? `<div class="ps-line"><span>Đi lại</span><span class="ps-amount">+${fmtVND(ps.allowance.transport)}</span></div>` : ''}
+          ${ps.allowance.phone     ? `<div class="ps-line"><span>Điện thoại</span><span class="ps-amount">+${fmtVND(ps.allowance.phone)}</span></div>` : ''}
+          ${ps.allowance.housing   ? `<div class="ps-line"><span>Nhà ở</span><span class="ps-amount">+${fmtVND(ps.allowance.housing)}</span></div>` : ''}
+          ${ps.allowance.other     ? `<div class="ps-line"><span>Khác</span><span class="ps-amount">+${fmtVND(ps.allowance.other)}</span></div>` : ''}
+          ${!ps.allowance.lunch && !ps.allowance.transport && !ps.allowance.phone && !ps.allowance.housing && !ps.allowance.other ? `<div class="ps-line" style="color:var(--c-text-3);font-style:italic"><span>Chưa có phụ cấp</span><span>—</span></div>` : ''}
+
+          ${ps.tax>0 ? `
+          <div class="ps-group-title" style="color:#EF4444">💸 Khấu trừ</div>
+          <div class="ps-line"><span>Thuế TNCN tạm tính (5%)</span><span class="ps-amount ps-red">−${fmtVND(ps.tax)}</span></div>
+          ` : ''}
+        </div>
+
+        <!-- Total bar -->
+        <div class="ps-total-bar">
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:4px">💵 THỰC NHẬN THÁNG ${parseInt(m)}/${y}</div>
+            <div style="font-size:26px;font-weight:800;letter-spacing:-0.5px">${fmtVND(ps.net)}</div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:rgba(255,255,255,0.7)">
+            <div>Thu nhập gộp</div>
+            <div style="font-size:14px;font-weight:600;color:white">${fmtVND(ps.gross)}</div>
+          </div>
+        </div>
+
+        <div style="text-align:center;font-size:11px;color:var(--c-text-3);margin-top:12px">
+          ${ps.kpi?.approved
+            ? `✅ KPI đã phê duyệt · ${ps.kpi.approvedAt?.slice(0,10)||''}`
+            : '⏳ KPI chưa phê duyệt — số liệu có thể thay đổi'}
+          &nbsp;·&nbsp; Trả lương mùng ${SALARY_POLICY.policy.payDay}
         </div>
       </div>
-      <div class="modal-footer">
+
+      <div class="modal-footer" style="padding:14px 20px;display:flex;justify-content:flex-end;gap:8px">
         <button class="btn btn-cancel" onclick="document.getElementById('payslipModal').remove()">✕ Đóng</button>
         <button class="btn btn-save" onclick="printPayslip()">🖨️ In / PDF</button>
       </div>

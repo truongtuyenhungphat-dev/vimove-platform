@@ -208,7 +208,13 @@ function getAppUsers() {
 }
 
 function saveAppUsers(users) {
-  // Lược bỏ localStorage vì đã đẩy bằng API riêng rẻ lên Firebase
+  // Luu danh sach user tuong them (tu DEMO_USERS, ko phai hardcoded)
+  const hardcodedIds = new Set([
+    'u001','u002','u003','u004','u005','u006',
+    'u007','u008','u009','u010','u011','u012'
+  ]);
+  const added = users.filter(u => !hardcodedIds.has(u.id));
+  localStorage.setItem('viwork_users', JSON.stringify(added));
 }
 
 function renderUserManager() {
@@ -347,24 +353,52 @@ function deleteUser(userId) {
   // Remove from DEMO_USERS
   const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
   if (entry) delete DEMO_USERS[entry[0]];
+  // Luu ID da xoa de khoi phuc sau refresh
+  try {
+    const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
+    if (!deleted.includes(userId)) deleted.push(userId);
+    localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
+  } catch(e) {}
+  // Xoa khoi TEAM_MEMBERS
+  const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === userId);
+  if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
   renderUserManager();
   showToast(`🗑️ Đã xóa tài khoản "${target.name}"!`, 'info');
 }
 
-// Khởi động: load users vào DEMO_USERS khi start app
+// Khoi dong: load users vao DEMO_USERS khi start app
 function loadSavedUsers() {
   try {
+    // Lay danh sach ID da xoa
+    const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
+
+    // Xoa nhung user hardcoded bi xoa khoi TEAM_MEMBERS va DEMO_USERS
+    if (deletedIds.size > 0) {
+      deletedIds.forEach(id => {
+        const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === id);
+        if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
+        const duEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === id);
+        if (duEntry) delete DEMO_USERS[duEntry[0]];
+      });
+    }
+
+    // Them user moi tu localStorage (nguoi dung tu tao)
     const saved = localStorage.getItem('viwork_users');
     if (saved) {
       const users = JSON.parse(saved);
       users.forEach(u => {
-        if (u.email && !DEMO_USERS[u.email]) {
-          DEMO_USERS[u.email] = { ...u };
-          if (!TEAM_MEMBERS.find(m => m.id === u.id)) {
-            TEAM_MEMBERS.push({ id: u.id, name: u.name, role: u.role, avatar: u.avatar || getInitials(u.name), department: u.department || 'Nhân viên', kpi: 0, revenue: 0, tasks: 0 });
-          }
+        if (!u.email) return;
+        if (deletedIds.has(u.id)) return; // Da bi xoa
+        DEMO_USERS[u.email] = { ...u };
+        if (!TEAM_MEMBERS.find(m => m.id === u.id)) {
+          TEAM_MEMBERS.push({
+            id: u.id, name: u.name, role: u.role,
+            avatar: u.avatar || getInitials(u.name),
+            department: u.department || 'Nhan vien',
+            kpi: 0, revenue: 0, tasks: 0
+          });
         }
       });
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadSavedUsers:', e); }
 }
