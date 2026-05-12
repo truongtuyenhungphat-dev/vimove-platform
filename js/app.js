@@ -28,24 +28,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ============ APP INIT (after login) ============
 function initApp() {
-  // Load saved users into DEMO_USERS (Gap 5)
-  loadSavedUsers();
-  // Default to dashboard
-  showModule('dashboard');
-  // Init Sprint 1 modules
-  initRequests();
-  // Render my tasks badge
-  renderMyTasks();
-  updateBadges();
-  updateRequestBadge();
-  // Sprint 2: Assignments badge
-  updateAsgnBadge();
-  // Settings panel
-  renderSettingsPanel();
-  // Gap 6: start notification interval
-  startNotificationWatcher();
-  // Sprint 3: Attendance
-  initAttendance();
+  // Load users from Firebase (cross-device sync) then fallback to localStorage
+  loadUsersFromFirebase(() => {
+    // Default to dashboard
+    showModule('dashboard');
+    // Init Sprint 1 modules
+    initRequests();
+    // Render my tasks badge
+    renderMyTasks();
+    updateBadges();
+    updateRequestBadge();
+    // Sprint 2: Assignments badge
+    updateAsgnBadge();
+    // Settings panel
+    renderSettingsPanel();
+    // Gap 6: start notification interval
+    startNotificationWatcher();
+    // Sprint 3: Attendance
+    initAttendance();
+    // Start realtime user listener
+    startUserListener();
+  });
 }
 
 // ============ MODULE NAVIGATION ============
@@ -310,7 +313,7 @@ function saveNewUser() {
   };
 
   users.push(newUser);
-  // Also add to DEMO_USERS so login works immediately
+  // Add to DEMO_USERS so login works immediately
   DEMO_USERS[email] = { ...newUser };
   // Add to TEAM_MEMBERS
   TEAM_MEMBERS.push({ id: newUser.id, name, role, avatar: newUser.avatar, department, kpi: 0, revenue: 0, tasks: 0 });
@@ -319,7 +322,13 @@ function saveNewUser() {
     USER_ALLOWANCES[newUser.id] = { lunch: 700000, transport: 300000, phone: 200000, housing: 0, other: 0, note: '' };
   }
 
-  if (window.fbSaveUser) window.fbSaveUser(newUser);
+  // Luu len Firebase (source of truth cho cross-device sync)
+  // newUser phai co email de fbSaveUser dung duoc
+  const userWithEmail = { ...newUser, email };
+  if (window.fbSaveUser) {
+    window.fbSaveUser(userWithEmail).catch(e => console.warn('fbSaveUser error:', e));
+  }
+  // Luu localStorage lam fallback offline
   saveAppUsers(users);
 
   // Clear form
@@ -328,42 +337,50 @@ function saveNewUser() {
   });
   closeModal('newUserModal');
 
-  // Refresh dung view dang active
+  // Refresh view
   if (document.getElementById('teamPageContainer')) renderTeamPage();
   if (typeof renderUserManager === 'function') renderUserManager();
-  showToast(`\u2705 \u0110\u00e3 th\u00eam "${name}" (${role === 'manager' ? 'Team Lead' : 'Nh\u00e2n vi\u00ean'}) v\u00e0o h\u1ec7 th\u1ed1ng!`, 'success');
+  showToast(`✅ Đã thêm "${name}" (${role === 'manager' ? 'Team Lead' : 'Nhân viên'}) vào hệ thống!`, 'success');
 }
 
-function deleteUser(userId) {
-  const users = getAppUsers();
+async function deleteUser(userId) {
+  const users  = getAppUsers();
   const target = users.find(u => u.id === userId);
   if (!target) return;
 
-  // Kiểm tra quyền xóa
   if (!canDeleteUser(target)) {
     showToast('⚠️ Bạn không có quyền xóa tài khoản này!', 'error');
     return;
   }
 
-  if (!confirm(`Xóa tài khoản "${target.name}"?`)) return;
-
-  const updated = users.filter(u => u.id !== userId);
-  if (window.fbDeleteUser && target.email) window.fbDeleteUser(target.email);
-  saveAppUsers(updated);
-  // Remove from DEMO_USERS
-  const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
-  if (entry) delete DEMO_USERS[entry[0]];
-  // Luu ID da xoa de khoi phuc sau refresh
-  try {
-    const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
-    if (!deleted.includes(userId)) deleted.push(userId);
-    localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
-  } catch(e) {}
-  // Xoa khoi TEAM_MEMBERS
-  const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === userId);
-  if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
-  renderUserManager();
-  showToast(`🗑️ Đã xóa tài khoản "${target.name}"!`, 'info');
+  hrConfirm(
+    `Xóa tài khoản "${target.name}"?`,
+    'Thao tác này sẽ xóa vĩnh viễn và đồng bộ tất cả thiết bị.',
+    async () => {
+      // 1. Xoa tren Firebase
+      if (window.fbDeleteUser && target.email) {
+        try { await window.fbDeleteUser(target.email); } catch(e) { console.warn('fbDeleteUser:', e); }
+      }
+      // 2. Xoa DEMO_USERS
+      const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
+      if (entry) delete DEMO_USERS[entry[0]];
+      // 3. Xoa TEAM_MEMBERS
+      const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === userId);
+      if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
+      // 4. Luu localStorage fallback
+      const updated = users.filter(u => u.id !== userId);
+      saveAppUsers(updated);
+      try {
+        const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
+        if (!deleted.includes(userId)) deleted.push(userId);
+        localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
+      } catch(e) {}
+      // 5. Refresh UI
+      if (document.getElementById('teamPageContainer') && typeof renderTeamPage === 'function') renderTeamPage();
+      if (typeof renderUserManager === 'function') renderUserManager();
+      showToast(`🗑️ Đã xóa tài khoản "${target.name}"!`, 'info');
+    }
+  );
 }
 
 // Khoi dong: load users vao DEMO_USERS khi start app
@@ -382,13 +399,13 @@ function loadSavedUsers() {
       });
     }
 
-    // Them user moi tu localStorage (nguoi dung tu tao)
+    // Them user moi tu localStorage (nguoi dung tu tao) - offline fallback only
     const saved = localStorage.getItem('viwork_users');
     if (saved) {
       const users = JSON.parse(saved);
       users.forEach(u => {
         if (!u.email) return;
-        if (deletedIds.has(u.id)) return; // Da bi xoa
+        if (deletedIds.has(u.id)) return;
         DEMO_USERS[u.email] = { ...u };
         if (!TEAM_MEMBERS.find(m => m.id === u.id)) {
           TEAM_MEMBERS.push({
@@ -401,4 +418,135 @@ function loadSavedUsers() {
       });
     }
   } catch(e) { console.warn('loadSavedUsers:', e); }
+}
+
+// ============ FIREBASE CROSS-DEVICE SYNC ============
+
+/**
+ * Load tat ca users tu Firestore khi dang nhap.
+ * Merge vao DEMO_USERS + TEAM_MEMBERS, ghi de local data.
+ * @param {Function} callback - Goi sau khi load xong
+ */
+function loadUsersFromFirebase(callback) {
+  const db = window.firebaseDB;
+  if (!db) {
+    // Firebase chua san sang — dung local
+    loadSavedUsers();
+    if (callback) callback();
+    return;
+  }
+
+  db.collection('viwork_users').get().then(snapshot => {
+    if (!snapshot.empty) {
+      applyFirebaseUsers(snapshot);
+    } else {
+      // Chua co data tren Firebase — seed tu DEMO_USERS
+      loadSavedUsers();
+      window.fbCheckAndSeed?.();
+    }
+    if (callback) callback();
+  }).catch(err => {
+    console.warn('[VIWORK] Firebase load users failed, using local:', err);
+    loadSavedUsers();
+    if (callback) callback();
+  });
+}
+
+/**
+ * Apply danh sach user tu Firebase snapshot vao DEMO_USERS + TEAM_MEMBERS.
+ * Giu nguyen password cua currentUser trong session.
+ */
+function applyFirebaseUsers(snapshot) {
+  // Hardcoded IDs (khong duoc xoa tu Firebase)
+  const hardcodedIds = new Set([
+    'u001','u002','u003','u004','u005','u006',
+    'u007','u008','u009','u010','u011','u012'
+  ]);
+
+  // Lay danh sach ID tu Firebase
+  const fbUserIds = new Set();
+  const fbUsers   = {};
+  snapshot.forEach(doc => {
+    const u = doc.data();
+    if (u && u.email) {
+      fbUsers[u.email] = u;
+      if (u.id) fbUserIds.add(u.id);
+    }
+  });
+
+  // Xoa khoi TEAM_MEMBERS nhung NV hardcoded khong con trong Firebase
+  for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
+    const m = TEAM_MEMBERS[i];
+    if (hardcodedIds.has(m.id) && !fbUserIds.has(m.id)) {
+      TEAM_MEMBERS.splice(i, 1);
+    }
+  }
+
+  // Ghi de / them vao DEMO_USERS
+  Object.keys(DEMO_USERS).forEach(email => {
+    const u = DEMO_USERS[email];
+    if (hardcodedIds.has(u.id) && !fbUserIds.has(u.id)) {
+      delete DEMO_USERS[email]; // Da bi xoa tren Firebase
+    }
+  });
+
+  // Merge Firebase users vao DEMO_USERS + TEAM_MEMBERS
+  Object.entries(fbUsers).forEach(([email, u]) => {
+    // Bao ton password cua current session
+    const existingPass = DEMO_USERS[email]?.password;
+    DEMO_USERS[email]  = { ...u, password: u.password || existingPass || '' };
+
+    if (!TEAM_MEMBERS.find(m => m.id === u.id)) {
+      TEAM_MEMBERS.push({
+        id:         u.id,
+        name:       u.name,
+        role:       u.role,
+        avatar:     u.avatar || getInitials(u.name),
+        department: u.department || '',
+        kpi:        u.kpi   || 0,
+        revenue:    u.revenue || 0,
+        tasks:      u.tasks || 0,
+      });
+    } else {
+      // Cap nhat thong tin moi nhat
+      const idx = TEAM_MEMBERS.findIndex(m => m.id === u.id);
+      if (idx > -1) {
+        TEAM_MEMBERS[idx] = {
+          ...TEAM_MEMBERS[idx],
+          name:       u.name,
+          role:       u.role,
+          avatar:     u.avatar || getInitials(u.name),
+          department: u.department || TEAM_MEMBERS[idx].department,
+        };
+      }
+    }
+  });
+
+  console.log(`[VIWORK] Synced ${Object.keys(fbUsers).length} users from Firebase`);
+}
+
+// Bien luu unsubscribe listener de tranh leak
+let _userListenerUnsub = null;
+
+/**
+ * Bat realtime listener de tu dong cap nhat khi co thay doi tu may khac.
+ * Chi goi 1 lan sau khi initApp xong.
+ */
+function startUserListener() {
+  if (_userListenerUnsub) return; // Da co listener
+  const db = window.firebaseDB;
+  if (!db) return;
+
+  _userListenerUnsub = db.collection('viwork_users').onSnapshot(snapshot => {
+    applyFirebaseUsers(snapshot);
+    // Refresh UI neu dang o trang team
+    const teamContainer = document.getElementById('teamPageContainer');
+    if (teamContainer && typeof renderTeamPage === 'function') {
+      renderTeamPage();
+    }
+    if (typeof renderUserManager === 'function') renderUserManager();
+    console.log('[VIWORK] User list updated from Firebase');
+  }, err => {
+    console.warn('[VIWORK] User listener error:', err);
+  });
 }
