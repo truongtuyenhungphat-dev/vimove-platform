@@ -354,6 +354,64 @@ const POSITIONS = [
   },
 ];
 
+/* ========================================================
+   SALARY POLICY — Chính sách lương thưởng Vimove
+   ======================================================== */
+const SALARY_POLICY = {
+  version: '1.0',
+  effectiveDate: '2026-04-01',
+  tiers: [
+    { min: 0,   max: 69,  label: 'Cảnh báo',      emoji: '🔴', baseMult: 0.85, bonusMult: 0,    note: 'Lương cứng còn 85%, không có thưởng KPI' },
+    { min: 70,  max: 79,  label: 'Cần cải thiện',  emoji: '🟠', baseMult: 1.0,  bonusMult: 0.70, note: 'Đủ lương cứng, thưởng KPI 70%' },
+    { min: 80,  max: 89,  label: 'Đạt một phần',   emoji: '🟡', baseMult: 1.0,  bonusMult: 0.85, note: 'Đủ lương cứng, thưởng KPI 85%' },
+    { min: 90,  max: 99,  label: 'Đạt KPI',        emoji: '🟢', baseMult: 1.0,  bonusMult: 1.0,  note: 'Đủ lương cứng, thưởng KPI đầy đủ' },
+    { min: 100, max: 200, label: 'Xuất sắc',       emoji: '🌟', baseMult: 1.0,  bonusMult: 1.2,  note: 'Đủ lương cứng, thưởng KPI + 20% bonus xuất sắc' },
+  ],
+  // Thưởng đặc biệt
+  specialBonuses: [
+    { id: 'referral',    label: 'Giới thiệu nhân viên mới',  amount: 500000  },
+    { id: 'longevity6m', label: 'Thâm niên 6 tháng',         amount: 500000  },
+    { id: 'longevity1y', label: 'Thâm niên 1 năm',           amount: 1500000 },
+    { id: 'longevity2y', label: 'Thâm niên 2 năm',           amount: 3000000 },
+    { id: 'project',     label: 'Hoàn thành dự án xuất sắc', amount: 1000000 },
+  ],
+  // Chính sách chung
+  policy: {
+    payDay: 10,           // Ngày trả lương hàng tháng
+    kpiReviewDay: 5,      // Ngày Admin nhập KPI thực tế (mùng 5 tháng sau)
+    probation: 2,         // Tháng thử việc (lương × 85%)
+    currency: 'VNĐ',
+    note: 'Lương được tính và phê duyệt bởi Admin/Quản trị vào đầu mỗi tháng. Nhân viên chỉ xem được bảng lương của chính mình.',
+  },
+};
+
+/* ========================================================
+   USER ALLOWANCES — Phụ cấp từng người (Admin nhập riêng)
+   ======================================================== */
+const USER_ALLOWANCES = {
+  'u001': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0,       other: 0,       note: 'Phụ cấp kỹ thuật' },
+  'u002': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0,       other: 0,       note: 'Phụ cấp quản trị' },
+  'u003': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
+  'u004': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
+  'u005': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: 'Phụ cấp lead content' },
+  'u006': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
+  'u007': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
+  'u008': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
+  'u009': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
+  'u010': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
+  'u011': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
+  'u012': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
+};
+
+/* ========================================================
+   KPI_ACTUALS — Số liệu KPI thực tế từng tháng (Admin nhập)
+   key: 'userId_YYYY-MM'
+   ======================================================== */
+const KPI_ACTUALS = {
+  // Ví dụ cấu trúc — Admin nhập qua form trong app
+  // 'u005_2026-04': { posts: 18, videos: 7, tasks_done: 88, approved: true, approvedBy: 'u002', approvedAt: '2026-05-05' }
+};
+
 /* ============ INITIAL TASKS — Từ TNA Vimove 2026 (GĐ 1: Setup 01/04 - 30/06) ============ */
 const INITIAL_TASKS = [
 

@@ -1,5 +1,5 @@
 /* ================================================
-   VIWORK — Positions, Org Chart & Income Styles
+   VIWORK — Positions, Org Chart, Income & HR Styles
    ================================================ */
 
 /* ── TAB BAR ────────────────────────────────────── */
@@ -476,4 +476,133 @@
 .income-table tfoot td {
   background: var(--c-surface-2);
   font-size: 13px;
+}
+
+/* ── PAYSLIP MODAL ───────────────────────────────── */
+.payslip-box { font-family: 'Inter', sans-serif; }
+.ps-emp-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--c-surface-2);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.ps-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--grad-primary);
+  color: white;
+  font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ps-emp-name { font-weight: 700; font-size: 15px; }
+.ps-emp-pos  { font-size: 12px; color: var(--c-text-3); margin-top: 2px; }
+.ps-kpi-badge {
+  margin-left: auto;
+  text-align: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  min-width: 70px;
+}
+
+.ps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.ps-table thead th {
+  background: var(--c-surface-2);
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px; font-weight: 600;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+.ps-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--c-border-subtle);
+  vertical-align: middle;
+}
+.ps-table tfoot td { padding: 10px 12px; }
+.ps-money { text-align: right; font-family: 'Manrope', monospace; font-weight: 600; }
+.ps-green { color: #10B981; }
+.ps-red   { color: #EF4444; }
+.ps-section-head td {
+  background: var(--c-surface-2) !important;
+  font-size: 11px; font-weight: 700;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 6px 12px !important;
+}
+.ps-gross td { font-weight: 700; border-top: 2px solid var(--c-border-subtle); }
+.ps-net td   { font-weight: 800; font-size: 15px; color: #10B981; background: rgba(16,185,129,0.06); }
+
+/* ── KPI PROGRESS CARD ───────────────────────────── */
+.kpi-progress-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+}
+.kpi-prog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.kpi-prog-table thead th {
+  background: var(--c-surface-2);
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 10px; font-weight: 600;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+.kpi-prog-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+.kpi-prog-table tfoot td {
+  padding: 8px 10px;
+  background: var(--c-surface-2);
+  border-top: 2px solid var(--c-border-subtle);
+}
+
+/* ── POLICY PAGE ─────────────────────────────────── */
+.policy-page { display: flex; flex-direction: column; gap: 16px; }
+.policy-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+}
+.policy-section-title {
+  font-size: 14px; font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+.policy-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--c-border-subtle);
+  color: var(--c-text-2);
+}
+.policy-info-row:last-child { border-bottom: none; }
+
+/* ── PRINT STYLES ────────────────────────────────── */
+@media print {
+  .sidebar, .nav-bar, .team-tab-bar, .modal-footer { display: none !important; }
+  .payslip-box { box-shadow: none !important; border: 1px solid #ccc !important; }
+  body { background: white !important; color: black !important; }
 }

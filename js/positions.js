@@ -67,11 +67,13 @@ function renderTeamPage() {
       <button class="team-tab-btn ${activeTeamTab==='leaderboard'?'active':''}"
         onclick="switchTeamTab('leaderboard')">🏆 Leaderboard</button>
       <button class="team-tab-btn ${activeTeamTab==='orgchart'?'active':''}"
-        onclick="switchTeamTab('orgchart')">🗂️ Sơ đồ Tổ chức</button>
+        onclick="switchTeamTab('orgchart')">🗂️ Sơ đồ</button>
       <button class="team-tab-btn ${activeTeamTab==='positions'?'active':''}"
         onclick="switchTeamTab('positions')">📋 Vị trí & KPI</button>
       <button class="team-tab-btn ${activeTeamTab==='income'?'active':''}"
         onclick="switchTeamTab('income')">💰 Thu nhập</button>
+      <button class="team-tab-btn ${activeTeamTab==='policy'?'active':''}"
+        onclick="switchTeamTab('policy')">📜 Chính sách</button>
     </div>
     <div id="teamTabContent"></div>
   `;
@@ -91,9 +93,10 @@ function renderTeamTabContent() {
   const el = document.getElementById('teamTabContent');
   if (!el) return;
   if (activeTeamTab === 'leaderboard') { renderLeaderboardTab(el); }
-  else if (activeTeamTab === 'orgchart') { renderOrgChartTab(el); }
+  else if (activeTeamTab === 'orgchart')  { renderOrgChartTab(el); }
   else if (activeTeamTab === 'positions') { renderPositionsTab(el); }
-  else if (activeTeamTab === 'income') { renderIncomeTab(el); }
+  else if (activeTeamTab === 'income')    { renderIncomeTab(el); }
+  else if (activeTeamTab === 'policy')    { renderPolicyTab(el); }
 }
 
 // ============ TAB 1: LEADERBOARD ============
@@ -363,135 +366,134 @@ function createFromTemplate(tpl) {
   }, 200);
 }
 
-// ============ TAB 4: THU NHẬP ============
+// ============ TAB 4: THU NHAP ============
 function renderIncomeTab(el) {
   const isAdmin = currentUser?.role === 'admin';
+  const myId    = currentUser?.id;
 
-  // Admin thấy toàn đội, staff/manager chỉ thấy mình
-  const viewUsers = isAdmin
-    ? TEAM_MEMBERS
-    : TEAM_MEMBERS.filter(m => m.id === currentUser?.id);
-
-  const myInc = calcIncome(currentUser?.id);
+  // Card thu nhap ca nhan
+  const myPs = calcPayslip(myId);
+  const myKpi = calcKpiScore(myId);
 
   el.innerHTML = `
     <div class="income-page">
-      ${myInc ? renderMyIncomeCard(myInc) : ''}
-
-      ${isAdmin ? `
-        <div class="income-section-title">📊 Thu nhập ước tính toàn đội tháng này</div>
-        <div class="income-table-wrap">
-          <table class="income-table">
-            <thead>
-              <tr>
-                <th>Thành viên</th>
-                <th>Vị trí</th>
-                <th>KPI</th>
-                <th>Lương cứng</th>
-                <th>Thưởng KPI</th>
-                <th>Thưởng CVC</th>
-                <th style="color:#5AB800">Ước tính nhận</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${TEAM_MEMBERS.map(m => {
-                const inc = calcIncome(m.id);
-                const pos = getUserPosition(m.id);
-                if (!inc) return `<tr><td colspan="7" style="color:var(--c-text-3);font-size:12px">${m.name} — Chưa có vị trí</td></tr>`;
-                const tierIcon = { warn:'🔴', partial:'🟡', good:'🟢', excellent:'🌟' }[inc.tier];
-                return `
-                  <tr>
-                    <td>
-                      <div style="display:flex;align-items:center;gap:8px">
-                        <span class="org-avatar">${m.avatar}</span>
-                        <div>
-                          <div style="font-weight:600;font-size:13px">${escHtml(m.name)}</div>
-                          <div style="font-size:11px;color:var(--c-text-3)">${m.department||''}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style="font-size:12px">${pos ? pos.icon + ' ' + pos.name : '—'}</td>
-                    <td><span style="font-weight:700;color:${inc.kpiPct>=90?'#10B981':inc.kpiPct>=70?'#F59E0B':'#EF4444'}">${tierIcon} ${inc.kpiPct}%</span></td>
-                    <td style="font-family:monospace">${fmtVND(inc.basePaid)}</td>
-                    <td style="font-family:monospace;color:#10B981">+${fmtVND(inc.kpiBonus)}</td>
-                    <td style="font-family:monospace;color:#F59E0B">+${fmtVND(inc.cvcBonus)}</td>
-                    <td style="font-family:monospace;font-weight:700;color:#5AB800">${fmtVND(inc.total_income)}</td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="6" style="font-weight:700;text-align:right;padding:10px 14px">Tổng ước tính chi lương tháng:</td>
-                <td style="font-weight:800;font-size:15px;color:#5AB800;padding:10px 14px">
-                  ${fmtVND(TEAM_MEMBERS.reduce((s, m) => { const i = calcIncome(m.id); return s + (i?.total_income||0); }, 0))}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+      <!-- Card ca nhan -->
+      <div class="my-income-card" style="background:${myPs ? (myPs.tier.bonusMult>=1?'rgba(16,185,129,0.07)':'rgba(245,158,11,0.07)') : 'var(--c-surface-2)'};
+        border-color:${myPs ? (myPs.tier.bonusMult>=1?'rgba(16,185,129,0.3)':'rgba(245,158,11,0.3)') : 'var(--c-border-subtle)'}">
+        <div class="income-card-header">
+          <div>
+            <div class="income-month">💰 Thu nhập tháng ${new Date().getMonth()+1}/${new Date().getFullYear()}</div>
+            <div class="income-tier" style="color:${myPs?'inherit':'var(--c-text-3)'}">${myPs ? myPs.tier.emoji + ' ' + myPs.tier.label : 'Chưa có vị trí'}</div>
+          </div>
+          <div class="income-total">${myPs ? fmtVND(myPs.net) : '—'}</div>
         </div>
-      ` : ''}
+
+        ${myPs ? `
+        <div class="income-breakdown">
+          <div class="inc-row"><span class="inc-label">Lương cứng</span><span class="inc-val">${fmtVND(myPs.basePaid)}</span></div>
+          <div class="inc-row"><span class="inc-label">+ Thưởng KPI (${myPs.kpiPct}%)</span><span class="inc-val" style="color:#10B981">+${fmtVND(myPs.kpiBonus)}</span></div>
+          ${myPs.excelBonus>0 ? `<div class="inc-row"><span class="inc-label">+ Bonus xuất sắc</span><span class="inc-val" style="color:#5AB800">+${fmtVND(myPs.excelBonus)}</span></div>` : ''}
+          <div class="inc-row"><span class="inc-label">+ Phụ cấp tổng</span><span class="inc-val">+${fmtVND(myPs.totalAllowance)}</span></div>
+          ${myPs.tax>0 ? `<div class="inc-row"><span class="inc-label">- Thuế TNCN</span><span class="inc-val" style="color:#EF4444">-${fmtVND(myPs.tax)}</span></div>` : ''}
+          <div class="inc-divider"></div>
+          <div class="inc-row inc-total-row"><span class="inc-label">💵 Thực nhận</span><span class="inc-val inc-total-val">${fmtVND(myPs.net)}</span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn-primary" onclick="openPayslip('${myId}')">📄 Xem phiếu lương chi tiết</button>
+          <button class="btn-secondary" onclick="openChangePasswordModal()">🔑 Đổi mật khẩu</button>
+        </div>
+        <div class="income-meta" style="margin-top:10px">
+          <span>📋 CVC tháng này: ${myPs.doneTasks} hoàn thành</span>
+          <span>${myKpi?.approved ? '✅ KPI đã duyệt' : '⏳ KPI chưa duyệt'}</span>
+        </div>` : `
+        <div style="color:var(--c-text-3);font-size:13px;padding:12px 0">Tài khoản chưa được gán vị trí. Liên hệ Admin để cập nhật.</div>
+        <button class="btn-secondary" onclick="openChangePasswordModal()" style="margin-top:8px">🔑 Đổi mật khẩu</button>
+        `}
+      </div>
+
+      <!-- KPI tien do chi tiet -->
+      ${myKpi ? renderKpiProgress(myId, myKpi) : ''}
+
+      <!-- Admin: bang toan doi -->
+      ${isAdmin ? renderAdminIncomeTable() : ''}
     </div>
   `;
 }
 
-function renderMyIncomeCard(inc) {
-  const tierData = {
-    warn:      { icon:'🔴', label:'Cảnh báo KPI', color:'#EF4444', bg:'rgba(239,68,68,0.08)' },
-    partial:   { icon:'🟡', label:'Đạt một phần', color:'#F59E0B', bg:'rgba(245,158,11,0.08)' },
-    good:      { icon:'🟢', label:'Đạt KPI',      color:'#10B981', bg:'rgba(16,185,129,0.08)' },
-    excellent: { icon:'🌟', label:'Xuất sắc',     color:'#5AB800', bg:'rgba(90,184,0,0.10)'   },
-  }[inc.tier];
+function renderKpiProgress(userId, kpi) {
+  if (!kpi) return '';
+  return `
+    <div class="kpi-progress-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="pos-section-title" style="margin:0">📊 Tiến độ KPI tháng ${kpi.yearMonth}</div>
+        <div style="font-size:22px;font-weight:800;color:${kpi.tier.emoji==='🌟'||kpi.tier.emoji==='🟢'?'#10B981':'#F59E0B'}">${kpi.tier.emoji} ${kpi.kpiTotal}%</div>
+      </div>
+      <table class="kpi-prog-table">
+        <thead><tr><th>Chỉ tiêu</th><th>Target</th><th>Thực tế</th><th>Đạt</th><th>Trọng số</th><th>Điểm</th></tr></thead>
+        <tbody>
+          ${kpi.breakdown.map(k => {
+            const pctColor = k.pct>=90?'#10B981':k.pct>=70?'#F59E0B':'#EF4444';
+            return `<tr>
+              <td>${k.label}</td>
+              <td style="color:var(--c-text-3)">${k.target} ${k.unit}</td>
+              <td style="font-weight:600">${k.actual !== null ? k.actual + ' ' + k.unit : '<span style="color:var(--c-text-3)">Chờ nhập</span>'}</td>
+              <td style="color:${pctColor};font-weight:700">${k.actual!==null?k.pct+'%':'—'}</td>
+              <td style="color:var(--c-text-3)">${k.weight}%</td>
+              <td style="font-weight:700">${k.actual!==null?k.score:'—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot><tr><td colspan="5" style="text-align:right;font-weight:700">KPI Tổng</td><td style="font-weight:800;font-size:15px">${kpi.kpiTotal}%</td></tr></tfoot>
+      </table>
+      ${kpi.approved
+        ? `<div style="margin-top:8px;font-size:12px;color:#10B981">✅ Đã phê duyệt ${kpi.approvedAt?.slice(0,10)||''}</div>`
+        : `<div style="margin-top:8px;font-size:12px;color:var(--c-text-3)">⏳ Chờ Admin phê duyệt — số liệu có thể thay đổi</div>`
+      }
+    </div>
+  `;
+}
 
+function renderAdminIncomeTable() {
   const now = new Date();
-  const daysLeft = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate() - now.getDate();
-  const needed   = inc.maxKpiBonus - inc.kpiBonus;
-  const hint     = inc.kpiPct < 90
-    ? `⚠️ Hoàn thành thêm CVC để đạt KPI 90% — sẽ nhận thêm ${fmtVND(needed)} thưởng KPI`
-    : (inc.kpiPct >= 100 ? '🌟 Xuất sắc! Bạn đang ở mức thưởng cao nhất' : '✅ Đang đạt KPI đầy đủ');
+  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const total = TEAM_MEMBERS.reduce((s,m) => { const p = calcPayslip(m.id); return s + (p?.net||0); }, 0);
 
   return `
-    <div class="my-income-card" style="background:${tierData.bg};border-color:${tierData.color}30">
-      <div class="income-card-header">
-        <div>
-          <div class="income-month">💰 Thu nhập tháng ${now.getMonth()+1}/${now.getFullYear()}</div>
-          <div class="income-tier" style="color:${tierData.color}">${tierData.icon} ${tierData.label}</div>
-        </div>
-        <div class="income-total" style="color:${tierData.color}">${fmtVND(inc.total_income)}</div>
-      </div>
-
-      <div class="income-breakdown">
-        <div class="inc-row">
-          <span class="inc-label">Lương cứng</span>
-          <span class="inc-val">${fmtVND(inc.basePaid)}</span>
-        </div>
-        <div class="inc-row">
-          <span class="inc-label">+ Thưởng KPI (${inc.kpiPct}% × ${fmtVND(inc.maxKpiBonus)})</span>
-          <span class="inc-val" style="color:#10B981">+${fmtVND(inc.kpiBonus)}</span>
-        </div>
-        ${inc.cvcBonus > 0 ? `
-        <div class="inc-row">
-          <span class="inc-label">+ Thưởng CVC vượt (${inc.cvcOver} CVC)</span>
-          <span class="inc-val" style="color:#F59E0B">+${fmtVND(inc.cvcBonus)}</span>
-        </div>` : ''}
-        ${inc.excelBonus > 0 ? `
-        <div class="inc-row">
-          <span class="inc-label">+ Thưởng xuất sắc (KPI ≥ 100%)</span>
-          <span class="inc-val" style="color:#5AB800">+${fmtVND(inc.excelBonus)}</span>
-        </div>` : ''}
-        <div class="inc-divider"></div>
-        <div class="inc-row inc-total-row">
-          <span class="inc-label">💵 Ước tính nhận</span>
-          <span class="inc-val inc-total-val">${fmtVND(inc.total_income)}</span>
-        </div>
-      </div>
-
-      <div class="income-hint">${hint}</div>
-
-      <div class="income-meta">
-        <span>📋 CVC tháng này: ${inc.done} hoàn thành / ${inc.myTasksTotal} tổng</span>
-        <span>📅 Còn ${daysLeft} ngày trong tháng</span>
-      </div>
+    <div class="income-section-title">👑 Bảng lương toàn đội — ${ym}</div>
+    <div class="income-table-wrap">
+      <table class="income-table">
+        <thead><tr><th>Nhân viên</th><th>Vị trí</th><th>KPI</th><th>Lương cứng</th><th>Thưởng</th><th>Phụ cấp</th><th style="color:#5AB800">Thực nhận</th><th></th></tr></thead>
+        <tbody>
+          ${TEAM_MEMBERS.map(m => {
+            const ps  = calcPayslip(m.id);
+            const pos = getUserPosition(m.id);
+            const kpiScore = calcKpiScore(m.id);
+            if (!ps) return `<tr><td colspan="8" style="color:var(--c-text-3);font-size:12px;padding:10px 14px">${m.name} — Chưa gán vị trí</td></tr>`;
+            return `<tr>
+              <td><div style="display:flex;align-items:center;gap:8px">
+                <span class="org-avatar">${m.avatar}</span>
+                <div><div style="font-weight:600;font-size:13px">${escHtml(m.name)}</div>
+                <div style="font-size:11px;color:var(--c-text-3)">${m.department||''}</div></div>
+              </div></td>
+              <td style="font-size:12px">${pos ? pos.icon+' '+pos.name : '—'}</td>
+              <td><span style="font-weight:700;color:${ps.kpiPct>=90?'#10B981':ps.kpiPct>=70?'#F59E0B':'#EF4444'}">${ps.tier.emoji} ${ps.kpiPct}%</span></td>
+              <td style="font-family:monospace">${fmtVND(ps.basePaid)}</td>
+              <td style="font-family:monospace;color:#10B981">+${fmtVND(ps.kpiBonus+ps.excelBonus+ps.cvcBonus)}</td>
+              <td style="font-family:monospace">+${fmtVND(ps.totalAllowance)}</td>
+              <td style="font-family:monospace;font-weight:700;color:#5AB800">${fmtVND(ps.net)}</td>
+              <td><div style="display:flex;gap:4px">
+                <button class="pos-use-btn" onclick="openKpiEntryModal('${m.id}')" title="Nhập KPI">📊</button>
+                <button class="pos-use-btn" style="background:var(--c-surface-2);color:var(--c-text)" onclick="openPayslip('${m.id}')" title="Phiếu lương">💰</button>
+              </div></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="6" style="font-weight:700;text-align:right;padding:10px 14px">Tổng chi lương tháng:</td>
+          <td style="font-weight:800;font-size:15px;color:#5AB800;padding:10px 14px">${fmtVND(total)}</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
     </div>
   `;
 }
