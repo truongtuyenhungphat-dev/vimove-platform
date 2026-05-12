@@ -902,6 +902,18 @@
           <label>Mật khẩu mới <span style="font-size:11px;color:var(--c-text-3);font-weight:normal">(để trống = giữ nguyên)</span></label>
           <input type="password" id="editMemberPass" placeholder="••••••••" />
         </div>
+        <!-- VỊ TRÍ / NHIỆM VỤ -->
+        <div class="form-group full-width">
+          <label>🏢 Vị trí / Nhiệm vụ</label>
+          <select id="editMemberPosition" onchange="onEditMemberPositionChange()">
+            <option value="">— Chưa phân công vị trí —</option>
+          </select>
+          <div style="font-size:11px;color:var(--c-text-3);margin-top:4px" id="editMemberPositionDesc"></div>
+        </div>
+        <div class="form-group full-width">
+          <label>📋 Chức danh cụ thể <span style="font-size:11px;color:var(--c-text-3);font-weight:normal">(tuỳ chọn)</span></label>
+          <input type="text" id="editMemberJobTitle" placeholder="VD: Kỹ thuật viên Senior..." />
+        </div>
         <div class="form-group full-width">
           <label>Phòng ban / Mảng phụ trách</label>
           <input type="text" id="editMemberDept" placeholder="VD: Content, Digital, Thiết kế..." />

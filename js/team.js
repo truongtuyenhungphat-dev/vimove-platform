@@ -68,68 +68,133 @@ function renderTeam() {
 
 // ============ OPEN EDIT MODAL ============
 function openEditMemberModal(memberId) {
-  // Tìm trong TEAM_MEMBERS
   const member = TEAM_MEMBERS.find(m => m.id === memberId);
   if (!member) { showToast('⚠️ Không tìm thấy thành viên!', 'error'); return; }
 
-  // Phân quyền: Manager không sửa được Admin
   if (currentUser?.role === 'manager' && member.role === 'admin') {
     showToast('⚠️ Bạn không có quyền chỉnh sửa Admin!', 'error');
     return;
   }
 
-  // Lấy thêm user info từ DEMO_USERS để có email
   const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
-  const email = userEntry ? userEntry[0] : '';
+  const email     = userEntry ? userEntry[0] : '';
+  const userData  = userEntry ? userEntry[1] : {};
 
-  // Điền dữ liệu vào form
-  document.getElementById('editMemberId').value    = memberId;
-  document.getElementById('editMemberName').value  = member.name;
-  document.getElementById('editMemberEmail').value = email;
-  document.getElementById('editMemberDept').value  = member.department || '';
-  document.getElementById('editMemberKpi').value   = member.kpi || 0;
-  document.getElementById('editMemberRevenue').value = member.revenue || 0;
+  // Điền dữ liệu cơ bản
+  document.getElementById('editMemberId').value       = memberId;
+  document.getElementById('editMemberName').value     = member.name;
+  document.getElementById('editMemberEmail').value    = email;
+  document.getElementById('editMemberDept').value     = member.department || '';
+  document.getElementById('editMemberKpi').value      = member.kpi || 0;
+  document.getElementById('editMemberRevenue').value  = member.revenue || 0;
+  document.getElementById('editMemberPass').value     = '';
+  document.getElementById('editMemberJobTitle').value = userData.jobTitle || member.jobTitle || '';
 
-  // Role select — Admin có thể đổi role, Manager không
+  // Role select
   const roleSelect = document.getElementById('editMemberRole');
-  roleSelect.value = member.role;
+  roleSelect.value    = member.role;
   roleSelect.disabled = currentUser?.role !== 'admin';
 
-  // Mật khẩu để trống (chỉ nhập khi muốn đổi)
-  document.getElementById('editMemberPass').value = '';
+  // Populate + pre-select position dropdown
+  const posSel = document.getElementById('editMemberPosition');
+  if (posSel && typeof POSITIONS !== 'undefined') {
+    posSel.innerHTML = '<option value="">— Chưa phân công vị trí —</option>';
+    POSITIONS.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value       = p.id;
+      opt.textContent = `${p.icon} ${p.name}`;
+      // Pre-select: tìm vị trí đang chứa memberId HOẶC khớp positionId đã lưu
+      if (p.members?.includes(memberId) || p.id === (userData.positionId || member.positionId)) {
+        opt.selected = true;
+      }
+      posSel.appendChild(opt);
+    });
+    // Hiện mô tả vị trí hiện tại
+    const curPos = POSITIONS.find(p => p.members?.includes(memberId) || p.id === (userData.positionId || member.positionId));
+    const descEl = document.getElementById('editMemberPositionDesc');
+    if (descEl && curPos) {
+      descEl.innerHTML = `📄 ${curPos.description?.slice(0, 80)}... &nbsp;·&nbsp; 👥 ${curPos.members?.length || 0} người`;
+    } else if (descEl) {
+      descEl.textContent = '';
+    }
+  }
 
-  // Cập nhật tiêu đề modal
   document.getElementById('editMemberModalTitle').textContent = `✏️ Chỉnh sửa: ${member.name}`;
-
-  // Hiển thị modal
   document.getElementById('editMemberModal').classList.remove('hidden');
+}
+
+/** Khi thay đổi vị trí trong modal edit: auto-fill dept */
+function onEditMemberPositionChange() {
+  const posId = document.getElementById('editMemberPosition')?.value;
+  const descEl = document.getElementById('editMemberPositionDesc');
+  if (!posId || typeof POSITIONS === 'undefined') {
+    if (descEl) descEl.textContent = '';
+    return;
+  }
+  const pos = POSITIONS.find(p => p.id === posId);
+  if (!pos) return;
+
+  // Gợi ý auto-fill phòng ban nếu đang trống
+  const deptEl = document.getElementById('editMemberDept');
+  if (deptEl && !deptEl.value) deptEl.value = pos.name;
+
+  // Cập nhật mô tả
+  if (descEl) {
+    descEl.innerHTML = `📄 ${pos.description?.slice(0, 80)}... &nbsp;·&nbsp; 👥 ${pos.members?.length || 0} người`;
+  }
+
+  // Gợi ý role theo level
+  const roleEl = document.getElementById('editMemberRole');
+  if (roleEl && !roleEl.disabled) {
+    if (pos.level === 0)      roleEl.value = 'admin';
+    else if (pos.level === 1) roleEl.value = 'manager';
+    else                      roleEl.value = 'staff';
+  }
 }
 
 // ============ SAVE EDIT MEMBER ============
 async function saveEditMember() {
-  const memberId = document.getElementById('editMemberId').value;
-  const name     = document.getElementById('editMemberName').value.trim();
-  const dept     = document.getElementById('editMemberDept').value.trim();
-  const kpi      = parseInt(document.getElementById('editMemberKpi').value) || 0;
-  const revenue  = parseFloat(document.getElementById('editMemberRevenue').value) || 0;
-  const newPass  = document.getElementById('editMemberPass').value;
-  const role     = document.getElementById('editMemberRole').value;
+  const memberId   = document.getElementById('editMemberId').value;
+  const name       = document.getElementById('editMemberName').value.trim();
+  const dept       = document.getElementById('editMemberDept').value.trim();
+  const kpi        = parseInt(document.getElementById('editMemberKpi').value) || 0;
+  const revenue    = parseFloat(document.getElementById('editMemberRevenue').value) || 0;
+  const newPass    = document.getElementById('editMemberPass').value;
+  const role       = document.getElementById('editMemberRole').value;
+  const positionId = document.getElementById('editMemberPosition')?.value || '';
+  const jobTitle   = document.getElementById('editMemberJobTitle')?.value.trim() || '';
 
   if (!name) { showToast('⚠️ Tên không được để trống!', 'error'); return; }
   if (kpi < 0 || kpi > 200) { showToast('⚠️ KPI phải từ 0–200%!', 'error'); return; }
 
-  // -- Cập nhật TEAM_MEMBERS --
+  // Cập nhật POSITIONS.members: xóa khỏi vị trí cũ, thêm vào vị trí mới
+  if (typeof POSITIONS !== 'undefined') {
+    // Tìm vị trí cũ
+    const oldPos = POSITIONS.find(p => p.members?.includes(memberId));
+    if (oldPos && oldPos.id !== positionId) {
+      oldPos.members = oldPos.members.filter(id => id !== memberId);
+    }
+    // Thêm vào vị trí mới
+    if (positionId) {
+      const newPos = POSITIONS.find(p => p.id === positionId);
+      if (newPos && !newPos.members.includes(memberId)) {
+        newPos.members.push(memberId);
+      }
+    }
+  }
+
+  // Cập nhật TEAM_MEMBERS
   const idx = TEAM_MEMBERS.findIndex(m => m.id === memberId);
   if (idx > -1) {
     TEAM_MEMBERS[idx] = {
       ...TEAM_MEMBERS[idx],
-      name, department: dept, kpi, revenue,
-      role,
+      name, department: dept, kpi, revenue, role,
       avatar: getInitials(name),
+      positionId, jobTitle,
     };
   }
 
-  // -- Cập nhật DEMO_USERS --
+  // Cập nhật DEMO_USERS
   const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
   if (userEntry) {
     const [email, user] = userEntry;
@@ -137,20 +202,22 @@ async function saveEditMember() {
       ...user,
       name, department: dept, role,
       avatar: getInitials(name),
+      positionId, jobTitle,
       ...(newPass ? { password: newPass } : {}),
     };
-    // -- Cập nhật lên Firebase --
     if (window.fbSaveUser) {
       await window.fbSaveUser({ ...DEMO_USERS[email], email });
     }
   }
 
-  // -- Nếu đang edit chính mình, cập nhật currentUser sidebar --
+  // Nếu edit chính mình
   if (currentUser?.id === memberId) {
     currentUser.name       = name;
     currentUser.department = dept;
     currentUser.role       = role;
     currentUser.avatar     = getInitials(name);
+    currentUser.positionId = positionId;
+    currentUser.jobTitle   = jobTitle;
     appState.currentUser   = currentUser;
     sessionStorage.setItem('vw_user', JSON.stringify(currentUser));
     document.getElementById('sidebarName').textContent   = name;
