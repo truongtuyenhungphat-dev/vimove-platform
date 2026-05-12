@@ -158,79 +158,95 @@ async function saveEditMember() {
   }
 
   closeModal('editMemberModal');
-  renderTeam();
+  renderTeamPage();
   showToast(`✅ Đã cập nhật thông tin "${name}" thành công!`, 'success');
 }
 
 // ============ DELETE MEMBER ============
-async function confirmDeleteMember(memberId) {
-  // Chỉ Admin
+function confirmDeleteMember(memberId) {
   if (currentUser?.role !== 'admin') {
-    showToast('⚠️ Chỉ Admin mới có quyền xóa thành viên!', 'error');
-    return;
+    showToast('⚠️ Chỉ Admin mới có quyền xóa thành viên!', 'error'); return;
   }
-  // Không xóa chính mình
   if (memberId === currentUser?.id) {
-    showToast('⚠️ Không thể xóa tài khoản đang đăng nhập!', 'error');
-    return;
+    showToast('⚠️ Không thể xóa tài khoản đang đăng nhập!', 'error'); return;
   }
-
   const member = TEAM_MEMBERS.find(m => m.id === memberId);
   if (!member) return;
-
-  // Không xóa admin cuối cùng
   if (member.role === 'admin') {
     const adminCount = TEAM_MEMBERS.filter(m => m.role === 'admin').length;
-    if (adminCount <= 1) {
-      showToast('⚠️ Hệ thống cần ít nhất 1 Admin — không thể xóa!', 'error');
-      return;
-    }
+    if (adminCount <= 1) { showToast('⚠️ Hệ thống cần ít nhất 1 Admin!', 'error'); return; }
   }
 
-  // Xác nhận
-  if (!confirm(`Xóa thành viên "${member.name}"?\n\nHành động này không thể hoàn tác.`)) return;
+  // Custom confirm dialog thay thế confirm() bị block trên Netlify
+  hrConfirm(
+    `Xóa thành viên "${member.name}"?`,
+    'Hành động này sẽ xóa vĩnh viễn tài khoản khỏi hệ thống.',
+    () => doDeleteMember(memberId, member)
+  );
+}
 
-  // 1. Xóa khỏi TEAM_MEMBERS
+async function doDeleteMember(memberId, member) {
+  // 1. Xóa TEAM_MEMBERS
   const idx = TEAM_MEMBERS.findIndex(m => m.id === memberId);
   if (idx > -1) TEAM_MEMBERS.splice(idx, 1);
 
-  // 2. Tìm email và xóa khỏi DEMO_USERS
+  // 2. Xóa DEMO_USERS
   const userEntry = Object.entries(DEMO_USERS).find(([, u]) => u.id === memberId);
   let email = null;
-  if (userEntry) {
-    email = userEntry[0];
-    delete DEMO_USERS[email];
-  }
+  if (userEntry) { email = userEntry[0]; delete DEMO_USERS[email]; }
 
-  // 3. Xóa trên Firebase
+  // 3. Xóa Firebase
   if (email && window.fbDeleteUser) {
-    try { await window.fbDeleteUser(email); } catch(e) { console.warn('Firebase delete user:', e); }
+    try { await window.fbDeleteUser(email); } catch(e) { console.warn(e); }
   }
 
   // 4. Un-assign CVC
   if (typeof appState !== 'undefined') {
-    appState.tasks.forEach(t => {
-      if (t.assigneeId === memberId) t.assigneeId = null;
-    });
+    appState.tasks.forEach(t => { if (t.assigneeId === memberId) t.assigneeId = null; });
   }
 
-  // 5. Xóa khỏi localStorage (getAppUsers/saveAppUsers)
+  // 5. Xóa localStorage
   try {
     const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
-    const updated = saved.filter(u => u.id !== memberId);
-    localStorage.setItem('viwork_users', JSON.stringify(updated));
+    localStorage.setItem('viwork_users', JSON.stringify(saved.filter(u => u.id !== memberId)));
   } catch(e) {}
 
-  // 6. Xóa phụ cấp cá nhân
+  // 6. Xóa phụ cấp
   if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[memberId];
 
   renderTeamPage();
   showToast(`🗑️ Đã xóa thành viên "${member.name}"`, 'info');
 }
+
+// Custom confirm dialog (thay thế confirm() bị block trên một số browser)
+function hrConfirm(title, message, onConfirm) {
+  document.getElementById('hrConfirmDialog')?.remove();
+  const el = document.createElement('div');
+  el.id = 'hrConfirmDialog';
+  el.className = 'modal-overlay';
+  el.style.zIndex = '9999';
+  el.innerHTML = `
+    <div class="modal-box" style="max-width:380px;text-align:center">
+      <div class="modal-body" style="padding:28px 24px">
+        <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px">${title}</div>
+        <div style="font-size:13px;color:var(--c-text-3);margin-bottom:20px">${message}</div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-cancel" onclick="document.getElementById('hrConfirmDialog').remove()">✕ Hủy</button>
+          <button class="btn btn-danger" id="hrConfirmOk">🗑️ Xác nhận xóa</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  document.getElementById('hrConfirmOk').onclick = () => {
+    el.remove();
+    onConfirm();
+  };
+}
+
 function openAddMemberModal() {
   if (!currentUser || currentUser.role === 'staff') {
-    showToast('⚠️ Bạn không có quyền thêm thành viên!', 'error');
-    return;
+    showToast('⚠️ Bạn không có quyền thêm thành viên!', 'error'); return;
   }
   openAddUserModal();
 }

@@ -114,6 +114,7 @@ function openKpiEntryModal(userId, yearMonth) {
   const modal = document.createElement('div');
   modal.id = 'kpiEntryModal';
   modal.className = 'modal-overlay';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `
     <div class="modal-box" style="max-width:520px">
       <div class="modal-header">
@@ -149,8 +150,8 @@ function openKpiEntryModal(userId, yearMonth) {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="document.getElementById('kpiEntryModal').remove()">Hủy</button>
-        <button class="btn-primary" onclick="saveKpiEntry('${userId}','${ym}')">💾 Lưu KPI</button>
+        <button class="btn btn-cancel" onclick="document.getElementById('kpiEntryModal').remove()">Hủy</button>
+        <button class="btn btn-save" onclick="saveKpiEntry('${userId}','${ym}')">💾 Lưu KPI</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -207,6 +208,7 @@ function openPayslip(userId, yearMonth) {
   const modal = document.createElement('div');
   modal.id = 'payslipModal';
   modal.className = 'modal-overlay';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `
     <div class="modal-box payslip-box" style="max-width:580px">
       <div class="modal-header">
@@ -214,8 +216,6 @@ function openPayslip(userId, yearMonth) {
         <button class="modal-close" onclick="document.getElementById('payslipModal').remove()">✕</button>
       </div>
       <div class="modal-body">
-
-        <!-- Header nhân viên -->
         <div class="ps-emp-header">
           <div class="ps-avatar">${ps.member.avatar}</div>
           <div>
@@ -228,8 +228,6 @@ function openPayslip(userId, yearMonth) {
             <div style="font-size:11px;color:var(--c-text-3)">${ps.tier.label}</div>
           </div>
         </div>
-
-        <!-- Bảng lương -->
         <table class="ps-table">
           <thead><tr><th>Khoản mục</th><th>Số tiền</th></tr></thead>
           <tbody>
@@ -252,17 +250,13 @@ function openPayslip(userId, yearMonth) {
             <tr class="ps-net"><td>💵 Thực nhận</td><td class="ps-money ps-green">${fmtVND(ps.net)}</td></tr>
           </tfoot>
         </table>
-
         <div style="font-size:11px;color:var(--c-text-3);margin-top:10px;text-align:center">
-          ${ps.kpi?.approved ? `✅ KPI đã được phê duyệt bởi Admin · ${ps.kpi.approvedAt?.slice(0,10)||''}` : '⏳ KPI chưa được phê duyệt — số liệu có thể thay đổi'}
-        </div>
-        <div style="text-align:center;color:var(--c-text-3);font-size:10px;margin-top:4px">
-          Ngày trả lương: mùng ${SALARY_POLICY.policy.payDay} hàng tháng
+          ${ps.kpi?.approved ? `✅ KPI đã phê duyệt · ${ps.kpi.approvedAt?.slice(0,10)||''}` : '⏳ KPI chưa phê duyệt — số liệu có thể thay đổi'}
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="document.getElementById('payslipModal').remove()">Đóng</button>
-        <button class="btn-primary" onclick="printPayslip()">🖨️ In / Xuất PDF</button>
+        <button class="btn btn-cancel" onclick="document.getElementById('payslipModal').remove()">✕ Đóng</button>
+        <button class="btn btn-save" onclick="printPayslip()">🖨️ In / PDF</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -341,6 +335,7 @@ function openChangePasswordModal(targetUserId) {
   const modal = document.createElement('div');
   modal.id = 'changePassModal';
   modal.className = 'modal-overlay';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `
     <div class="modal-box" style="max-width:420px">
       <div class="modal-header">
@@ -352,7 +347,7 @@ function openChangePasswordModal(targetUserId) {
         <div class="form-group">
           <label>Mật khẩu hiện tại</label>
           <input type="password" class="form-input" id="cpCurrentPass" placeholder="Nhập mật khẩu cũ">
-        </div>` : `<p style="font-size:12px;color:var(--c-text-3);margin-bottom:12px">Admin có thể đặt lại mật khẩu trực tiếp</p>`}
+        </div>` : `<div class="info-banner">🔐 Admin có thể đặt lại mật khẩu trực tiếp không cần xác nhận</div>`}
         <div class="form-group">
           <label>Mật khẩu mới</label>
           <input type="password" class="form-input" id="cpNewPass" placeholder="Tối thiểu 6 ký tự">
@@ -364,8 +359,8 @@ function openChangePasswordModal(targetUserId) {
         <div id="cpError" style="color:#EF4444;font-size:12px;margin-top:6px"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="document.getElementById('changePassModal').remove()">Hủy</button>
-        <button class="btn-primary" onclick="saveChangePassword('${uid}','${isSelf && !isAdmin}')">💾 Đổi mật khẩu</button>
+        <button class="btn btn-cancel" onclick="document.getElementById('changePassModal').remove()">✕ Hủy</button>
+        <button class="btn btn-save" onclick="saveChangePassword('${uid}','${isSelf && !isAdmin}')">💾 Đổi mật khẩu</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
