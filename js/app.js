@@ -308,6 +308,10 @@ function saveNewUser() {
   DEMO_USERS[email] = { ...newUser };
   // Add to TEAM_MEMBERS
   TEAM_MEMBERS.push({ id: newUser.id, name, role, avatar: newUser.avatar, department, kpi: 0, revenue: 0, tasks: 0 });
+  // Init phu cap mac dinh cho thanh vien moi
+  if (typeof USER_ALLOWANCES !== 'undefined' && !USER_ALLOWANCES[newUser.id]) {
+    USER_ALLOWANCES[newUser.id] = { lunch: 700000, transport: 300000, phone: 200000, housing: 0, other: 0, note: '' };
+  }
 
   if (window.fbSaveUser) window.fbSaveUser(newUser);
   saveAppUsers(users);
@@ -318,8 +322,10 @@ function saveNewUser() {
   });
   closeModal('newUserModal');
 
-  renderUserManager();
-  showToast(`✅ Đã thêm "${name}" (${role === 'manager' ? 'Team Lead' : 'Nhân viên'}) vào hệ thống!`, 'success');
+  // Refresh dung view dang active
+  if (document.getElementById('teamPageContainer')) renderTeamPage();
+  if (typeof renderUserManager === 'function') renderUserManager();
+  showToast(`\u2705 \u0110\u00e3 th\u00eam "${name}" (${role === 'manager' ? 'Team Lead' : 'Nh\u00e2n vi\u00ean'}) v\u00e0o h\u1ec7 th\u1ed1ng!`, 'success');
 }
 
 function deleteUser(userId) {

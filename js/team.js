@@ -207,14 +207,24 @@ async function confirmDeleteMember(memberId) {
     try { await window.fbDeleteUser(email); } catch(e) { console.warn('Firebase delete user:', e); }
   }
 
-  // 4. Xóa CVC đang giao cho user này (tùy chọn: un-assign)
+  // 4. Un-assign CVC
   if (typeof appState !== 'undefined') {
     appState.tasks.forEach(t => {
       if (t.assigneeId === memberId) t.assigneeId = null;
     });
   }
 
-  renderTeam();
+  // 5. Xóa khỏi localStorage (getAppUsers/saveAppUsers)
+  try {
+    const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
+    const updated = saved.filter(u => u.id !== memberId);
+    localStorage.setItem('viwork_users', JSON.stringify(updated));
+  } catch(e) {}
+
+  // 6. Xóa phụ cấp cá nhân
+  if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[memberId];
+
+  renderTeamPage();
   showToast(`🗑️ Đã xóa thành viên "${member.name}"`, 'info');
 }
 function openAddMemberModal() {
