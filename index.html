@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/workflow.css?v=3.0" />
   <link rel="stylesheet" href="css/sprint1.css?v=3.0" />
   <link rel="stylesheet" href="css/attendance.css?v=1.0" />
+  <link rel="stylesheet" href="css/positions.css?v=1.0" />
   <link rel="manifest" href="manifest.json" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -463,13 +464,16 @@
         <div class="page-header">
           <div>
             <h1 class="page-h1">Đội ngũ Vimove</h1>
-            <p class="page-sub">Hiệu suất và bảng xếp hạng đội bán hàng</p>
+            <p class="page-sub">Leaderboard · Sơ đồ tổ chức · Vị trí & KPI · Thu nhập</p>
           </div>
           <div class="page-actions">
             <button class="btn-primary manager-up" onclick="openAddMemberModal()">+ Thêm thành viên</button>
           </div>
         </div>
-        <div class="team-leaderboard" id="teamLeaderboard"></div>
+        <div id="teamPageContainer">
+          <!-- Tabs rendered by renderTeamPage() -->
+          <div class="team-leaderboard" id="teamLeaderboard"></div>
+        </div>
       </div>
 
       <!-- ===== REQUESTS PAGE ===== -->
@@ -940,6 +944,8 @@
 <script src="js/assignments.js?v=2.5"></script>
 <!-- Sprint 3: Attendance -->
 <script src="js/attendance.js?v=1.0"></script>
+<!-- Sprint 4: Positions, Org Chart, Income -->
+<script src="js/positions.js?v=1.0"></script>
 <script src="js/app.js?v=2.5"></script>
 </body>
 </html>

@@ -90,7 +90,7 @@ function showModule(module) {
     case 'mytasks':     renderMyTasks();     break;
     case 'crm':         renderCRM();         break;
     case 'performance': renderPerformance(); break;
-    case 'team':        renderTeam();        break;
+    case 'team':        renderTeamPage();    break;
     case 'requests':    renderRequests();    break;
     case 'assignments': renderAssignments(); break;
     case 'attendance':  renderAttendance();  break;
