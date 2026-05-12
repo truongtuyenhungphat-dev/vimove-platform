@@ -5,10 +5,18 @@
 
 // ============ CONFIG ============
 const ATT_CONFIG = {
-  checkInStd:   '08:00',   // Giờ vào chuẩn
-  checkOutStd:  '17:00',   // Giờ ra chuẩn
-  lateThreshold: 30,        // Phút muộn (vào sau 08:30)
-  reminderHour:  18,        // Nhắc nhở chưa check-out sau 18:00
+  checkInStd:   '08:00',
+  checkOutStd:  '17:00',
+  lateThreshold: 30,
+  reminderHour:  18,
+  // GPS văn phòng — cấu hình tại đây
+  office: {
+    name:    'Văn phòng Vimove',
+    lat:     10.7769,   // ← Thay bằng tọa độ văn phòng thực
+    lng:     106.7009,  // ← Thay bằng tọa độ văn phòng thực
+    radius:  100,       // mét cho phép ±
+  },
+  qrSecret: 'VIWORK_OFFICE_2026',  // Mã bí mật QR
 };
 
 // ============ LOCAL STATE ============
@@ -136,8 +144,40 @@ function getUserMonthRecords(userId, year, month) {
   return ATTENDANCE_RECORDS.filter(r => r.userId === userId && r.date.startsWith(prefix));
 }
 
-// ============ CHECK-IN ============
-async function doCheckIn(isOnline) {
+// ============ GPS HELPERS ============
+
+/** Tính khoảng cách giữa 2 tọa độ (metres) */
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+/** Lấy vị trí GPS hiện tại */
+function getCurrentGPS() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Thiết bị không hỗ trợ GPS'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+}
+
+/** Kiểm tra GPS có trong phạm vi văn phòng không */
+function isInOfficeRange(lat, lng) {
+  const d = calcDistance(lat, lng, ATT_CONFIG.office.lat, ATT_CONFIG.office.lng);
+  return { inRange: d <= ATT_CONFIG.office.radius, distance: Math.round(d) };
+}
+
+// ============ CHECK-IN (GPS văn phòng) ============
+async function doCheckIn(isOnline, gpsData, viaQR) {
   const user = currentUser;
   if (!user) return;
 
@@ -163,19 +203,102 @@ async function doCheckIn(isOnline) {
     checkOut:   null,
     duration:   null,
     isOnline:   !!isOnline,
-    note:       '',
+    note:       viaQR ? 'QR check-in tại văn phòng' : '',
     isLate,
     status:     'working',
+    checkInMethod: viaQR ? 'qr' : (isOnline ? 'online' : 'manual'),
+    gps: gpsData || null,
   };
 
   ATTENDANCE_RECORDS.push(record);
   if (window.fbSaveAttendance) await window.fbSaveAttendance(record);
 
-  const msg = isLate
-    ? `🟡 Đã check-in lúc ${formatTime(now)} (Muộn ${ciMins - 8*60 - ATT_CONFIG.lateThreshold} phút)`
-    : `✅ Đã check-in lúc ${formatTime(now)}${isOnline ? ' — Online' : ' — Tại văn phòng'}`;
+  let msg;
+  if (viaQR)       msg = `✅ QR Check-in lúc ${formatTime(now)} — Tại văn phòng`;
+  else if (isLate) msg = `🟡 Đã check-in lúc ${formatTime(now)} (Muộn ${ciMins - 8*60 - ATT_CONFIG.lateThreshold} phút)`;
+  else             msg = `✅ Check-in lúc ${formatTime(now)}${isOnline ? ' — Online' : ' — Văn phòng' + (gpsData ? ` (±${Math.round(gpsData.acc||0)}m)` : '')}`;
+
   showToast(msg, isLate ? 'info' : 'success');
   renderAttendance();
+}
+
+/** Check-in văn phòng với xác minh GPS */
+async function checkInOffice() {
+  const btn = document.getElementById('btnCheckIn');
+  if (btn) { btn.disabled = true; btn.querySelector('small').textContent = 'Đang xác định vị trí...'; }
+
+  try {
+    const gps = await getCurrentGPS();
+    const { inRange, distance } = isInOfficeRange(gps.lat, gps.lng);
+
+    if (inRange) {
+      await doCheckIn(false, gps, false);
+    } else {
+      // Ngoai pham vi — hien dialog xac nhan
+      showGpsOutOfRangeDialog(distance, gps);
+    }
+  } catch (err) {
+    console.warn('GPS error:', err);
+    // GPS khong kha dung — cho phep check-in thu cong voi canh bao
+    showGpsUnavailableDialog();
+  } finally {
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+/** Dialog khi o ngoai pham vi van phong */
+function showGpsOutOfRangeDialog(distance, gps) {
+  document.getElementById('gpsDialog')?.remove();
+  const el = document.createElement('div');
+  el.id = 'gpsDialog';
+  el.className = 'modal-overlay';
+  el.onclick = e => { if (e.target === el) el.remove(); };
+  el.innerHTML = `
+    <div class="modal-box" style="max-width:380px;text-align:center">
+      <div class="modal-body" style="padding:28px 24px">
+        <div style="font-size:42px;margin-bottom:12px">📍</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px">Ngoài phạm vi văn phòng</div>
+        <div style="font-size:13px;color:var(--c-text-2);margin-bottom:6px">
+          Bạn đang cách văn phòng <strong style="color:#EF4444">${distance}m</strong><br>
+          Phạm vi cho phép: <strong>±${ATT_CONFIG.office.radius}m</strong>
+        </div>
+        <div style="font-size:12px;color:var(--c-text-3);margin-bottom:20px">
+          Nếu bạn đang ở văn phòng, GPS có thể chưa chính xác. Bạn có muốn tiếp tục không?
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-cancel" onclick="document.getElementById('gpsDialog').remove()">Hủy</button>
+          <button class="btn btn-save" onclick="document.getElementById('gpsDialog').remove(); doCheckIn(false, ${JSON.stringify(gps)}, false)">✔️ Xác nhận check-in</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+}
+
+/** Dialog khi GPS khong kha dung */
+function showGpsUnavailableDialog() {
+  document.getElementById('gpsDialog')?.remove();
+  const el = document.createElement('div');
+  el.id = 'gpsDialog';
+  el.className = 'modal-overlay';
+  el.onclick = e => { if (e.target === el) el.remove(); };
+  el.innerHTML = `
+    <div class="modal-box" style="max-width:360px;text-align:center">
+      <div class="modal-body" style="padding:28px 24px">
+        <div style="font-size:42px;margin-bottom:12px">🚧</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px">Không xác định được GPS</div>
+        <div style="font-size:13px;color:var(--c-text-2);margin-bottom:6px">
+          Vui lòng bật GPS trên thiết bị và cấp quyền vị trí cho trình duyệt.
+        </div>
+        <div style="font-size:12px;color:var(--c-text-3);margin-bottom:20px">
+          Hoặc sử dụng <strong>QR Check-in</strong> tại quầy lễ tân.
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-cancel" onclick="document.getElementById('gpsDialog').remove()">Hủy</button>
+          <button class="btn btn-save" onclick="document.getElementById('gpsDialog').remove(); doCheckIn(false, null, false)">Check-in không GPS</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
 }
 
 // ============ CHECK-OUT ============
@@ -243,7 +366,15 @@ function renderAttendance() {
         <h1 class="page-h1">⏱ Chấm công</h1>
         <p class="page-sub">${formatDateVN(today)}</p>
       </div>
-      <div class="page-actions">
+      <div class="page-actions" style="gap:8px">
+        ${isAdminOrMgr ? `
+          <button class="att-admin-qr-btn" onclick="openQrDisplayModal()" title="Sinh mã QR cho nhân viên quét">
+            📋 Mã QR VP
+          </button>
+          <button class="att-admin-qr-btn" onclick="updateOfficeLocation()" title="Cập nhật tọa độ GPS văn phòng">
+            📍 Cập nhật GPS VP
+          </button>
+        ` : ''}
         <select id="attViewPeriod" class="select-input" onchange="renderAttHistory()">
           <option value="week">Tuần này</option>
           <option value="month" selected>Tháng này</option>
@@ -308,14 +439,21 @@ function renderCheckInWidget(record) {
         </div>
         ${remoteNote}
         <div class="att-buttons">
-          <button class="att-btn checkin-office" onclick="doCheckIn(false)" id="btnCheckIn">
+          <button class="att-btn checkin-office" onclick="checkInOffice()" id="btnCheckIn">
             <span class="att-btn-icon">🏢</span>
             <span class="att-btn-text">
               <strong>Check-in Văn phòng</strong>
-              <small>Làm việc tại văn phòng</small>
+              <small>📍 Xác minh GPS ±${ATT_CONFIG.office.radius}m</small>
             </span>
           </button>
-          <button class="att-btn checkin-online ${remoteRec ? 'approved' : ''}" onclick="doCheckIn(true)" id="btnCheckInOnline">
+          <button class="att-btn checkin-qr" onclick="openQrScanModal()" id="btnCheckInQR">
+            <span class="att-btn-icon">📷</span>
+            <span class="att-btn-text">
+              <strong>Quét mã QR</strong>
+              <small>Check-in bằng mã QR tại VP</small>
+            </span>
+          </button>
+          <button class="att-btn checkin-online ${remoteRec ? 'approved' : ''}" onclick="doCheckIn(true, null, false)" id="btnCheckInOnline">
             <span class="att-btn-icon">🌐</span>
             <span class="att-btn-text">
               <strong>Check-in Online</strong>

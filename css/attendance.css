@@ -183,6 +183,51 @@
 }
 .att-btn.checkout strong { color: #EF4444; }
 
+/* QR check-in */
+.att-btn.checkin-qr {
+  border-color: rgba(245,158,11,0.4);
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02));
+}
+.att-btn.checkin-qr:hover {
+  border-color: #F59E0B;
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+}
+.att-btn.checkin-qr strong { color: #F59E0B; }
+
+/* GPS info badge */
+.gps-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.gps-badge.ok   { background: rgba(16,185,129,0.12); color: #10B981; }
+.gps-badge.warn { background: rgba(245,158,11,0.12);  color: #F59E0B; }
+.gps-badge.err  { background: rgba(239,68,68,0.12);   color: #EF4444; }
+
+/* Admin QR button in att page */
+.att-admin-qr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(90,184,0,0.1);
+  border: 1px solid rgba(90,184,0,0.3);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5AB800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.att-admin-qr-btn:hover { background: rgba(90,184,0,0.18); }
+
+/* QR video modal overlay */
+#qrVideo { max-height: 300px; object-fit: cover; }
+
 /* ============ DONE STATE ============ */
 .att-widget-status.done {
   text-align: center;
