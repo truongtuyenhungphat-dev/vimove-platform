@@ -265,30 +265,51 @@ async function doDeleteMember(memberId, member) {
   } catch(e) {}
 }
 
-// Custom confirm dialog (thay thế confirm() bị block trên một số browser)
+// Custom confirm dialog (thay thế confirm() bị block trên Netlify)
 function hrConfirm(title, message, onConfirm) {
+  // Xóa dialog cũ nếu có
   document.getElementById('hrConfirmDialog')?.remove();
+
   const el = document.createElement('div');
   el.id = 'hrConfirmDialog';
   el.className = 'modal-overlay';
-  el.style.zIndex = '9999';
+  el.style.cssText = 'z-index:9999;display:flex;align-items:center;justify-content:center;';
   el.innerHTML = `
-    <div class="modal-box" style="max-width:380px;text-align:center">
-      <div class="modal-body" style="padding:28px 24px">
-        <div style="font-size:36px;margin-bottom:12px">⚠️</div>
-        <div style="font-weight:700;font-size:16px;margin-bottom:8px">${title}</div>
-        <div style="font-size:13px;color:var(--c-text-3);margin-bottom:20px">${message}</div>
-        <div style="display:flex;gap:10px;justify-content:center">
-          <button class="btn btn-cancel" onclick="document.getElementById('hrConfirmDialog').remove()">✕ Hủy</button>
-          <button class="btn btn-danger" id="hrConfirmOk">🗑️ Xác nhận xóa</button>
+    <div class="modal" style="max-width:400px;width:90%;text-align:center;padding:0;">
+      <div class="modal-body" style="padding:32px 28px 24px;">
+        <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+        <div style="font-weight:700;font-size:17px;margin-bottom:10px;color:var(--c-text-1)">${title}</div>
+        <div style="font-size:13px;color:var(--c-text-3);margin-bottom:24px;line-height:1.5">${message}</div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button
+            style="padding:10px 24px;border-radius:8px;border:1.5px solid var(--c-border);background:var(--c-surface);color:var(--c-text-1);font-weight:600;cursor:pointer;font-size:14px"
+            onclick="document.getElementById('hrConfirmDialog').remove()">
+            ✕ Hủy
+          </button>
+          <button
+            id="hrConfirmOk"
+            style="padding:10px 24px;border-radius:8px;border:none;background:#EF4444;color:#fff;font-weight:600;cursor:pointer;font-size:14px">
+            🗑️ Xác nhận xóa
+          </button>
         </div>
       </div>
     </div>`;
+
   document.body.appendChild(el);
-  document.getElementById('hrConfirmOk').onclick = () => {
-    el.remove();
-    onConfirm();
-  };
+
+  // Gắn sự kiện sau khi DOM đã render
+  const okBtn = document.getElementById('hrConfirmOk');
+  if (okBtn) {
+    okBtn.onclick = async () => {
+      el.remove();
+      try { await onConfirm(); } catch(e) { console.error('[hrConfirm]', e); }
+    };
+  }
+
+  // Click nền để hủy
+  el.addEventListener('click', e => {
+    if (e.target === el) el.remove();
+  });
 }
 
 function openAddMemberModal() {
