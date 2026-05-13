@@ -14,7 +14,7 @@ const ATT_CONFIG = {
     name:    'Văn phòng Vimove',
     lat:     10.7769,   // ← Thay bằng tọa độ văn phòng thực
     lng:     106.7009,  // ← Thay bằng tọa độ văn phòng thực
-    radius:  100,       // mét cho phép ±
+    radius:  300,       // mét cho phép ± (check-in trong vòng 300m từ văn phòng)
   },
   qrSecret: 'VIWORK_OFFICE_2026',  // Mã bí mật QR
 };
