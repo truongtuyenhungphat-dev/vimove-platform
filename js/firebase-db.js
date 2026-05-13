@@ -13,7 +13,35 @@ window.fbCheckAndSeed = async () => {
     if(typeof INITIAL_REQUESTS !== 'undefined') await window.fbSeedRequests(INITIAL_REQUESTS);
     if(typeof INITIAL_ASSIGNMENTS !== 'undefined') await window.fbSeedAssignments(INITIAL_ASSIGNMENTS);
     console.log('[⚡ VIWORK] Đã đẩy Data gốc lên Cloud thành công!');
+  } else {
+    // Collection có data rồi — chỉ bổ sung những user còn thiếu
+    await window.fbEnsureAllUsers();
   }
+};
+
+/**
+ * Đảm bảo tất cả hardcoded users đều có mặt trên Firebase.
+ * Chỉ seed những user chưa tồn tại, không ghi đè user đã có.
+ */
+window.fbEnsureAllUsers = async () => {
+  const db = getDB();
+  const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
+  const promises = [];
+  for (const email in DEMO_USERS) {
+    const u = DEMO_USERS[email];
+    if (deletedIds.has(u.id)) continue; // Đã bị xóa — bỏ qua
+    const docId = email.replace(/[@.]/g, '_');
+    const ref   = db.collection('viwork_users').doc(docId);
+    promises.push(
+      ref.get().then(snap => {
+        if (!snap.exists) {
+          console.log(`[VIWORK] Seed missing user: ${u.name} (${email})`);
+          return ref.set({ ...u, email });
+        }
+      })
+    );
+  }
+  await Promise.all(promises);
 };
 
 window.fbSeedTasks = async (tasksArray) => {
@@ -56,7 +84,9 @@ window.fbSeedUsers = async (usersObj) => {
   const db = getDB();
   const batch = db.batch();
   for (const email in usersObj) {
-    batch.set(db.collection('viwork_users').doc(email.replace(/[@.]/g,'_')), usersObj[email]);
+    const docId = email.replace(/[@.]/g,'_');
+    // Đảm bảo field 'email' có trong document để fbListenUsers đọc được
+    batch.set(db.collection('viwork_users').doc(docId), { ...usersObj[email], email });
   }
   await batch.commit();
 };

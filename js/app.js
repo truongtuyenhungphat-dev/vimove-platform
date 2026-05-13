@@ -540,19 +540,24 @@ function applyFirebaseUsers(snapshot) {
     }
   });
 
-  // Xoa khoi TEAM_MEMBERS nhung NV hardcoded khong con trong Firebase
+  // Lay danh sach ID da bi Admin xoa chu dong
+  const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
+
+  // CHI xoa khoi TEAM_MEMBERS nhung user da bi Admin xoa chu dong (co trong deleted_ids)
+  // KHONG bao gio xoa vi ho vang tren Firebase (co the Firebase chua duoc seed day du)
   for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
-    const m = TEAM_MEMBERS[i];
-    if (hardcodedIds.has(m.id) && !fbUserIds.has(m.id)) {
-      TEAM_MEMBERS.splice(i, 1);
-    }
+    if (deletedIds.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
   }
 
-  // Ghi de / them vao DEMO_USERS
+  // Xoa khoi DEMO_USERS nhung user da bi xoa chu dong
   Object.keys(DEMO_USERS).forEach(email => {
-    const u = DEMO_USERS[email];
-    if (hardcodedIds.has(u.id) && !fbUserIds.has(u.id)) {
-      delete DEMO_USERS[email]; // Da bi xoa tren Firebase
+    if (deletedIds.has(DEMO_USERS[email]?.id)) delete DEMO_USERS[email];
+  });
+
+  // Seed len Firebase nhung hardcoded user CHUA co tren Firebase de dong bo sang may khac
+  Object.entries(DEMO_USERS).forEach(([email, u]) => {
+    if (hardcodedIds.has(u.id) && !fbUsers[email] && !deletedIds.has(u.id) && window.fbSaveUser) {
+      window.fbSaveUser({ ...u, email }).catch(() => {});
     }
   });
 
