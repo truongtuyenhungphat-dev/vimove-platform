@@ -11,10 +11,10 @@ const ATT_CONFIG = {
   reminderHour:  18,
   // GPS văn phòng — cấu hình tại đây
   office: {
-    name:    'Văn phòng Vimove',
-    lat:     10.7769,   // ← Thay bằng tọa độ văn phòng thực
-    lng:     106.7009,  // ← Thay bằng tọa độ văn phòng thực
-    radius:  300,       // mét cho phép ± (check-in trong vòng 300m từ văn phòng)
+    name:    'Văn phòng Vimove — Đại Mỗ, Hà Nội',
+    lat:     20.9996875,  // XQPW+QGR Đại Mỗ, Nam Từ Liêm, Hà Nội
+    lng:     105.7594375, // XQPW+QGR Đại Mỗ, Nam Từ Liêm, Hà Nội
+    radius:  300,         // mét cho phép ± (check-in trong vòng 300m từ văn phòng)
   },
   qrSecret: 'VIWORK_OFFICE_2026',  // Mã bí mật QR
 };
