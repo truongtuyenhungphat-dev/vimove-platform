@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    VIWORK — App Main Entry Point
    Module routing, navigation, initialization
    ================================================ */
@@ -410,39 +410,56 @@ function saveNewUser() {
 }
 
 async function deleteUser(userId) {
-  const users  = getAppUsers();
-  const target = users.find(u => u.id === userId);
-  if (!target) return;
+  // Tim target tu TEAM_MEMBERS hoac DEMO_USERS (khong chi localStorage)
+  let target = TEAM_MEMBERS.find(m => m.id === userId);
+  if (!target) {
+    // Fallback: tim trong DEMO_USERS
+    const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
+    if (entry) target = { ...entry[1], email: entry[0] };
+  }
+  if (!target) { showToast('⚠️ Không tìm thấy tài khoản!', 'error'); return; }
+
+  // Lay email
+  const emailEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
+  const email = emailEntry ? emailEntry[0] : target.email;
 
   if (!canDeleteUser(target)) {
     showToast('⚠️ Bạn không có quyền xóa tài khoản này!', 'error');
     return;
   }
 
+  // Dung chung luong xoa voi team.js
   hrConfirm(
     `Xóa tài khoản "${target.name}"?`,
     'Thao tác này sẽ xóa vĩnh viễn và đồng bộ tất cả thiết bị.',
     async () => {
-      // 1. Xoa tren Firebase
-      if (window.fbDeleteUser && target.email) {
-        try { await window.fbDeleteUser(target.email); } catch(e) { console.warn('fbDeleteUser:', e); }
+      // 1. Xoa Firebase
+      if (window.fbDeleteUser && email) {
+        try { await window.fbDeleteUser(email); } catch(e) { console.warn('fbDeleteUser:', e); }
       }
-      // 2. Xoa DEMO_USERS
-      const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
-      if (entry) delete DEMO_USERS[entry[0]];
+      // 2. Xoa DEMO_USERS (tat ca entry co cung ID)
+      Object.keys(DEMO_USERS).forEach(em => {
+        if (DEMO_USERS[em]?.id === userId) delete DEMO_USERS[em];
+      });
       // 3. Xoa TEAM_MEMBERS
       const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === userId);
       if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
       // 4. Luu localStorage fallback
-      const updated = users.filter(u => u.id !== userId);
-      saveAppUsers(updated);
       try {
+        const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
+        localStorage.setItem('viwork_users', JSON.stringify(saved.filter(u => u.id !== userId)));
         const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
         if (!deleted.includes(userId)) deleted.push(userId);
         localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
       } catch(e) {}
-      // 5. Refresh UI
-      if (document.getElementById('teamPageContainer') && typeof renderTeamPage === 'function') renderTeamPage();
+      // 5. Un-assign tasks
+      if (typeof appState !== 'undefined') {
+        appState.tasks?.forEach(t => { if (t.assigneeId === userId) t.assigneeId = null; });
+      }
+      // 6. Xoa phu cap
+      if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[userId];
+      // 7. Refresh UI
+      if (typeof renderTeamPage === 'function') renderTeamPage();
       if (typeof renderUserManager === 'function') renderUserManager();
       showToast(`🗑️ Đã xóa tài khoản "${target.name}"!`, 'info');
     }
