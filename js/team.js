@@ -253,16 +253,57 @@ function confirmDeleteMember(memberId) {
 }
 
 async function doDeleteMember(memberId, member) {
-  // Dùng _performDelete() chung để đảm bảo đồng bộ đầy đủ
   const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
   const email = userEntry ? userEntry[0] : null;
-  await _performDelete(memberId, member.name, email);
 
-  // Luu localStorage viwork_users
+  // 1. Xóa trên Firebase
+  if (email && window.fbDeleteUser) {
+    try { await window.fbDeleteUser(email); }
+    catch(e) { console.warn('[delete] Firebase error:', e); }
+  }
+
+  // 2. Xóa tất cả DEMO_USERS entries có cùng ID (kể cả alias)
+  Object.keys(DEMO_USERS).forEach(em => {
+    if (DEMO_USERS[em]?.id === memberId) delete DEMO_USERS[em];
+  });
+
+  // 3. Xóa TEAM_MEMBERS
+  const idx = TEAM_MEMBERS.findIndex(m => m.id === memberId);
+  if (idx > -1) TEAM_MEMBERS.splice(idx, 1);
+
+  // 4. Xóa khỏi POSITIONS.members
+  if (typeof POSITIONS !== 'undefined') {
+    POSITIONS.forEach(p => {
+      if (p.members?.includes(memberId))
+        p.members = p.members.filter(id => id !== memberId);
+    });
+  }
+
+  // 5. Un-assign tasks
+  if (typeof appState !== 'undefined') {
+    appState.tasks?.forEach(t => { if (t.assigneeId === memberId) t.assigneeId = null; });
+  }
+
+  // 6. Lưu deleted_ids + viwork_users vào localStorage
   try {
     const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
     localStorage.setItem('viwork_users', JSON.stringify(saved.filter(u => u.id !== memberId)));
+
+    const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
+    if (!deleted.includes(memberId)) deleted.push(memberId);
+    localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
   } catch(e) {}
+
+  // 7. Xóa phụ cấp
+  if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[memberId];
+
+  // 8. Refresh toàn bộ views
+  try { if (typeof renderTeamPage === 'function') renderTeamPage(); } catch(e) {}
+  try { if (typeof renderTeam === 'function') renderTeam(); } catch(e) {}
+  try { if (typeof renderUserManager === 'function') renderUserManager(); } catch(e) {}
+  try { if (typeof updateBadges === 'function') updateBadges(); } catch(e) {}
+
+  showToast(`🗑️ Đã xóa "${member.name}" khỏi hệ thống!`, 'info');
 }
 
 // Custom confirm dialog (thay thế confirm() bị block trên Netlify)
