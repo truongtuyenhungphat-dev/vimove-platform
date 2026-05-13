@@ -194,23 +194,20 @@ async function saveEditMember() {
     };
   }
 
-  // Cập nhật DEMO_USERS — tìm tất cả entries có cùng ID (kể cả hardcoded)
-  let savedEmail = null;
-  Object.entries(DEMO_USERS).forEach(([em, u]) => {
-    if (u.id === memberId) {
-      savedEmail = savedEmail || em; // lấy email đầu tiên tìm thấy
-      DEMO_USERS[em] = {
-        ...u,
-        name, department: dept, role,
-        avatar: getInitials(name),
-        positionId, jobTitle,
-        ...(newPass ? { password: newPass } : {}),
-      };
+  // Cập nhật DEMO_USERS
+  const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
+  if (userEntry) {
+    const [email, user] = userEntry;
+    DEMO_USERS[email] = {
+      ...user,
+      name, department: dept, role,
+      avatar: getInitials(name),
+      positionId, jobTitle,
+      ...(newPass ? { password: newPass } : {}),
+    };
+    if (window.fbSaveUser) {
+      await window.fbSaveUser({ ...DEMO_USERS[email], email });
     }
-  });
-
-  if (savedEmail && window.fbSaveUser) {
-    await window.fbSaveUser({ ...DEMO_USERS[savedEmail], email: savedEmail });
   }
 
   // Nếu edit chính mình

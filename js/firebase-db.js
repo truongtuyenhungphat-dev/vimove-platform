@@ -29,14 +29,34 @@ window.fbEnsureAllUsers = async () => {
   const promises = [];
   for (const email in DEMO_USERS) {
     const u = DEMO_USERS[email];
-    if (deletedIds.has(u.id)) continue; // Đã bị xóa — bỏ qua
+    if (deletedIds.has(u.id)) continue;
     const docId = email.replace(/[@.]/g, '_');
     const ref   = db.collection('viwork_users').doc(docId);
     promises.push(
       ref.get().then(snap => {
         if (!snap.exists) {
+          // Chua co — tao moi
           console.log(`[VIWORK] Seed missing user: ${u.name} (${email})`);
           return ref.set({ ...u, email });
+        } else {
+          // Da co — cap nhat password + thong tin chinh de tranh dung password cu sai
+          const existing = snap.data();
+          const needsUpdate =
+            existing.password !== u.password ||
+            existing.name !== u.name ||
+            existing.role !== u.role;
+          if (needsUpdate) {
+            console.log(`[VIWORK] Fix user data: ${u.name} (${email})`);
+            return ref.update({
+              password: u.password,
+              name: u.name,
+              role: u.role,
+              department: u.department,
+              avatar: u.avatar,
+              id: u.id,
+              email,
+            });
+          }
         }
       })
     );
