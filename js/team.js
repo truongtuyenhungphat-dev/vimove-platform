@@ -225,7 +225,7 @@ async function saveEditMember() {
   }
 
   closeModal('editMemberModal');
-  renderTeamPage();
+  syncAllViews();
   showToast(`✅ Đã cập nhật thông tin "${name}" thành công!`, 'success');
 }
 
@@ -253,40 +253,16 @@ function confirmDeleteMember(memberId) {
 }
 
 async function doDeleteMember(memberId, member) {
-  // 1. Xóa TEAM_MEMBERS
-  const idx = TEAM_MEMBERS.findIndex(m => m.id === memberId);
-  if (idx > -1) TEAM_MEMBERS.splice(idx, 1);
+  // Dùng _performDelete() chung để đảm bảo đồng bộ đầy đủ
+  const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
+  const email = userEntry ? userEntry[0] : null;
+  await _performDelete(memberId, member.name, email);
 
-  // 2. Xóa DEMO_USERS
-  const userEntry = Object.entries(DEMO_USERS).find(([, u]) => u.id === memberId);
-  let email = null;
-  if (userEntry) { email = userEntry[0]; delete DEMO_USERS[email]; }
-
-  // 3. Xóa Firebase
-  if (email && window.fbDeleteUser) {
-    try { await window.fbDeleteUser(email); } catch(e) { console.warn(e); }
-  }
-
-  // 4. Un-assign CVC
-  if (typeof appState !== 'undefined') {
-    appState.tasks.forEach(t => { if (t.assigneeId === memberId) t.assigneeId = null; });
-  }
-
-  // 5. Xóa localStorage (users added list + deleted IDs list)
+  // Luu localStorage viwork_users
   try {
     const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
     localStorage.setItem('viwork_users', JSON.stringify(saved.filter(u => u.id !== memberId)));
-    // Luu ID da xoa de sau refresh khong load lai tu hardcoded data
-    const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
-    if (!deleted.includes(memberId)) deleted.push(memberId);
-    localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
   } catch(e) {}
-
-  // 6. Xóa phụ cấp
-  if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[memberId];
-
-  renderTeamPage();
-  showToast(`🗑️ Đã xóa thành viên "${member.name}"`, 'info');
 }
 
 // Custom confirm dialog (thay thế confirm() bị block trên một số browser)

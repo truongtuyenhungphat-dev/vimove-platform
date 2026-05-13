@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    VIWORK — App Main Entry Point
    Module routing, navigation, initialization
    ================================================ */
@@ -333,7 +333,7 @@ function onNewUserPositionChange() {
   }
 }
 
-function saveNewUser() {
+async function saveNewUser() {
   const name      = document.getElementById('newUserName')?.value.trim();
   const email     = document.getElementById('newUserEmail')?.value.trim().toLowerCase();
   const pass      = document.getElementById('newUserPass')?.value;
@@ -344,58 +344,50 @@ function saveNewUser() {
 
   if (!name || !email || !pass) { showToast('⚠️ Vui lòng điền đủ họ tên, email, mật khẩu!', 'error'); return; }
   if (!positionId) { showToast('⚠️ Vui lòng chọn vị trí cho nhân viên!', 'error'); return; }
-
-  // Phân quyền tạo: Manager không được tạo admin
   if (currentUser?.role === 'manager' && role === 'admin') {
-    showToast('⚠️ Bạn không có quyền tạo tài khoản Admin!', 'error');
-    return;
+    showToast('⚠️ Bạn không có quyền tạo tài khoản Admin!', 'error'); return;
   }
 
   const users = getAppUsers();
   if (users.find(u => u.email === email)) { showToast('⚠️ Email đã tồn tại!', 'error'); return; }
 
-  // Lấy tên vị trí để điền vào department nếu trống
   const pos = (typeof POSITIONS !== 'undefined') ? POSITIONS.find(p => p.id === positionId) : null;
-  const department = dept ||
-    pos?.name ||
+  const department = dept || pos?.name ||
     (currentUser?.role === 'manager' ? currentUser.department : null) ||
     (role === 'admin' ? 'Quản trị' : role === 'manager' ? 'Quản lý' : 'Nhân viên');
 
   const newUser = {
-    id:          generateId('u'),
-    name,
-    email,
-    password:    pass,
-    role,
-    avatar:      getInitials(name),
-    department,
-    positionId,
-    jobTitle:    jobTitle || pos?.name || '',
-    createdBy:   currentUser?.id,
+    id: generateId('u'), name, email, password: pass, role,
+    avatar: getInitials(name), department, positionId,
+    jobTitle: jobTitle || pos?.name || '',
+    createdBy: currentUser?.id,
+    createdAt: Date.now(),
   };
 
+  // Cập nhật local state ngay
   users.push(newUser);
   DEMO_USERS[email] = { ...newUser };
-  TEAM_MEMBERS.push({ id: newUser.id, name, role, avatar: newUser.avatar, department, kpi: 0, revenue: 0, tasks: 0 });
-
-  // Thêm vào POSITIONS.members
-  if (pos && !pos.members.includes(newUser.id)) {
-    pos.members.push(newUser.id);
-  }
-
-  // Init phụ cấp mặc định
+  TEAM_MEMBERS.push({
+    id: newUser.id, name, role, avatar: newUser.avatar,
+    department, positionId, jobTitle: newUser.jobTitle,
+    kpi: 0, revenue: 0, tasks: 0
+  });
+  if (pos && !pos.members.includes(newUser.id)) pos.members.push(newUser.id);
   if (typeof USER_ALLOWANCES !== 'undefined' && !USER_ALLOWANCES[newUser.id]) {
     USER_ALLOWANCES[newUser.id] = { lunch: 700000, transport: 300000, phone: 200000, housing: 0, other: 0, note: '' };
   }
 
-  // Lưu Firebase
-  const userWithEmail = { ...newUser, email };
-  if (window.fbSaveUser) {
-    window.fbSaveUser(userWithEmail).catch(e => console.warn('fbSaveUser error:', e));
+  // Lưu Firebase (await — đợi xác nhận cloud)
+  try {
+    if (window.fbSaveUser) await window.fbSaveUser({ ...newUser, email });
+    saveAppUsers(users);
+  } catch(e) {
+    console.warn('saveNewUser Firebase error:', e);
+    saveAppUsers(users);
+    showToast('⚠️ Lưu cloud thất bại, đã lưu offline!', 'info');
   }
-  saveAppUsers(users);
 
-  // Clear form
+  // Clear form và đóng modal
   ['newUserName','newUserEmail','newUserPass','newUserDept','newUserJobTitle'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value='';
   });
@@ -403,50 +395,15 @@ function saveNewUser() {
   if (posEl) posEl.value = '';
   closeModal('newUserModal');
 
-  // Refresh view
-  if (document.getElementById('teamPageContainer')) renderTeamPage();
-  if (typeof renderUserManager === 'function') renderUserManager();
-  showToast(`✅ Đã thêm "${name}" (${role === 'manager' ? 'Team Lead' : 'Nhân viên'}) vào hệ thống!`, 'success');
+  syncAllViews();
+  showToast(`✅ Đã thêm "${name}" · ${pos ? pos.icon + ' ' + pos.name : role}`, 'success');
 }
-
-async function deleteUser(userId) {
-  const users  = getAppUsers();
-  const target = users.find(u => u.id === userId);
-  if (!target) return;
-
-  if (!canDeleteUser(target)) {
-    showToast('⚠️ Bạn không có quyền xóa tài khoản này!', 'error');
-    return;
-  }
-
-  hrConfirm(
-    `Xóa tài khoản "${target.name}"?`,
-    'Thao tác này sẽ xóa vĩnh viễn và đồng bộ tất cả thiết bị.',
-    async () => {
-      // 1. Xoa tren Firebase
-      if (window.fbDeleteUser && target.email) {
-        try { await window.fbDeleteUser(target.email); } catch(e) { console.warn('fbDeleteUser:', e); }
-      }
-      // 2. Xoa DEMO_USERS
-      const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
-      if (entry) delete DEMO_USERS[entry[0]];
-      // 3. Xoa TEAM_MEMBERS
-      const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === userId);
-      if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
-      // 4. Luu localStorage fallback
-      const updated = users.filter(u => u.id !== userId);
-      saveAppUsers(updated);
-      try {
-        const deleted = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
-        if (!deleted.includes(userId)) deleted.push(userId);
-        localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
-      } catch(e) {}
-      // 5. Refresh UI
-      if (document.getElementById('teamPageContainer') && typeof renderTeamPage === 'function') renderTeamPage();
-      if (typeof renderUserManager === 'function') renderUserManager();
-      showToast(`🗑️ Đã xóa tài khoản "${target.name}"!`, 'info');
-    }
-  );
+function syncAllViews() {
+  if (typeof renderTeamPage === 'function') renderTeamPage();
+  if (typeof renderTeam === 'function') renderTeam();
+  if (typeof renderUserManager === 'function') renderUserManager();
+  if (typeof renderPositions === 'function') renderPositions();
+  updateBadges?.();
 }
 
 // Khoi dong: load users vao DEMO_USERS khi start app
