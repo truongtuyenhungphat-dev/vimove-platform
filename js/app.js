@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    VIWORK — App Main Entry Point
    Module routing, navigation, initialization
    ================================================ */
@@ -523,77 +523,112 @@ function loadUsersFromFirebase(callback) {
  * Giu nguyen password cua currentUser trong session.
  */
 function applyFirebaseUsers(snapshot) {
-  // Hardcoded IDs (khong duoc xoa tu Firebase)
   const hardcodedIds = new Set([
     'u001','u002','u003','u004','u005','u006',
     'u007','u008','u009','u010','u011','u012'
   ]);
 
-  // Lay danh sach ID tu Firebase
-  const fbUserIds = new Set();
-  const fbUsers   = {};
+  // BUOC 1: Doc snapshot — dedup theo ID, giu email chinh
+  const fbAllDocs = {};
   snapshot.forEach(doc => {
     const u = doc.data();
-    if (u && u.email) {
-      fbUsers[u.email] = u;
-      if (u.id) fbUserIds.add(u.id);
+    if (u && u.email) fbAllDocs[u.email] = { ...u, _docId: doc.id };
+  });
+
+  // Map id -> email chinh trong DEMO_USERS (khong co alias nua)
+  const demoEmailForId = {};
+  Object.entries(DEMO_USERS).forEach(([email, u]) => {
+    if (u.id && !demoEmailForId[u.id]) demoEmailForId[u.id] = email;
+  });
+
+  const fbUsers     = {};   // email chinh -> data
+  const seenIds     = {};   // id -> email winner
+  const aliasEmails = [];   // email alias trung lap -> xoa Firebase
+
+  Object.entries(fbAllDocs).forEach(([email, u]) => {
+    if (!u.id) return;
+    if (!seenIds[u.id]) {
+      seenIds[u.id] = email;
+      fbUsers[email] = u;
+    } else {
+      // Trung ID — email nao khop DEMO_USERS thi thang
+      const primary = demoEmailForId[u.id];
+      if (primary && primary === email && primary !== seenIds[u.id]) {
+        aliasEmails.push(seenIds[u.id]);
+        delete fbUsers[seenIds[u.id]];
+        seenIds[u.id] = email;
+        fbUsers[email] = u;
+      } else {
+        aliasEmails.push(email);
+      }
     }
   });
 
-  // Lay danh sach ID da bi Admin xoa chu dong
+  // Xoa alias documents tren Firestore (background)
+  if (aliasEmails.length > 0 && window.firebaseDB) {
+    aliasEmails.forEach(email => {
+      window.firebaseDB.collection('viwork_users')
+        .doc(email.replace(/[@.]/g,'_')).delete()
+        .then(() => console.log('[VIWORK] Removed alias doc:', email))
+        .catch(() => {});
+    });
+  }
+
+  // BUOC 2: Xu ly deleted_ids
   const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
 
-  // CHI xoa khoi TEAM_MEMBERS nhung user da bi Admin xoa chu dong (co trong deleted_ids)
-  // KHONG bao gio xoa vi ho vang tren Firebase (co the Firebase chua duoc seed day du)
   for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
     if (deletedIds.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
   }
-
-  // Xoa khoi DEMO_USERS nhung user da bi xoa chu dong
   Object.keys(DEMO_USERS).forEach(email => {
     if (deletedIds.has(DEMO_USERS[email]?.id)) delete DEMO_USERS[email];
   });
 
-  // Seed len Firebase nhung hardcoded user CHUA co tren Firebase de dong bo sang may khac
+  // BUOC 3: Seed hardcoded users con thieu len Firebase
   Object.entries(DEMO_USERS).forEach(([email, u]) => {
     if (hardcodedIds.has(u.id) && !fbUsers[email] && !deletedIds.has(u.id) && window.fbSaveUser) {
       window.fbSaveUser({ ...u, email }).catch(() => {});
     }
   });
 
-  // Merge Firebase users vao DEMO_USERS + TEAM_MEMBERS
+  // BUOC 4: Merge vao DEMO_USERS + TEAM_MEMBERS (dedup theo ID)
+  const mergedIds = new Set();
   Object.entries(fbUsers).forEach(([email, u]) => {
-    // Bao ton password cua current session
-    const existingPass = DEMO_USERS[email]?.password;
-    DEMO_USERS[email]  = { ...u, password: u.password || existingPass || '' };
+    if (!u.id || deletedIds.has(u.id) || mergedIds.has(u.id)) return;
+    mergedIds.add(u.id);
 
-    if (!TEAM_MEMBERS.find(m => m.id === u.id)) {
+    const existingPass = DEMO_USERS[email]?.password;
+    DEMO_USERS[email] = { ...u, password: u.password || existingPass || '' };
+
+    const idx = TEAM_MEMBERS.findIndex(m => m.id === u.id);
+    if (idx === -1) {
       TEAM_MEMBERS.push({
-        id:         u.id,
-        name:       u.name,
-        role:       u.role,
-        avatar:     u.avatar || getInitials(u.name),
+        id: u.id, name: u.name, role: u.role,
+        avatar: u.avatar || getInitials(u.name),
         department: u.department || '',
-        kpi:        u.kpi   || 0,
-        revenue:    u.revenue || 0,
-        tasks:      u.tasks || 0,
+        positionId: u.positionId || '', jobTitle: u.jobTitle || '',
+        kpi: u.kpi || 0, revenue: u.revenue || 0, tasks: u.tasks || 0,
       });
     } else {
-      // Cap nhat thong tin moi nhat
-      const idx = TEAM_MEMBERS.findIndex(m => m.id === u.id);
-      if (idx > -1) {
-        TEAM_MEMBERS[idx] = {
-          ...TEAM_MEMBERS[idx],
-          name:       u.name,
-          role:       u.role,
-          avatar:     u.avatar || getInitials(u.name),
-          department: u.department || TEAM_MEMBERS[idx].department,
-        };
-      }
+      TEAM_MEMBERS[idx] = {
+        ...TEAM_MEMBERS[idx],
+        name: u.name, role: u.role,
+        avatar: u.avatar || getInitials(u.name),
+        department: u.department || TEAM_MEMBERS[idx].department,
+        positionId: u.positionId || TEAM_MEMBERS[idx].positionId || '',
+        jobTitle: u.jobTitle || TEAM_MEMBERS[idx].jobTitle || '',
+      };
     }
   });
 
-  console.log(`[VIWORK] Synced ${Object.keys(fbUsers).length} users from Firebase`);
+  // BUOC 5: Xoa phan tu trung trong TEAM_MEMBERS (phong thu)
+  const seen = new Set();
+  for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
+    if (seen.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
+    else seen.add(TEAM_MEMBERS[i].id);
+  }
+
+  console.log(`[VIWORK] Synced ${Object.keys(fbUsers).length} unique users from Firebase${aliasEmails.length ? ' | Removed '+aliasEmails.length+' duplicates' : ''}`);
 }
 
 // Bien luu unsubscribe listener de tranh leak

@@ -122,10 +122,7 @@ const DEMO_USERS = {
     password: 'dung456', avatar: 'KTD',
     department: 'Thiết kế'
   },
-  // ===== Legacy quick-login aliases =====
-  'admin@vimove.vn':   { id: 'u002', name: 'Nguyễn Thị Thanh Ngân',  role: 'admin',   password: 'admin123',   avatar: 'NTN',  department: 'Quản trị & Phê duyệt' },
-  'manager@vimove.vn': { id: 'u001', name: 'Trương Ngọc Tuyền',      role: 'admin',   password: 'manager123', avatar: 'TNT',  department: 'Digital & Hỗ trợ kỹ thuật' },
-  'staff@vimove.vn':   { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', password: 'staff123',   avatar: 'NQT',  department: 'HR & MKT & Sale' },
+  // NOTE: Không có alias — mỗi user chỉ có 1 email duy nhất
 };
 
 /* ========================================================
