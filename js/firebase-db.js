@@ -119,6 +119,72 @@ window.fbDeleteUser = async (email) => {
   return getDB().collection('viwork_users').doc(email.replace(/[@.]/g,'_')).delete();
 };
 
+/**
+ * Ghi userId vào Firestore viwork_config/deleted_users
+ * để tất cả máy khác biết và xóa user đó khỏi local state.
+ */
+window.fbMarkUserDeleted = async (userId) => {
+  const db = getDB();
+  if (!db) return;
+  try {
+    await db.collection('viwork_config').doc('deleted_users').set(
+      { ids: firebase.firestore.FieldValue.arrayUnion(userId) },
+      { merge: true }
+    );
+    console.log('[VIWORK] Marked deleted on cloud:', userId);
+  } catch(e) {
+    // Fallback nếu FieldValue chưa load: dùng get + set
+    try {
+      const snap = await db.collection('viwork_config').doc('deleted_users').get();
+      const existing = snap.exists ? (snap.data().ids || []) : [];
+      if (!existing.includes(userId)) existing.push(userId);
+      await db.collection('viwork_config').doc('deleted_users').set({ ids: existing });
+    } catch(e2) { console.warn('[fbMarkUserDeleted]', e2); }
+  }
+};
+
+/**
+ * Lắng nghe Firestore deleted_users — khi có máy khác xóa user,
+ * tự động xóa user đó khỏi TEAM_MEMBERS + DEMO_USERS trên máy này.
+ */
+window.fbListenDeletedUsers = () => {
+  const db = getDB();
+  if (!db) return;
+  db.collection('viwork_config').doc('deleted_users').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const ids = snap.data()?.ids || [];
+    if (ids.length === 0) return;
+
+    let changed = false;
+    ids.forEach(userId => {
+      // Xóa khỏi TEAM_MEMBERS
+      const idx = TEAM_MEMBERS.findIndex(m => m.id === userId);
+      if (idx > -1) { TEAM_MEMBERS.splice(idx, 1); changed = true; }
+
+      // Xóa khỏi DEMO_USERS
+      Object.keys(DEMO_USERS).forEach(em => {
+        if (DEMO_USERS[em]?.id === userId) { delete DEMO_USERS[em]; changed = true; }
+      });
+
+      // Lưu vào localStorage để offline cũng không load lại
+      try {
+        const local = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
+        if (!local.includes(userId)) {
+          local.push(userId);
+          localStorage.setItem('viwork_deleted_ids', JSON.stringify(local));
+        }
+      } catch(e) {}
+    });
+
+    if (changed) {
+      try { if (typeof renderTeamPage === 'function') renderTeamPage(); } catch(e) {}
+      try { if (typeof renderTeam === 'function') renderTeam(); } catch(e) {}
+      try { if (typeof renderUserManager === 'function') renderUserManager(); } catch(e) {}
+      console.log('[VIWORK] Synced deletions from cloud:', ids);
+    }
+  }, err => console.warn('[fbListenDeletedUsers]', err));
+};
+
 // ============ VIWORK_REQUESTS ============
 window.fbSeedRequests = async (reqArray) => {
   const db = getDB();

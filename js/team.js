@@ -256,10 +256,14 @@ async function doDeleteMember(memberId, member) {
   const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
   const email = userEntry ? userEntry[0] : null;
 
-  // 1. Xóa trên Firebase
+  // 1. Xóa trên Firebase + đánh dấu deleted để đồng bộ máy khác
   if (email && window.fbDeleteUser) {
     try { await window.fbDeleteUser(email); }
     catch(e) { console.warn('[delete] Firebase error:', e); }
+  }
+  // Ghi deleted_id lên Firestore → tất cả máy đang online sẽ nhận và xóa ngay
+  if (window.fbMarkUserDeleted) {
+    window.fbMarkUserDeleted(memberId).catch(e => console.warn('[fbMarkUserDeleted]', e));
   }
 
   // 2. Xóa tất cả DEMO_USERS entries có cùng ID (kể cả alias)

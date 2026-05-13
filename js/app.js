@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    VIWORK — App Main Entry Point
    Module routing, navigation, initialization
    ================================================ */
@@ -28,26 +28,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ============ APP INIT (after login) ============
 function initApp() {
-  // Load users from Firebase (cross-device sync) then fallback to localStorage
   loadUsersFromFirebase(() => {
-    // Default to dashboard
     showModule('dashboard');
-    // Init Sprint 1 modules
     initRequests();
-    // Render my tasks badge
     renderMyTasks();
     updateBadges();
     updateRequestBadge();
-    // Sprint 2: Assignments badge
     updateAsgnBadge();
-    // Settings panel
     renderSettingsPanel();
-    // Gap 6: start notification interval
     startNotificationWatcher();
-    // Sprint 3: Attendance
     initAttendance();
-    // Start realtime user listener
+    // Realtime listeners
     startUserListener();
+    // Lắng nghe xóa user từ máy khác (cross-device delete sync)
+    if (window.fbListenDeletedUsers) window.fbListenDeletedUsers();
   });
 }
 
