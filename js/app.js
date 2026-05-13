@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    VIWORK — App Main Entry Point
    Module routing, navigation, initialization
    ================================================ */
@@ -440,38 +440,88 @@ function loadSavedUsers() {
 // ============ FIREBASE CROSS-DEVICE SYNC ============
 
 /**
- * Load tat ca users tu Firestore khi dang nhap.
- * Merge vao DEMO_USERS + TEAM_MEMBERS, ghi de local data.
- * @param {Function} callback - Goi sau khi load xong
+ * Tap trung danh sach ID user da bi xoa (tu ca localStorage lan Firestore).
+ * Day la "source of truth" duy nhat cho viec loc user bi xoa.
  */
-function loadUsersFromFirebase(callback) {
+let _deletedUserIds = new Set();
+
+/** Ap dung _deletedUserIds vao TEAM_MEMBERS va DEMO_USERS */
+function _applyDeletedIds() {
+  for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
+    if (_deletedUserIds.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
+  }
+  Object.keys(DEMO_USERS).forEach(em => {
+    if (_deletedUserIds.has(DEMO_USERS[em]?.id)) delete DEMO_USERS[em];
+  });
+}
+
+/**
+ * Tai deleted_ids tu BOTH localStorage va Firestore.
+ * Merge lai, luu vao _deletedUserIds global va sync localStorage.
+ */
+async function loadDeletedIds() {
+  // 1. Tu localStorage
+  try {
+    const local = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
+    local.forEach(id => _deletedUserIds.add(id));
+  } catch(e) {}
+
+  // 2. Tu Firestore (source of truth cross-device)
+  const db = window.firebaseDB;
+  if (db) {
+    try {
+      const snap = await db.collection('viwork_config').doc('deleted_users').get();
+      if (snap.exists) {
+        const ids = snap.data()?.ids || [];
+        ids.forEach(id => _deletedUserIds.add(id));
+      }
+    } catch(e) { console.warn('[loadDeletedIds]', e); }
+  }
+
+  // 3. Sync lai vao localStorage de hoat dong offline
+  try {
+    localStorage.setItem('viwork_deleted_ids', JSON.stringify([..._deletedUserIds]));
+  } catch(e) {}
+
+  return _deletedUserIds;
+}
+
+/**
+ * Load tat ca users tu Firestore khi dang nhap.
+ * PHAI load deletedIds TRUOC, sau do moi load users.
+ */
+async function loadUsersFromFirebase(callback) {
+  // Buoc 0: load deleted IDs tu cloud truoc het
+  await loadDeletedIds();
+  // Ap dung ngay vao hardcoded data
+  _applyDeletedIds();
+
   const db = window.firebaseDB;
   if (!db) {
-    // Firebase chua san sang — dung local
     loadSavedUsers();
     if (callback) callback();
     return;
   }
 
-  db.collection('viwork_users').get().then(snapshot => {
+  try {
+    const snapshot = await db.collection('viwork_users').get();
     if (!snapshot.empty) {
       applyFirebaseUsers(snapshot);
     } else {
-      // Chua co data tren Firebase — seed tu DEMO_USERS
       loadSavedUsers();
       window.fbCheckAndSeed?.();
     }
-    if (callback) callback();
-  }).catch(err => {
+  } catch(err) {
     console.warn('[VIWORK] Firebase load users failed, using local:', err);
     loadSavedUsers();
-    if (callback) callback();
-  });
+  }
+
+  if (callback) callback();
 }
 
 /**
  * Apply danh sach user tu Firebase snapshot vao DEMO_USERS + TEAM_MEMBERS.
- * Giu nguyen password cua currentUser trong session.
+ * Su dung _deletedUserIds da duoc load tu truoc.
  */
 function applyFirebaseUsers(snapshot) {
   const hardcodedIds = new Set([
@@ -479,22 +529,21 @@ function applyFirebaseUsers(snapshot) {
     'u007','u008','u009','u010','u011','u012'
   ]);
 
-  // BUOC 1: Doc snapshot — dedup theo ID, giu email chinh
+  // BUOC 1: Doc snapshot, dedup theo ID
   const fbAllDocs = {};
   snapshot.forEach(doc => {
     const u = doc.data();
     if (u && u.email) fbAllDocs[u.email] = { ...u, _docId: doc.id };
   });
 
-  // Map id -> email chinh trong DEMO_USERS (khong co alias nua)
   const demoEmailForId = {};
   Object.entries(DEMO_USERS).forEach(([email, u]) => {
     if (u.id && !demoEmailForId[u.id]) demoEmailForId[u.id] = email;
   });
 
-  const fbUsers     = {};   // email chinh -> data
-  const seenIds     = {};   // id -> email winner
-  const aliasEmails = [];   // email alias trung lap -> xoa Firebase
+  const fbUsers     = {};
+  const seenIds     = {};
+  const aliasEmails = [];
 
   Object.entries(fbAllDocs).forEach(([email, u]) => {
     if (!u.id) return;
@@ -502,7 +551,6 @@ function applyFirebaseUsers(snapshot) {
       seenIds[u.id] = email;
       fbUsers[email] = u;
     } else {
-      // Trung ID — email nao khop DEMO_USERS thi thang
       const primary = demoEmailForId[u.id];
       if (primary && primary === email && primary !== seenIds[u.id]) {
         aliasEmails.push(seenIds[u.id]);
@@ -515,38 +563,29 @@ function applyFirebaseUsers(snapshot) {
     }
   });
 
-  // Xoa alias documents tren Firestore (1 lan duy nhat, khong trigger lai onSnapshot)
+  // Xoa alias doc (1 lan/session)
   if (aliasEmails.length > 0 && window.firebaseDB && !sessionStorage.getItem('_vw_alias_cleaned')) {
     sessionStorage.setItem('_vw_alias_cleaned', '1');
     aliasEmails.forEach(email => {
       window.firebaseDB.collection('viwork_users')
-        .doc(email.replace(/[@.]/g,'_')).delete()
-        .then(() => console.log('[VIWORK] Cleaned alias:', email))
-        .catch(() => {});
+        .doc(email.replace(/[@.]/g,'_')).delete().catch(() => {});
     });
   }
 
-  // BUOC 2: Xu ly deleted_ids
-  const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
+  // BUOC 2: Ap dung deleted_ids (da load tu cloud)
+  _applyDeletedIds();
 
-  for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
-    if (deletedIds.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
-  }
-  Object.keys(DEMO_USERS).forEach(email => {
-    if (deletedIds.has(DEMO_USERS[email]?.id)) delete DEMO_USERS[email];
-  });
-
-  // BUOC 3: Seed hardcoded users con thieu len Firebase
+  // BUOC 3: Seed hardcoded users con thieu — KHONG seed user da bi xoa
   Object.entries(DEMO_USERS).forEach(([email, u]) => {
-    if (hardcodedIds.has(u.id) && !fbUsers[email] && !deletedIds.has(u.id) && window.fbSaveUser) {
+    if (hardcodedIds.has(u.id) && !fbUsers[email] && !_deletedUserIds.has(u.id) && window.fbSaveUser) {
       window.fbSaveUser({ ...u, email }).catch(() => {});
     }
   });
 
-  // BUOC 4: Merge vao DEMO_USERS + TEAM_MEMBERS (dedup theo ID)
+  // BUOC 4: Merge Firebase users vao DEMO_USERS + TEAM_MEMBERS
   const mergedIds = new Set();
   Object.entries(fbUsers).forEach(([email, u]) => {
-    if (!u.id || deletedIds.has(u.id) || mergedIds.has(u.id)) return;
+    if (!u.id || _deletedUserIds.has(u.id) || mergedIds.has(u.id)) return;
     mergedIds.add(u.id);
 
     const existingPass = DEMO_USERS[email]?.password;
@@ -573,16 +612,18 @@ function applyFirebaseUsers(snapshot) {
     }
   });
 
-  // BUOC 5: Xoa phan tu trung trong TEAM_MEMBERS (phong thu)
+  // BUOC 5: Loai bo duplicate trong TEAM_MEMBERS
   const seen = new Set();
   for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
-    if (seen.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
-    else seen.add(TEAM_MEMBERS[i].id);
+    if (seen.has(TEAM_MEMBERS[i].id) || _deletedUserIds.has(TEAM_MEMBERS[i].id)) {
+      TEAM_MEMBERS.splice(i, 1);
+    } else {
+      seen.add(TEAM_MEMBERS[i].id);
+    }
   }
 
-  console.log(`[VIWORK] Synced ${Object.keys(fbUsers).length} unique users from Firebase${aliasEmails.length ? ' | Removed '+aliasEmails.length+' duplicates' : ''}`);
+  console.log(`[VIWORK] Synced ${Object.keys(fbUsers).length} users | Deleted: ${_deletedUserIds.size} | Aliases cleaned: ${aliasEmails.length}`);
 }
-
 // Bien luu unsubscribe listener de tranh leak
 let _userListenerUnsub = null;
 let _userListenerTimer = null;  // Debounce timer

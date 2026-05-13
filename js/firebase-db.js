@@ -1,4 +1,4 @@
-// Lấy instance DB chung
+﻿// Lấy instance DB chung
 const getDB = () => window.firebaseDB;
 
 // ============ VIWORK_TASKS ============
@@ -25,37 +25,27 @@ window.fbCheckAndSeed = async () => {
  */
 window.fbEnsureAllUsers = async () => {
   const db = getDB();
-  const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
+  // Dung _deletedUserIds global (da load tu Firestore truoc); fallback localStorage
+  const deletedIds = (typeof _deletedUserIds !== 'undefined' && _deletedUserIds.size > 0)
+    ? _deletedUserIds
+    : new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
+
   const promises = [];
   for (const email in DEMO_USERS) {
     const u = DEMO_USERS[email];
-    if (deletedIds.has(u.id)) continue;
+    if (deletedIds.has(u.id)) continue; // Da bi xoa — KHONG seed lai
     const docId = email.replace(/[@.]/g, '_');
     const ref   = db.collection('viwork_users').doc(docId);
     promises.push(
       ref.get().then(snap => {
         if (!snap.exists) {
-          // Chua co — tao moi
           console.log(`[VIWORK] Seed missing user: ${u.name} (${email})`);
           return ref.set({ ...u, email });
         } else {
-          // Da co — cap nhat password + thong tin chinh de tranh dung password cu sai
           const existing = snap.data();
-          const needsUpdate =
-            existing.password !== u.password ||
-            existing.name !== u.name ||
-            existing.role !== u.role;
-          if (needsUpdate) {
-            console.log(`[VIWORK] Fix user data: ${u.name} (${email})`);
-            return ref.update({
-              password: u.password,
-              name: u.name,
-              role: u.role,
-              department: u.department,
-              avatar: u.avatar,
-              id: u.id,
-              email,
-            });
+          if (existing.password !== u.password || existing.name !== u.name || existing.role !== u.role) {
+            return ref.update({ password: u.password, name: u.name, role: u.role,
+              department: u.department, avatar: u.avatar, id: u.id, email });
           }
         }
       })
@@ -63,7 +53,6 @@ window.fbEnsureAllUsers = async () => {
   }
   await Promise.all(promises);
 };
-
 window.fbSeedTasks = async (tasksArray) => {
   const db = getDB();
   const batch = db.batch();
@@ -157,16 +146,19 @@ window.fbListenDeletedUsers = () => {
 
     let changed = false;
     ids.forEach(userId => {
-      // Xóa khỏi TEAM_MEMBERS
+      // Aggiorna il set globale
+      if (typeof _deletedUserIds !== 'undefined') _deletedUserIds.add(userId);
+
+      // Xoa khoi TEAM_MEMBERS
       const idx = TEAM_MEMBERS.findIndex(m => m.id === userId);
       if (idx > -1) { TEAM_MEMBERS.splice(idx, 1); changed = true; }
 
-      // Xóa khỏi DEMO_USERS
+      // Xoa khoi DEMO_USERS
       Object.keys(DEMO_USERS).forEach(em => {
         if (DEMO_USERS[em]?.id === userId) { delete DEMO_USERS[em]; changed = true; }
       });
 
-      // Lưu vào localStorage để offline cũng không load lại
+      // Luu vao localStorage
       try {
         const local = JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]');
         if (!local.includes(userId)) {
@@ -180,7 +172,7 @@ window.fbListenDeletedUsers = () => {
       try { if (typeof renderTeamPage === 'function') renderTeamPage(); } catch(e) {}
       try { if (typeof renderTeam === 'function') renderTeam(); } catch(e) {}
       try { if (typeof renderUserManager === 'function') renderUserManager(); } catch(e) {}
-      console.log('[VIWORK] Synced deletions from cloud:', ids);
+      console.log('[VIWORK] Cross-device delete applied:', ids);
     }
   }, err => console.warn('[fbListenDeletedUsers]', err));
 };
