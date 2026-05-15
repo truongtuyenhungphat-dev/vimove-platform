@@ -455,11 +455,19 @@ function saveAssignment() {
     appState.assignments = appState.assignments || [];
     appState.assignments.push(newAsgn);
     if (window.fbSaveAssignment) window.fbSaveAssignment(newAsgn);
-    showToast(`🎉 Đã giao việc "${title}" thành công!`, 'success');
+
+    // Thông báo cho người được giao (nếu là chính mình đang xem)
+    const assigneeName = getUserById(assigneeId)?.name || 'bạn';
+    if (assigneeId === currentUser.id) {
+      showToast(`📌 Bạn vừa được giao việc: "${title}"`, 'info');
+    } else {
+      showToast(`🎉 Đã giao việc "${title}" cho ${assigneeName.split(' ').pop()}!`, 'success');
+    }
   }
 
   closeModal('asgnModal');
   renderAssignments();
+  renderMyTasks();
   updateAsgnBadge();
 }
 
@@ -485,34 +493,65 @@ function updateAsgnStatus(id, newStatus) {
   showToast(`${st?.icon} ${st?.name}`, 'success');
   closeModal('asgnDetailModal');
   renderAssignments();
+  renderMyTasks();
   updateAsgnBadge();
 }
 
 function promptReject(id) {
-  const reason = prompt('📝 Lý do từ chối (có thể bỏ qua):');
-  if (reason === null) return; // ESC / Cancel
-  const asgn = (appState.assignments || []).find(a => a.id === id);
-  if (!asgn) return;
-  asgn.status    = 'rejected';
-  asgn.note      = reason.trim() || 'Không có lý do';
-  asgn.updatedAt = new Date().toISOString();
-  asgn.comments  = asgn.comments || [];
-  asgn.comments.push({ author: currentUser.id, text: `❌ Từ chối: ${asgn.note}`, date: new Date().toISOString().split('T')[0] });
-  if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
-  showToast('❌ Đã từ chối giao việc', 'info');
-  closeModal('asgnDetailModal');
-  renderAssignments();
-  updateAsgnBadge();
+  // Custom reject dialog (thay prompt() bị block trên Netlify)
+  const existing = document.getElementById('rejectDialog');
+  if (existing) existing.remove();
+
+  const dlg = document.createElement('div');
+  dlg.id = 'rejectDialog';
+  dlg.className = 'modal-overlay';
+  dlg.style.cssText = 'z-index:10000;display:flex;align-items:center;justify-content:center;';
+  dlg.innerHTML = `
+    <div class="modal" style="max-width:380px;width:90%;padding:0">
+      <div class="modal-body" style="padding:28px 24px 20px">
+        <div style="font-size:28px;margin-bottom:10px">✋</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:12px">Lý do từ chối</div>
+        <textarea id="rejectReason" rows="3" placeholder="Nhập lý do (có thể bỏ trống)..."
+          style="width:100%;border-radius:8px;padding:10px;background:var(--c-surface-2);border:1px solid var(--c-border);color:var(--c-text-1);resize:vertical;box-sizing:border-box"></textarea>
+        <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end">
+          <button style="padding:8px 18px;border-radius:8px;border:1.5px solid var(--c-border);background:var(--c-surface);color:var(--c-text-1);font-weight:600;cursor:pointer"
+            onclick="document.getElementById('rejectDialog').remove()">Hủy</button>
+          <button id="rejectConfirmBtn" style="padding:8px 18px;border-radius:8px;border:none;background:#EF4444;color:#fff;font-weight:600;cursor:pointer">✋ Xác nhận từ chối</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(dlg);
+
+  document.getElementById('rejectConfirmBtn').onclick = () => {
+    const reason = document.getElementById('rejectReason').value.trim() || 'Không có lý do';
+    dlg.remove();
+    const asgn = (appState.assignments || []).find(a => a.id === id);
+    if (!asgn) return;
+    asgn.status    = 'rejected';
+    asgn.note      = reason;
+    asgn.updatedAt = new Date().toISOString();
+    asgn.comments  = asgn.comments || [];
+    asgn.comments.push({ author: currentUser.id, text: `❌ Từ chối: ${reason}`, date: new Date().toISOString().split('T')[0] });
+    if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
+    showToast('❌ Đã từ chối giao việc', 'info');
+    closeModal('asgnDetailModal');
+    renderAssignments();
+    renderMyTasks();
+    updateAsgnBadge();
+  };
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.remove(); });
 }
 
 function deleteAssignment(id) {
-  if (!confirm('Xóa giao việc này?')) return;
-  appState.assignments = (appState.assignments || []).filter(a => a.id !== id);
-  if (window.fbDeleteAssignment) window.fbDeleteAssignment(id);
-  closeModal('asgnDetailModal');
-  renderAssignments();
-  updateAsgnBadge();
-  showToast('🗑️ Đã xóa giao việc', 'info');
+  hrConfirm('Xóa giao việc này?', 'Hành động này không thể hoàn tác.', () => {
+    appState.assignments = (appState.assignments || []).filter(a => a.id !== id);
+    if (window.fbDeleteAssignment) window.fbDeleteAssignment(id);
+    closeModal('asgnDetailModal');
+    renderAssignments();
+    renderMyTasks();
+    updateAsgnBadge();
+    showToast('🗑️ Đã xóa giao việc', 'info');
+  });
 }
 
 // ============ FILTERS / TABS ============

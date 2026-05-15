@@ -554,9 +554,11 @@ function saveEditTask(taskId) {
 // ============ MY TASKS ============
 function renderMyTasks() {
   if (!currentUser) return;
-  const myTasks = appState.tasks.filter(t => t.assigneeId === currentUser.id && t.stage !== 'done');
+  const uid   = currentUser.id;
   const today = new Date(); today.setHours(0,0,0,0);
 
+  // ── SECTION 1: CVC từ Workflow Board ──
+  const myTasks  = appState.tasks.filter(t => t.assigneeId === uid && t.stage !== 'done');
   const urgent   = myTasks.filter(t => t.priority === 'urgent' || isOverdue(t));
   const todayArr = myTasks.filter(t => {
     if (!t.deadline) return false;
@@ -569,7 +571,7 @@ function renderMyTasks() {
   document.getElementById('cnt-today').textContent    = todayArr.length;
   document.getElementById('cnt-upcoming').textContent = upcoming.length;
 
-  const renderCard = t => `
+  const renderCvcCard = t => `
     <div class="my-task-card" onclick="openTaskDetail('${t.id}')">
       <div class="task-name">${escHtml(t.title)}</div>
       <div class="task-meta">
@@ -579,12 +581,78 @@ function renderMyTasks() {
     </div>
   `;
 
-  document.getElementById('my-urgent').innerHTML   = urgent.length   ? urgent.map(renderCard).join('')   : '<div class="col-empty">Không có việc khẩn cấp</div>';
-  document.getElementById('my-today').innerHTML    = todayArr.length  ? todayArr.map(renderCard).join('')  : '<div class="col-empty">Không có việc hôm nay</div>';
-  document.getElementById('my-upcoming').innerHTML = upcoming.length ? upcoming.map(renderCard).join('') : '<div class="col-empty">Không có việc sắp tới</div>';
+  document.getElementById('my-urgent').innerHTML   = urgent.length   ? urgent.map(renderCvcCard).join('')   : '<div class="col-empty">Không có việc khẩn cấp</div>';
+  document.getElementById('my-today').innerHTML    = todayArr.length  ? todayArr.map(renderCvcCard).join('')  : '<div class="col-empty">Không có việc hôm nay</div>';
+  document.getElementById('my-upcoming').innerHTML = upcoming.length ? upcoming.map(renderCvcCard).join('') : '<div class="col-empty">Không có việc sắp tới</div>';
 
-  // Update badge
-  document.getElementById('badge-mine').textContent = urgent.length || '';
+  // ── SECTION 2: Assignments (Việc được giao) ──
+  const allAsgns    = appState.assignments || [];
+  const received    = allAsgns.filter(a => a.assignedTo === uid && a.status !== 'done' && a.status !== 'rejected');
+  const sentActive  = allAsgns.filter(a => a.assignedBy === uid && a.status !== 'done' && a.status !== 'rejected');
+
+  const asgnSection = document.getElementById('myTasksAsgnSection');
+  if (!asgnSection) return;
+
+  if (received.length === 0 && sentActive.length === 0) {
+    asgnSection.innerHTML = `
+      <div class="mytasks-asgn-header">📌 Việc được giao</div>
+      <div class="col-empty" style="padding:16px;text-align:center;color:var(--c-text-3)">
+        Không có giao việc nào đang hoạt động
+      </div>`;
+    updateAsgnBadge();
+    return;
+  }
+
+  const prioIcon = p => ({ urgent:'🔴', high:'🟠', medium:'🟡', low:'⚪' }[p] || '');
+  const stIcon   = s => ({ pending:'⏳', accepted:'👍', in_progress:'⚡', done:'✅', rejected:'❌' }[s] || '');
+  const stName   = s => ({ pending:'Chờ xác nhận', accepted:'Đã nhận', in_progress:'Đang làm', done:'Hoàn thành', rejected:'Từ chối' }[s] || s);
+
+  const renderAsgnMiniCard = (a, isReceiver) => {
+    const other = isReceiver ? getUserById(a.assignedBy) : getUserById(a.assignedTo);
+    const dl = a.deadline ? `📅 ${formatDateRelative(a.deadline)}` : '';
+    let actions = '';
+    if (isReceiver) {
+      if (a.status === 'pending')     actions = `
+        <button class="asgn-act-btn accept" onclick="event.stopPropagation();updateAsgnStatus('${a.id}','accepted')">👍 Nhận việc</button>
+        <button class="asgn-act-btn reject" onclick="event.stopPropagation();promptReject('${a.id}')">✋ Từ chối</button>`;
+      else if (a.status === 'accepted')    actions = `<button class="asgn-act-btn start" onclick="event.stopPropagation();updateAsgnStatus('${a.id}','in_progress')">⚡ Bắt đầu</button>`;
+      else if (a.status === 'in_progress') actions = `<button class="asgn-act-btn done"  onclick="event.stopPropagation();updateAsgnStatus('${a.id}','done')">✅ Hoàn thành</button>`;
+    }
+    return `
+      <div class="asgn-mini-card ${a.status === 'pending' && isReceiver ? 'asgn-mini-new' : ''}"
+           onclick="openAsgnDetail('${a.id}')">
+        <div class="asgn-mini-top">
+          <span class="asgn-mini-title">${prioIcon(a.priority)} ${escHtml(a.title)}</span>
+          <span class="asgn-mini-status">${stIcon(a.status)} ${stName(a.status)}</span>
+        </div>
+        <div class="asgn-mini-meta">
+          <span>${isReceiver ? '← Từ' : '→ Giao'}: <strong>${other.name.split(' ').pop()}</strong></span>
+          <span style="color:var(--c-text-3)">${dl}</span>
+        </div>
+        ${actions ? `<div class="asgn-mini-actions">${actions}</div>` : ''}
+      </div>`;
+  };
+
+  let html = '<div class="mytasks-asgn-header">📌 Việc được giao cho tôi</div>';
+  if (received.length > 0) {
+    html += received
+      .sort((a,b) => (a.status==='pending'?0:1) - (b.status==='pending'?0:1))
+      .map(a => renderAsgnMiniCard(a, true)).join('');
+  } else {
+    html += '<div class="col-empty" style="padding:12px 16px">Không có việc được giao</div>';
+  }
+
+  if (sentActive.length > 0 && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+    html += '<div class="mytasks-asgn-header" style="margin-top:16px">📤 Việc tôi đã giao</div>';
+    html += sentActive.map(a => renderAsgnMiniCard(a, false)).join('');
+  }
+
+  asgnSection.innerHTML = html;
+  updateAsgnBadge();
+
+  // Badge sidebar
+  const pendingCount = received.filter(a => a.status === 'pending').length;
+  document.getElementById('badge-mine').textContent = (urgent.length + pendingCount) || '';
 }
 
 // ============ BADGES ============
