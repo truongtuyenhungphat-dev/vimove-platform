@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    VIWORK — Positions Module
    Sơ đồ tổ chức, Mô tả vị trí, KPI & Thu nhập
    ================================================ */
@@ -72,6 +72,12 @@ function renderTeamPage() {
         onclick="switchTeamTab('positions')">📋 Vị trí & KPI</button>
       <button class="team-tab-btn ${activeTeamTab==='income'?'active':''}"
         onclick="switchTeamTab('income')">💰 Thu nhập</button>
+      <button class="team-tab-btn ${activeTeamTab==='competency'?'active':''}"
+        onclick="switchTeamTab('competency')">🎯 Khung năng lực</button>
+      <button class="team-tab-btn ${activeTeamTab==='checklist'?'active':''}"
+        onclick="switchTeamTab('checklist')">✅ Checklist</button>
+      <button class="team-tab-btn ${activeTeamTab==='onboarding90'?'active':''}"
+        onclick="switchTeamTab('onboarding90')">🗓️ Lộ trình 90 ngày</button>
       <button class="team-tab-btn ${activeTeamTab==='policy'?'active':''}"
         onclick="switchTeamTab('policy')">📜 Chính sách</button>
     </div>
@@ -92,11 +98,14 @@ function switchTeamTab(tab) {
 function renderTeamTabContent() {
   const el = document.getElementById('teamTabContent');
   if (!el) return;
-  if (activeTeamTab === 'leaderboard') { renderLeaderboardTab(el); }
-  else if (activeTeamTab === 'orgchart')  { renderOrgChartTab(el); }
-  else if (activeTeamTab === 'positions') { renderPositionsTab(el); }
-  else if (activeTeamTab === 'income')    { renderIncomeTab(el); }
-  else if (activeTeamTab === 'policy')    { renderPolicyTab(el); }
+  if (activeTeamTab === 'leaderboard')  { renderLeaderboardTab(el); }
+  else if (activeTeamTab === 'orgchart')     { renderOrgChartTab(el); }
+  else if (activeTeamTab === 'positions')    { renderPositionsTab(el); }
+  else if (activeTeamTab === 'income')       { renderIncomeTab(el); }
+  else if (activeTeamTab === 'competency')   { renderCompetencyTab(el); }
+  else if (activeTeamTab === 'checklist')    { renderChecklistTab(el); }
+  else if (activeTeamTab === 'onboarding90') { renderOnboarding90Tab(el); }
+  else if (activeTeamTab === 'policy')       { renderPolicyTab(el); }
 }
 
 // ============ TAB 1: LEADERBOARD ============
@@ -517,4 +526,313 @@ function renderAdminIncomeTable() {
       </table>
     </div>
   `;
+}
+
+// ============ TAB: KHUNG NANG LUC ============
+const COMPETENCY_FRAMEWORK = {
+  pos_ceo:       { hard:['Quản trị chiến lược','Tài chính & ngân sách','Quản lý rủi ro'], soft:['Lãnh đạo','Tư duy hệ thống','Quyết đoán'], level:['L4','L4','L3'] },
+  pos_tech:      { hard:['Lập trình Web/App','Firebase & Cloud','SEO & Tracking'], soft:['Giải quyết vấn đề','Tự học','Tư duy logic'], level:['L4','L4','L3'] },
+  pos_hr_mkt:    { hard:['Tuyển dụng','KPI & OKR','Phân tích HR'], soft:['Giao tiếp','Đàm phán','Tổ chức'], level:['L3','L3','L2'] },
+  pos_digital:   { hard:['Facebook Ads','TikTok Ads','Google Analytics'], soft:['Sáng tạo','Tư duy số liệu','Linh hoạt'], level:['L3','L4','L3'] },
+  pos_content:   { hard:['Viết content','Video script','SEO content'], soft:['Sáng tạo','Kể chuyện','Nghiên cứu'], level:['L3','L3','L2'] },
+  pos_product:   { hard:['Phát triển SP','Quản lý kho','Chất lượng SP'], soft:['Chi tiết','Phân tích','Làm việc nhóm'], level:['L3','L3','L2'] },
+  pos_sales:     { hard:['Kỹ năng bán hàng','CRM','Đàm phán hợp đồng'], soft:['Kiên nhẫn','Thuyết phục','Lắng nghe'], level:['L3','L4','L3'] },
+  pos_design:    { hard:['Photoshop/Figma','Branding','UI/UX cơ bản'], soft:['Thẩm mỹ','Chi tiết','Sáng tạo'], level:['L4','L3','L2'] },
+};
+const COMP_LEVELS = { L1:'Nhận thức', L2:'Cơ bản', L3:'Thành thạo', L4:'Chuyên gia' };
+const COMP_COLORS = { L1:'#94A3B8', L2:'#F59E0B', L3:'#3B82F6', L4:'#10B981' };
+
+function renderCompetencyTab(el) {
+  const pos = POSITIONS.find(p => p.id === (currentUser?.positionId||'')) || POSITIONS[0];
+  const allPos = POSITIONS;
+
+  el.innerHTML = `
+    <div class="page-header" style="margin-bottom:20px">
+      <div>
+        <h2 style="font-size:18px;font-weight:800">🎯 Khung năng lực Vimove</h2>
+        <p style="font-size:13px;color:var(--c-text-3)">Ma trận kỹ năng theo vị trí công việc</p>
+      </div>
+      <select class="form-control" style="width:220px" onchange="renderCompetencyForPos(this.value)">
+        ${allPos.map(p => `<option value="${p.id}" ${p.id===(currentUser?.positionId||allPos[0].id)?'selected':''}>${p.icon} ${p.name}</option>`).join('')}
+      </select>
+    </div>
+    <div id="competencyMatrix">${_buildCompetencyMatrix(currentUser?.positionId || allPos[0].id)}</div>
+  `;
+}
+
+function renderCompetencyForPos(posId) {
+  const el = document.getElementById('competencyMatrix');
+  if (el) el.innerHTML = _buildCompetencyMatrix(posId);
+}
+
+function _buildCompetencyMatrix(posId) {
+  const pos = POSITIONS.find(p => p.id === posId) || POSITIONS[0];
+  const cf  = COMPETENCY_FRAMEWORK[posId] || COMPETENCY_FRAMEWORK[POSITIONS[0].id] || { hard:[], soft:[], level:[] };
+  const levelBar = (l) => {
+    const num = parseInt(l.replace('L','')) || 1;
+    return `<div style="display:flex;gap:3px">${[1,2,3,4].map(i=>
+      `<div style="width:18px;height:8px;border-radius:4px;background:${i<=num?COMP_COLORS[l]:'var(--c-border-subtle)'}"></div>`
+    ).join('')}</div>`;
+  };
+  const rows = cf.hard.map((skill, i) => `
+    <tr>
+      <td style="padding:10px 14px;font-weight:600">${skill}</td>
+      <td style="padding:10px 14px"><span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,0.12);color:#3B82F6;font-weight:700">Kỹ năng cứng</span></td>
+      <td style="padding:10px 14px">${cf.soft[i] || '—'}</td>
+      <td style="padding:10px 14px">
+        ${levelBar(cf.level[i]||'L2')}
+        <div style="font-size:11px;color:${COMP_COLORS[cf.level[i]||'L2']};margin-top:3px;font-weight:700">${cf.level[i]||'L2'} — ${COMP_LEVELS[cf.level[i]||'L2']}</div>
+      </td>
+    </tr>
+  `).join('');
+
+  return `
+    <div style="background:var(--c-surface);border:1px solid var(--c-border-subtle);border-radius:var(--r-xl);overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--c-border-subtle);display:flex;align-items:center;gap:12px">
+        <div style="font-size:32px">${pos.icon}</div>
+        <div>
+          <div style="font-size:16px;font-weight:800">${pos.name}</div>
+          <div style="font-size:12px;color:var(--c-text-3)">${pos.description?.substring(0,80)}…</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center;padding:16px 20px;gap:12px;border-bottom:1px solid var(--c-border-subtle)">
+        ${Object.entries(COMP_LEVELS).map(([k,v]) =>
+          `<div style="background:${COMP_COLORS[k]}15;border-radius:var(--r-lg);padding:10px">
+            <div style="font-size:18px;font-weight:900;color:${COMP_COLORS[k]}">${k}</div>
+            <div style="font-size:11px;color:var(--c-text-2);font-weight:600">${v}</div>
+          </div>`
+        ).join('')}
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead style="background:var(--c-bg-3)">
+          <tr>
+            <th style="padding:10px 14px;text-align:left;font-size:12px">Kỹ năng cứng (Chuyên môn)</th>
+            <th style="padding:10px 14px;text-align:left;font-size:12px">Loại</th>
+            <th style="padding:10px 14px;text-align:left;font-size:12px">Kỹ năng mềm</th>
+            <th style="padding:10px 14px;text-align:left;font-size:12px">Cấp độ yêu cầu</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ============ TAB: CHECKLIST CONG VIEC ============
+// Storage key: 'viwork_checklists'
+function _getChecklists() {
+  try { return JSON.parse(localStorage.getItem('viwork_checklists') || '{}'); } catch(e) { return {}; }
+}
+function _saveChecklists(data) { localStorage.setItem('viwork_checklists', JSON.stringify(data)); }
+
+const DEFAULT_CHECKLISTS = {
+  pos_ceo:    ['Duyệt kế hoạch tháng','Họp tổng kết tuần','Review KPI toàn đội','Phê duyệt ngân sách','Gặp gỡ đối tác chiến lược'],
+  pos_tech:   ['Setup môi trường dev','Kiểm tra uptime hệ thống','Deploy bản cập nhật','Review code','Backup dữ liệu'],
+  pos_hr_mkt: ['Đăng tin tuyển dụng','Phỏng vấn ứng viên','Cập nhật KPI đội ngũ','Báo cáo nhân sự tháng','Tổ chức team building'],
+  pos_digital:['Kiểm tra hiệu quả ads','Tối ưu chi phí CPA','Báo cáo ROAS tuần','A/B test creative','Cập nhật pixel tracking'],
+  pos_content:['Lên kế hoạch content tháng','Viết bài blog/script','Đăng bài đúng lịch','Phân tích engagement','Review và chỉnh sửa content'],
+  pos_product:['Kiểm tra chất lượng sản phẩm','Cập nhật catalog','Theo dõi tồn kho','Liên hệ nhà cung cấp','Báo cáo sản phẩm tháng'],
+  pos_sales:  ['Gọi điện khách hàng mới','Theo dõi pipeline','Chốt đơn hàng','Nhập liệu CRM','Báo cáo doanh số tuần'],
+  pos_design: ['Thiết kế banner tuần','Review và export file','Cập nhật brand assets','Kiểm tra kích thước file','Đồng bộ thư viện thiết kế'],
+};
+
+function renderChecklistTab(el) {
+  const uid = currentUser?.id;
+  const posId = currentUser?.positionId || POSITIONS[0].id;
+  const stored = _getChecklists();
+  const userChk = stored[uid] || {};
+  const defaultItems = DEFAULT_CHECKLISTS[posId] || ['Hoàn thành công việc hàng ngày','Báo cáo cuối ngày'];
+  const items = userChk.items || defaultItems.map((t,i) => ({ id:'ck_'+i, text:t, done:false }));
+
+  const doneCount = items.filter(i => i.done).length;
+  const pct = items.length > 0 ? Math.round(doneCount/items.length*100) : 0;
+
+  el.innerHTML = `
+    <div style="max-width:700px">
+      <!-- Header -->
+      <div class="lp-hero" style="margin-bottom:20px">
+        <div class="lp-hero-icon">✅</div>
+        <div style="flex:1">
+          <h2 style="font-size:17px;font-weight:800;margin-bottom:4px">Checklist công việc — ${POSITIONS.find(p=>p.id===posId)?.name||'Của tôi'}</h2>
+          <p style="font-size:13px;color:var(--c-text-3)">${doneCount}/${items.length} nhiệm vụ hoàn thành</p>
+          <div class="lp-progress-bar-wrap">
+            <div class="lp-progress-bar-bg"><div class="lp-progress-bar-fill" style="width:${pct}%"></div></div>
+            <div class="lp-progress-pct">${pct}%</div>
+          </div>
+        </div>
+        ${isAdmin() ? `<button class="btn-outline sm" onclick="addChecklistItem()">+ Thêm</button>` : ''}
+      </div>
+
+      <!-- Items -->
+      <div style="display:flex;flex-direction:column;gap:8px" id="checklistItems">
+        ${items.map((item, i) => `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--c-surface);border:1px solid var(--c-border-subtle);border-radius:var(--r-lg);transition:all 0.2s;${item.done?'opacity:0.6':''}">
+            <input type="checkbox" ${item.done?'checked':''} onchange="toggleChecklist('${uid}','${item.id}',this.checked)"
+              style="width:18px;height:18px;accent-color:var(--c-primary);cursor:pointer;flex-shrink:0">
+            <span style="flex:1;font-size:14px;${item.done?'text-decoration:line-through;color:var(--c-text-3)':''}">${item.text}</span>
+            ${item.done ? '<span style="font-size:18px">✅</span>' : ''}
+            ${isAdmin() ? `<button onclick="removeChecklistItem('${uid}','${item.id}')" style="background:none;color:#EF4444;font-size:14px;cursor:pointer">×</button>` : ''}
+          </div>`).join('')}
+      </div>
+
+      <div style="margin-top:16px;padding:12px 16px;background:var(--c-bg-3);border-radius:var(--r-lg);font-size:12px;color:var(--c-text-3)">
+        💡 Tiến độ được lưu tự động. Reset checklist vào đầu tuần.
+      </div>
+    </div>
+  `;
+}
+
+function toggleChecklist(uid, itemId, done) {
+  const stored = _getChecklists();
+  const posId = currentUser?.positionId || POSITIONS[0].id;
+  if (!stored[uid]) stored[uid] = { items: (DEFAULT_CHECKLISTS[posId]||[]).map((t,i) => ({ id:'ck_'+i, text:t, done:false })) };
+  const item = stored[uid].items?.find(i => i.id === itemId);
+  if (item) { item.done = done; _saveChecklists(stored); }
+  // Re-render badge
+  const doneCount = stored[uid].items.filter(i => i.done).length;
+  const total = stored[uid].items.length;
+  showToast(done ? `✅ Hoàn thành! ${doneCount}/${total} nhiệm vụ` : '↩️ Đã bỏ đánh dấu', done ? 'success' : 'info');
+}
+
+function removeChecklistItem(uid, itemId) {
+  const stored = _getChecklists();
+  if (stored[uid]?.items) {
+    stored[uid].items = stored[uid].items.filter(i => i.id !== itemId);
+    _saveChecklists(stored);
+    switchTeamTab('checklist');
+  }
+}
+
+function addChecklistItem() {
+  const text = prompt('Nhập nội dung checklist:');
+  if (!text?.trim()) return;
+  const uid = currentUser?.id;
+  const posId = currentUser?.positionId || POSITIONS[0].id;
+  const stored = _getChecklists();
+  if (!stored[uid]) stored[uid] = { items: (DEFAULT_CHECKLISTS[posId]||[]).map((t,i) => ({ id:'ck_'+i, text:t, done:false })) };
+  stored[uid].items.push({ id:'ck_'+Date.now(), text:text.trim(), done:false });
+  _saveChecklists(stored);
+  switchTeamTab('checklist');
+}
+
+// ============ TAB: LO TRINH 90 NGAY ============
+const ONBOARDING_90 = [
+  {
+    phase: 1, range: 'Ngày 1 – 30', title: 'Khám phá & Hội nhập', color: '#3B82F6', icon: '🌱',
+    goal: 'Hiểu văn hóa, quy trình, đội nhóm và bắt đầu đóng góp',
+    milestones: [
+      { day:1,  text:'Nhận tài khoản, thiết bị, giới thiệu đội nhóm' },
+      { day:3,  text:'Hoàn thành khóa Onboarding trên VIWORK' },
+      { day:7,  text:'Shadow 1-on-1 với quản lý & đồng nghiệp cùng vị trí' },
+      { day:14, text:'Nắm vững quy trình làm việc, công cụ hàng ngày' },
+      { day:21, text:'Tự mình thực hiện nhiệm vụ đầu tiên' },
+      { day:30, text:'Review 1-on-1 với quản lý: đánh giá hội nhập' },
+    ],
+    deliverable: 'Hoàn thành khóa Onboarding + 1 CVC đầu tiên tự thực hiện'
+  },
+  {
+    phase: 2, range: 'Ngày 31 – 60', title: 'Học hỏi & Tăng tốc', color: '#F59E0B', icon: '⚡',
+    goal: 'Nắm vững chuyên môn, phát triển mạng lưới nội bộ, đạt KPI cơ bản',
+    milestones: [
+      { day:35, text:'Hoàn thành khóa đào tạo chuyên môn vị trí' },
+      { day:40, text:'Đảm nhận 3+ CVC độc lập' },
+      { day:45, text:'Trình bày ý tưởng cải tiến trong cuộc họp nhóm' },
+      { day:50, text:'Đạt 70%+ KPI tháng đầu tiên' },
+      { day:60, text:'Review 1-on-1: đánh giá hiệu suất & lộ trình tiếp theo' },
+    ],
+    deliverable: 'Đạt ≥70% KPI tháng 2 + đề xuất ít nhất 1 ý tưởng cải tiến'
+  },
+  {
+    phase: 3, range: 'Ngày 61 – 90', title: 'Đóng góp & Phát triển', color: '#10B981', icon: '🏆',
+    goal: 'Chứng minh giá trị độc lập, nhận feedback 360° và định hướng phát triển',
+    milestones: [
+      { day:65, text:'Mentor hoặc hỗ trợ nhân viên mới hơn' },
+      { day:70, text:'Đạt 85%+ KPI tháng thứ 3' },
+      { day:75, text:'Tự lên kế hoạch công việc tuần không cần nhắc nhở' },
+      { day:80, text:'Nhận đánh giá 360° từ đồng nghiệp & quản lý' },
+      { day:90, text:'Review toàn diện với quản lý + lộ trình 6 tháng tiếp' },
+    ],
+    deliverable: 'Đạt ≥85% KPI + đánh giá 360° đạt "Đáp ứng kỳ vọng" trở lên'
+  }
+];
+
+function renderOnboarding90Tab(el) {
+  const uid = currentUser?.id;
+  const stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}');
+  const userProgress = stored[uid] || {};
+
+  el.innerHTML = `
+    <div class="page-header" style="margin-bottom:24px">
+      <div>
+        <h2 style="font-size:18px;font-weight:800">🗓️ Lộ trình gia nhập 90 ngày</h2>
+        <p style="font-size:13px;color:var(--c-text-3)">Chương trình hội nhập có cấu trúc dành cho thành viên mới Vimove</p>
+      </div>
+    </div>
+
+    <!-- Timeline phases -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">
+      ${ONBOARDING_90.map(phase => {
+        const doneMiles = phase.milestones.filter(m => userProgress[`p${phase.phase}_d${m.day}`]).length;
+        const pct = Math.round(doneMiles/phase.milestones.length*100);
+        return `
+        <div style="background:var(--c-surface);border:2px solid ${phase.color}30;border-radius:var(--r-xl);padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div style="font-size:28px">${phase.icon}</div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:${phase.color};text-transform:uppercase;letter-spacing:.08em">${phase.range}</div>
+              <div style="font-size:15px;font-weight:800">${phase.title}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--c-text-2);margin-bottom:14px">${phase.goal}</div>
+          <div class="lp-progress-bar-bg" style="margin-bottom:6px">
+            <div class="lp-progress-bar-fill" style="width:${pct}%;background:${phase.color}"></div>
+          </div>
+          <div style="font-size:11px;color:${phase.color};font-weight:700;margin-bottom:14px">${pct}% — ${doneMiles}/${phase.milestones.length} mốc</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${phase.milestones.map(m => {
+              const key = `p${phase.phase}_d${m.day}`;
+              const done = !!userProgress[key];
+              return `
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;border-radius:var(--r-sm);background:${done?phase.color+'12':'transparent'}">
+                <input type="checkbox" ${done?'checked':''} onchange="_toggle90Day('${uid}','${key}',this.checked)"
+                  style="width:15px;height:15px;accent-color:${phase.color};flex-shrink:0;margin-top:1px">
+                <span style="font-size:12px;${done?'text-decoration:line-through;color:var(--c-text-3)':''}">
+                  <span style="font-weight:700;color:${phase.color}">Ngày ${m.day}:</span> ${m.text}
+                </span>
+              </label>`;
+            }).join('')}
+          </div>
+          <div style="margin-top:12px;padding:8px 10px;background:${phase.color}10;border-radius:var(--r-md);font-size:11px;color:var(--c-text-2)">
+            🎯 <strong>Kết quả kỳ vọng:</strong> ${phase.deliverable}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Tips -->
+    <div style="background:linear-gradient(135deg,rgba(90,184,0,0.08),rgba(90,184,0,0.03));border:1px solid rgba(90,184,0,0.2);border-radius:var(--r-xl);padding:20px">
+      <div style="font-weight:800;font-size:14px;margin-bottom:12px">💡 Bí quyết thành công trong 90 ngày đầu</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        ${[
+          ['🤝','Xây dựng quan hệ','Dành thời gian hiểu đồng nghiệp, đặt câu hỏi nhiều'],
+          ['📝','Ghi chép mọi thứ','Mọi quy trình, thông tin quan trọng đều cần ghi lại'],
+          ['🗣️','Chủ động báo cáo','Cập nhật tiến độ với quản lý, không để bị hỏi'],
+        ].map(([icon, title, desc]) => `
+          <div style="text-align:center;padding:14px;background:var(--c-surface);border-radius:var(--r-lg)">
+            <div style="font-size:24px;margin-bottom:6px">${icon}</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:4px">${title}</div>
+            <div style="font-size:11px;color:var(--c-text-3)">${desc}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function _toggle90Day(uid, key, done) {
+  const stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}');
+  if (!stored[uid]) stored[uid] = {};
+  stored[uid][key] = done;
+  localStorage.setItem('viwork_90day', JSON.stringify(stored));
+  showToast(done ? '✅ Mốc hoàn thành!' : '↩️ Đã bỏ đánh dấu', done ? 'success' : 'info');
+  // Refresh phase progress bars only
+  switchTeamTab('onboarding90');
 }
