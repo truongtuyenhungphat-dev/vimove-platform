@@ -734,7 +734,89 @@ function openAdminCourseEdit(courseId) {
   render();
 }
 
+// ============ QUIZ BUILDER HELPERS ============
+// Temporary quiz questions while editing a lesson
+window._quizDraft = []; // [{q:'', options:['','','',''], answer:0}]
+
+function _quizBuilderHtml(questions) {
+  const qs = questions || [];
+  return `
+    <div style="border-top:1px solid var(--c-border-subtle);margin-top:12px;padding-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-weight:700;font-size:13px">📝 Bài tập / Kiểm tra (${qs.length} câu)</span>
+        <button type="button" onclick="_quizAddQuestion()"
+          style="font-size:12px;padding:4px 12px;background:var(--grad-primary);color:#fff;border-radius:20px;font-weight:600;cursor:pointer">
+          + Thêm câu hỏi
+        </button>
+      </div>
+      <div id="_quiz_qs_list">
+        ${qs.map((q, qi) => `
+          <div style="background:var(--c-bg-3);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px">
+            <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+              <span style="font-size:11px;font-weight:700;color:var(--c-text-3);padding-top:3px">Câu ${qi+1}</span>
+              <textarea rows="2" style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--c-border-subtle);border-radius:6px;resize:vertical;background:var(--c-surface)"
+                id="_qq_text_${qi}" onblur="_quizSyncQuestion(${qi})">${q.q}</textarea>
+              <button type="button" onclick="_quizRemoveQuestion(${qi})"
+                style="background:none;color:#EF4444;font-size:16px;cursor:pointer;flex-shrink:0">×</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+              ${['A','B','C','D'].map((k,oi) => `
+                <div style="display:flex;align-items:center;gap:6px">
+                  <input type="radio" name="_q${qi}_ans" value="${oi}" ${q.answer===oi?'checked':''}
+                    id="_q${qi}_r${oi}" onchange="_quizSetAnswer(${qi},${oi})">
+                  <label for="_q${qi}_r${oi}" style="font-size:11px;font-weight:700;color:var(--c-primary-light);width:14px">${k}</label>
+                  <input type="text" style="flex:1;font-size:12px;padding:4px 6px;border:1px solid var(--c-border-subtle);border-radius:5px;background:var(--c-surface)"
+                    id="_qq_opt_${qi}_${oi}" value="${(q.options||[])[oi]||''}" placeholder="Đáp án ${k}"
+                    onblur="_quizSyncQuestion(${qi})">
+                </div>`).join('')}
+            </div>
+            <div style="font-size:11px;color:#10B981">✅ Đáp án đúng: ${['A','B','C','D'][q.answer]||'A'}</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--c-text-3);margin-top:4px">
+        💡 Chọn radio button để đánh dấu đáp án đúng. Không có câu hỏi = không có bài kiểm tra.
+      </div>
+    </div>`;
+}
+
+window._quizAddQuestion = function() {
+  window._quizDraft.push({ q: '', options: ['', '', '', ''], answer: 0 });
+  _quizRefreshBuilder();
+};
+
+window._quizRemoveQuestion = function(qi) {
+  window._quizDraft.splice(qi, 1);
+  _quizRefreshBuilder();
+};
+
+window._quizSetAnswer = function(qi, oi) {
+  if (window._quizDraft[qi]) window._quizDraft[qi].answer = oi;
+};
+
+window._quizSyncQuestion = function(qi) {
+  const q = window._quizDraft[qi];
+  if (!q) return;
+  q.q = document.getElementById(`_qq_text_${qi}`)?.value.trim() || q.q;
+  for (let oi = 0; oi < 4; oi++) {
+    q.options[oi] = document.getElementById(`_qq_opt_${qi}_${oi}`)?.value.trim() || '';
+  }
+};
+
+function _quizSyncAll() {
+  window._quizDraft.forEach((_, qi) => window._quizSyncQuestion(qi));
+}
+
+function _quizRefreshBuilder() {
+  const el = document.getElementById('_quiz_qs_list');
+  if (!el) return;
+  const wrapper = el.closest('[id]');
+  const container = document.getElementById('_quiz_builder_wrap');
+  if (container) container.innerHTML = _quizBuilderHtml(window._quizDraft);
+}
+
+// ============ ADD LESSON FORM ============
 window._adminAddLessonForm = function() {
+  window._quizDraft = [];
   const form = document.getElementById('_ac_lesson_form');
   if (!form) return;
   form.innerHTML = `
@@ -742,17 +824,21 @@ window._adminAddLessonForm = function() {
       <div style="font-weight:700;font-size:13px">➕ Thêm bài học mới</div>
       <div class="form-group"><label>Tên bài *</label><input id="_al_title" class="form-control" placeholder="Tên bài học" /></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label>Loại</label>
+        <div class="form-group"><label>Loại nội dung</label>
           <select id="_al_type" class="form-control">
             <option value="text">📔 Văn bản</option>
             <option value="video">🎬 Video YouTube</option>
             <option value="link">🔗 Link tài liệu</option>
           </select></div>
-        <div class="form-group"><label>Thời lượng (phút)</label><input id="_al_dur" class="form-control" type="number" min="1" value="15" /></div>
+        <div class="form-group"><label>Thời lượng (phút)</label>
+          <input id="_al_dur" class="form-control" type="number" min="1" value="15" /></div>
       </div>
       <div class="form-group"><label>Nội dung / URL *</label>
         <textarea id="_al_content" class="form-control" rows="3" placeholder="Nội dung bài học (text) hoặc URL (video/link)"></textarea></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
+
+      <div id="_quiz_builder_wrap">${_quizBuilderHtml(window._quizDraft)}</div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
         <button class="btn-outline" onclick="document.getElementById('_ac_lesson_form').innerHTML=''">Hủy</button>
         <button class="btn-primary" onclick="_adminSaveLesson()">✅ Lưu bài học</button>
       </div>
@@ -760,14 +846,24 @@ window._adminAddLessonForm = function() {
 };
 
 window._adminSaveLesson = function() {
+  _quizSyncAll();
   const title   = document.getElementById('_al_title')?.value.trim();
   const type    = document.getElementById('_al_type')?.value || 'text';
   const dur     = parseInt(document.getElementById('_al_dur')?.value) || 15;
   const content = document.getElementById('_al_content')?.value.trim();
   if (!title || !content) { showToast('⚠️ Nhập tên và nội dung bài!', 'error'); return; }
+
+  const validQuestions = (window._quizDraft || []).filter(q =>
+    q.q && q.options.filter(o => o).length >= 2
+  );
+
   const c = window._adminEditingCourse;
   if (!c.lessons) c.lessons = [];
-  c.lessons.push({ id: 'l_' + Date.now().toString(36), title, type, durationMins: dur, content });
+  c.lessons.push({
+    id: 'l_' + Date.now().toString(36), title, type, durationMins: dur, content,
+    quiz: validQuestions.length > 0 ? { questions: validQuestions } : undefined
+  });
+  window._quizDraft = [];
   window._adminRerenderCourseDialog?.();
 };
 
@@ -792,41 +888,57 @@ window._adminMoveLessonDown = function(idx) {
   window._adminRerenderCourseDialog?.();
 };
 
+// ============ EDIT LESSON FORM ============
 window._adminEditLesson = function(idx) {
   const c = window._adminEditingCourse;
   const l = c?.lessons?.[idx];
   if (!l) return;
+  // Load existing quiz into draft
+  window._quizDraft = JSON.parse(JSON.stringify(l.quiz?.questions || []));
+
   const form = document.getElementById('_ac_lesson_form');
   if (!form) return;
   form.innerHTML = `
     <div style="background:var(--c-surface);border:1.5px solid var(--c-primary);border-radius:var(--r-lg);padding:16px;margin-top:10px;display:flex;flex-direction:column;gap:10px">
       <div style="font-weight:700;font-size:13px">✏️ Sửa bài học #${idx+1}</div>
-      <div class="form-group"><label>Tên bài *</label><input id="_al_title" class="form-control" value="${l.title}" /></div>
+      <div class="form-group"><label>Tên bài *</label>
+        <input id="_al_title" class="form-control" value="${l.title}" /></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label>Loại</label>
+        <div class="form-group"><label>Loại nội dung</label>
           <select id="_al_type" class="form-control">
             <option value="text" ${l.type==='text'?'selected':''}>📔 Văn bản</option>
             <option value="video" ${l.type==='video'?'selected':''}>🎬 Video YouTube</option>
             <option value="link" ${l.type==='link'?'selected':''}>🔗 Link tài liệu</option>
           </select></div>
-        <div class="form-group"><label>Thời lượng (phút)</label><input id="_al_dur" class="form-control" type="number" min="1" value="${l.durationMins}" /></div>
+        <div class="form-group"><label>Thời lượng (phút)</label>
+          <input id="_al_dur" class="form-control" type="number" min="1" value="${l.durationMins}" /></div>
       </div>
       <div class="form-group"><label>Nội dung / URL</label>
         <textarea id="_al_content" class="form-control" rows="3">${l.content||''}</textarea></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
+
+      <div id="_quiz_builder_wrap">${_quizBuilderHtml(window._quizDraft)}</div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
         <button class="btn-outline" onclick="document.getElementById('_ac_lesson_form').innerHTML=''">Hủy</button>
-        <button class="btn-primary" onclick="_adminUpdateLesson(${idx})">✅ Cập nhật</button>
+        <button class="btn-primary" onclick="_adminUpdateLesson(${idx})">✅ Cập nhật bài học</button>
       </div>
     </div>`;
 };
 
 window._adminUpdateLesson = function(idx) {
+  _quizSyncAll();
   const c = window._adminEditingCourse;
   if (!c?.lessons?.[idx]) return;
-  c.lessons[idx].title       = document.getElementById('_al_title')?.value.trim() || c.lessons[idx].title;
-  c.lessons[idx].type        = document.getElementById('_al_type')?.value  || c.lessons[idx].type;
-  c.lessons[idx].durationMins = parseInt(document.getElementById('_al_dur')?.value) || 15;
-  c.lessons[idx].content     = document.getElementById('_al_content')?.value.trim() || c.lessons[idx].content;
+  c.lessons[idx].title        = document.getElementById('_al_title')?.value.trim()   || c.lessons[idx].title;
+  c.lessons[idx].type         = document.getElementById('_al_type')?.value           || c.lessons[idx].type;
+  c.lessons[idx].durationMins = parseInt(document.getElementById('_al_dur')?.value)  || 15;
+  c.lessons[idx].content      = document.getElementById('_al_content')?.value.trim() || c.lessons[idx].content;
+
+  const validQuestions = (window._quizDraft || []).filter(q =>
+    q.q && q.options.filter(o => o).length >= 2
+  );
+  c.lessons[idx].quiz = validQuestions.length > 0 ? { questions: validQuestions } : undefined;
+  window._quizDraft = [];
   window._adminRerenderCourseDialog?.();
 };
 
