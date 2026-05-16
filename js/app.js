@@ -151,51 +151,123 @@ function renderSettingsPanel() {
       <div class="stage-item">
         <div class="stage-item-color" style="background:var(--c-primary)"></div>
         <span class="stage-item-name">${v.icon} ${v.name}</span>
-        <button class="stage-item-del" title="Xóa">✕</button>
+        <button class="stage-item-del" onclick="removeCategory('${k}')" title="Xóa">✕</button>
       </div>
     `).join('');
   }
   // User manager (Admin only)
   renderUserManager();
-
-  // ⚠️ Vùng nguy hiểm — CHỈ hiển thị với Tech Admin u001 (tuyen@vimove.vn)
+  // Danger zone
   const dangerCard = document.getElementById('dangerZoneCard');
-  if (dangerCard) {
-    dangerCard.style.display = currentUser?.id === 'u001' ? '' : 'none';
-  }
+  if (dangerCard) dangerCard.style.display = currentUser?.id === 'u001' ? '' : 'none';
 }
 
-function addStage() { showToast('🔧 Tính năng thêm giai đoạn sẽ có trong bản tiếp theo!', 'info'); }
-
-function removeStage(id) {
-  // Chỉ Admin mới được xóa giai đoạn
-  if (!isAdmin()) {
-    showToast('⚠️ Chỉ Admin mới có thể xóa giai đoạn!', 'error');
-    return;
-  }
-
-  // Kiểm tra có CVC nào đang dùng giai đoạn này không
-  const inUse = appState.tasks.filter(t => t.stage === id);
-  if (inUse.length > 0) {
-    showToast(`⚠️ Không thể xóa — có ${inUse.length} CVC đang ở giai đoạn này!`, 'error');
-    return;
-  }
-
-  // Tìm giai đoạn cần xóa
-  const stage = STAGES.find(s => s.id === id);
-  if (!stage) { showToast('⚠️ Không tìm thấy giai đoạn!', 'error'); return; }
-
-  if (!confirm(`Xóa giai đoạn "${stage.icon} ${stage.name}"?`)) return;
-
-  // Xóa khỏi mảng STAGES
-  const idx = STAGES.findIndex(s => s.id === id);
-  if (idx > -1) STAGES.splice(idx, 1);
-
+// ---- ADD STAGE ----
+function addStage() {
+  if (!isAdmin()) { showToast('⚠️ Chỉ Admin mới được thêm giai đoạn!', 'error'); return; }
+  const dlg = _createDialog('stage');
+  dlg.innerHTML = `
+    <div class="modal" style="max-width:380px;padding:0">
+      <div class="modal-header"><h2>➕ Thêm giai đoạn CVC</h2></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>Tên giai đoạn</label>
+          <input id="_sName" placeholder="VD: Đang xem xét" class="form-control" /></div>
+        <div class="form-group"><label>Icon (emoji)</label>
+          <input id="_sIcon" placeholder="💡" class="form-control" maxlength="4" value="🔵" /></div>
+        <div class="form-group"><label>Màu sắc</label>
+          <input id="_sColor" type="color" value="#3B82F6" style="width:60px;height:36px;border:none;cursor:pointer;border-radius:8px" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="document.getElementById('_dlg_stage').remove()">Hủy</button>
+        <button class="btn-primary" onclick="_doAddStage()">✅ Thêm</button>
+      </div>
+    </div>`;
+  document.body.appendChild(dlg);
+}
+function _doAddStage() {
+  const name  = document.getElementById('_sName')?.value.trim();
+  const icon  = document.getElementById('_sIcon')?.value.trim() || '🔵';
+  const color = document.getElementById('_sColor')?.value || '#3B82F6';
+  if (!name) { showToast('⚠️ Nhập tên giai đoạn!', 'error'); return; }
+  const id = 'stage_' + name.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,16) + '_' + Date.now().toString(36);
+  STAGES.push({ id, name, icon, color, order: STAGES.length });
+  document.getElementById('_dlg_stage')?.remove();
   renderSettingsPanel();
-  showToast(`🗑️ Đã xóa giai đoạn "${stage.name}"`, 'info');
+  showToast(`✅ Đã thêm giai đoạn "${icon} ${name}"`, 'success');
 }
 
-function addCategory() { showToast('🔧 Tính năng thêm danh mục sẽ có trong bản tiếp theo!', 'info'); }
+// ---- REMOVE STAGE ----
+function removeStage(id) {
+  if (!isAdmin()) { showToast('⚠️ Chỉ Admin mới có thể xóa giai đoạn!', 'error'); return; }
+  const inUse = appState.tasks.filter(t => t.stage === id);
+  if (inUse.length > 0) { showToast(`⚠️ Không thể xóa — có ${inUse.length} CVC đang ở giai đoạn này!`, 'error'); return; }
+  const stage = STAGES.find(s => s.id === id);
+  if (!stage) return;
+  hrConfirm(`Xóa giai đoạn "${stage.icon} ${stage.name}"?`, 'Hành động không thể hoàn tác.', () => {
+    const idx = STAGES.findIndex(s => s.id === id);
+    if (idx > -1) STAGES.splice(idx, 1);
+    renderSettingsPanel();
+    showToast(`🗑️ Đã xóa giai đoạn "${stage.name}"`, 'info');
+  });
+}
+
+// ---- ADD CATEGORY ----
+function addCategory() {
+  if (!isAdmin()) { showToast('⚠️ Chỉ Admin mới được thêm danh mục!', 'error'); return; }
+  const dlg = _createDialog('cat');
+  dlg.innerHTML = `
+    <div class="modal" style="max-width:360px;padding:0">
+      <div class="modal-header"><h2>➕ Thêm danh mục công việc</h2></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>Tên danh mục</label>
+          <input id="_cName" placeholder="VD: Kỹ thuật" class="form-control" /></div>
+        <div class="form-group"><label>Icon (emoji)</label>
+          <input id="_cIcon" placeholder="⚙️" class="form-control" maxlength="4" value="📁" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="document.getElementById('_dlg_cat').remove()">Hủy</button>
+        <button class="btn-primary" onclick="_doAddCategory()">✅ Thêm</button>
+      </div>
+    </div>`;
+  document.body.appendChild(dlg);
+}
+function _doAddCategory() {
+  const name = document.getElementById('_cName')?.value.trim();
+  const icon = document.getElementById('_cIcon')?.value.trim() || '📁';
+  if (!name) { showToast('⚠️ Nhập tên danh mục!', 'error'); return; }
+  const key = name.toLowerCase().replace(/[\s\W]+/g,'_').replace(/[^a-z0-9_]/g,'').substring(0,20);
+  if (CATEGORIES[key]) { showToast('⚠️ Danh mục đã tồn tại!', 'error'); return; }
+  CATEGORIES[key] = { name, icon, cssClass: 'cat-custom' };
+  document.getElementById('_dlg_cat')?.remove();
+  renderSettingsPanel();
+  showToast(`✅ Đã thêm danh mục "${icon} ${name}"`, 'success');
+}
+
+// ---- REMOVE CATEGORY ----
+function removeCategory(key) {
+  if (!isAdmin()) { showToast('⚠️ Chỉ Admin mới có thể xóa danh mục!', 'error'); return; }
+  const inUse = appState.tasks.filter(t => t.category === key);
+  if (inUse.length > 0) { showToast(`⚠️ Có ${inUse.length} CVC đang dùng danh mục này!`, 'error'); return; }
+  const cat = CATEGORIES[key];
+  if (!cat) return;
+  hrConfirm(`Xóa danh mục "${cat.icon} ${cat.name}"?`, 'Hành động không thể hoàn tác.', () => {
+    delete CATEGORIES[key];
+    renderSettingsPanel();
+    showToast(`🗑️ Đã xóa danh mục "${cat.name}"`, 'info');
+  });
+}
+
+// ---- Helper tạo dialog overlay ----
+function _createDialog(suffix) {
+  const existing = document.getElementById(`_dlg_${suffix}`);
+  if (existing) existing.remove();
+  const dlg = document.createElement('div');
+  dlg.id = `_dlg_${suffix}`;
+  dlg.className = 'modal-overlay';
+  dlg.style.cssText = 'z-index:10000;display:flex;align-items:center;justify-content:center;';
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.remove(); });
+  return dlg;
+}
 
 // ============ USER MANAGEMENT (Gap 5) ============
 

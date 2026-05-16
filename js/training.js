@@ -34,6 +34,8 @@ function renderTraining() {
     { id: 'catalog',  icon: '📚', label: 'Khóa học' },
     { id: 'progress', icon: '📊', label: 'Tiến độ đội nhóm',
       hidden: currentUser?.role === 'staff' },
+    { id: 'manage',   icon: '⚙️', label: 'Quản lý khóa học',
+      hidden: currentUser?.role !== 'admin' },
   ];
 
   page.innerHTML = `
@@ -60,21 +62,28 @@ function switchTrainingTab(tab) {
   trainingState.courseId = null;
   trainingState.lessonIdx = 0;
   renderTrainingBody();
-  // update tab active
   document.querySelectorAll('.training-tab').forEach(b => b.classList.remove('active'));
-  const tabs = ['path','catalog','progress'];
-  const idx = tabs.indexOf(tab);
-  document.querySelectorAll('.training-tab')[idx]?.classList.add('active');
+  ['path','catalog','progress','manage'].filter(t => {
+    if (t==='progress' && currentUser?.role==='staff') return false;
+    if (t==='manage'   && currentUser?.role!=='admin') return false;
+    return true;
+  }).indexOf(tab);
+  document.querySelectorAll('.training-tab').forEach(b => {
+    if (b.textContent.includes(tab==='path'?'Lộ':tab==='catalog'?'Khóa':tab==='progress'?'Tiến':'&')) {}
+  });
+  // Simpler: re-render whole training page to reset active tabs
+  renderTraining();
 }
 
 function renderTrainingBody() {
   const el = document.getElementById('trainingBody');
   if (!el) return;
-  if (trainingState.courseId) { renderCourseDetail(el); return; }
+  if (trainingState.courseId && trainingState.tab !== 'manage') { renderCourseDetail(el); return; }
   switch(trainingState.tab) {
-    case 'path':     renderMyPath(el);    break;
-    case 'catalog':  renderCatalog(el);   break;
-    case 'progress': renderProgressDash(el); break;
+    case 'path':     renderMyPath(el);         break;
+    case 'catalog':  renderCatalog(el);        break;
+    case 'progress': renderProgressDash(el);   break;
+    case 'manage':   renderManageCourses(el);  break;
   }
 }
 
@@ -544,4 +553,251 @@ function getCourseProgress(uid, courseId, course) {
   if (!enr) return 0;
   const total = course?.lessons?.length || 1;
   return Math.round((enr.completedLessons?.length||0) / total * 100);
+}
+
+// ============ ADMIN: QUẢN LÝ KHÓA HỌC ============
+function renderManageCourses(el) {
+  const courses = TRAINING_COURSES || [];
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:800">⚙️ Quản lý khóa học (ⵂ{courses.length} khóa)</div>
+      <button class="btn-primary" onclick="openAdminCourseEdit(null)">➕ Tạo khóa học mới</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${courses.map(c => `
+        <div style="background:var(--c-surface);border:1px solid var(--c-border-subtle);border-radius:var(--r-lg);padding:16px 20px;display:flex;align-items:center;gap:16px">
+          <div style="font-size:36px;width:52px;text-align:center">${c.thumbnail}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:700">${c.title}</div>
+            <div style="font-size:12px;color:var(--c-text-3);margin-top:4px">
+              <span class="course-level level-${c.level}">${{beginner:'Cơ bản',intermediate:'Trung cấp',advanced:'Nâng cao'}[c.level]}</span>
+              &nbsp;· ⏱ ${c.durationMins} phút &nbsp;· 📖 ${c.lessons?.length||0} bài học
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="btn-outline sm" onclick="openAdminCourseEdit('${c.id}')">✏️ Sửa</button>
+            <button class="btn-danger sm" onclick="deleteAdminCourse('${c.id}')">🗑️ Xóa</button>
+          </div>
+        </div>`).join('')}
+    </div>
+  `.replace('ⵂ', courses.length);
+}
+
+function openAdminCourseEdit(courseId) {
+  const isNew = !courseId;
+  const course = isNew ? {
+    id: 'course_' + Date.now().toString(36),
+    title: '', description: '', thumbnail: '📚',
+    color: 'linear-gradient(135deg,rgba(90,184,0,0.15),rgba(90,184,0,0.05))',
+    level: 'beginner', durationMins: 60, passingScore: 70,
+    positionIds: [], pathIds: [], lessons: []
+  } : JSON.parse(JSON.stringify((TRAINING_COURSES||[]).find(c => c.id === courseId)));
+  if (!course) return;
+
+  const dlg = document.createElement('div');
+  dlg.id = '_dlg_admin_course';
+  dlg.className = 'modal-overlay';
+  dlg.style.cssText = 'z-index:10000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
+
+  const lessonRows = () => (course.lessons||[]).map((l,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--c-bg-3);border-radius:var(--r-md);margin-bottom:6px">
+      <span style="width:20px;color:var(--c-text-3);font-size:12px">${i+1}</span>
+      <span style="flex:1;font-size:13px;font-weight:600">${l.title}</span>
+      <span style="font-size:11px;color:var(--c-text-3)">${{text:'📔',video:'🎬',link:'🔗'}[l.type]||'📔'} ${l.durationMins}ph</span>
+      <button onclick="_adminMoveLessonUp(${i})" style="background:none;font-size:14px;cursor:pointer" title="Lên">↑</button>
+      <button onclick="_adminMoveLessonDown(${i})" style="background:none;font-size:14px;cursor:pointer" title="Xuống">↓</button>
+      <button onclick="_adminEditLesson(${i})" style="background:none;font-size:14px;cursor:pointer" title="Sửa">✏️</button>
+      <button onclick="_adminRemoveLesson(${i})" style="background:none;font-size:16px;color:#EF4444;cursor:pointer" title="Xóa">×</button>
+    </div>`).join('');
+
+  const render = () => {
+    dlg.innerHTML = `
+      <div class="modal" style="max-width:640px;width:100%;padding:0">
+        <div class="modal-header">
+          <h2>${isNew ? '➕ Tạo khóa học mới' : '✏️ Sửa khóa học'}</h2>
+          <button onclick="document.getElementById('_dlg_admin_course').remove()" style="background:none;font-size:20px;cursor:pointer;color:var(--c-text-3)">×</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;max-height:70vh;overflow-y:auto">
+          <div class="form-group"><label>Tên khóa học *</label>
+            <input id="_ac_title" class="form-control" value="${course.title}" placeholder="Nhập tên khóa" /></div>
+          <div class="form-group"><label>Mô tả ngắn</label>
+            <textarea id="_ac_desc" class="form-control" rows="2" placeholder="Mô tả ngắn về khóa học...">${course.description}</textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="form-group"><label>Icon (emoji)</label>
+              <input id="_ac_thumb" class="form-control" value="${course.thumbnail}" maxlength="4" /></div>
+            <div class="form-group"><label>Cấp độ</label>
+              <select id="_ac_level" class="form-control">
+                <option value="beginner" ${course.level==='beginner'?'selected':''}>Cơ bản</option>
+                <option value="intermediate" ${course.level==='intermediate'?'selected':''}>Trung cấp</option>
+                <option value="advanced" ${course.level==='advanced'?'selected':''}>Nâng cao</option>
+              </select></div>
+            <div class="form-group"><label>Điểm pass (%)</label>
+              <input id="_ac_pass" class="form-control" type="number" min="0" max="100" value="${course.passingScore}" /></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group"><label>Thời lượng (phút)</label>
+              <input id="_ac_dur" class="form-control" type="number" min="1" value="${course.durationMins}" /></div>
+            <div class="form-group"><label>Onboarding path?</label>
+              <select id="_ac_path" class="form-control">
+                <option value="" ${!course.pathIds?.includes('onboarding')?'selected':''}>Không</option>
+                <option value="onboarding" ${course.pathIds?.includes('onboarding')?'selected':''}>✅ Là khóa Onboarding</option>
+              </select></div>
+          </div>
+
+          <div style="border-top:1px solid var(--c-border-subtle);padding-top:14px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:10px">📖 Bài học (${(course.lessons||[]).length} bài)</div>
+            <div id="_ac_lessons">${lessonRows()}</div>
+            <button class="btn-outline" style="width:100%;margin-top:8px" onclick="_adminAddLessonForm()">➕ Thêm bài học</button>
+            <div id="_ac_lesson_form"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" onclick="document.getElementById('_dlg_admin_course').remove()">Hủy</button>
+          <button class="btn-primary" onclick="_adminSaveCourse('${course.id}', ${isNew})">💾 Lưu khóa học</button>
+        </div>
+      </div>`;
+  };
+
+  // Expose course object so nested functions can mutate it
+  window._adminEditingCourse = course;
+  window._adminRerenderCourseDialog = render;
+
+  document.body.appendChild(dlg);
+  render();
+}
+
+window._adminAddLessonForm = function() {
+  const form = document.getElementById('_ac_lesson_form');
+  if (!form) return;
+  form.innerHTML = `
+    <div style="background:var(--c-surface);border:1px solid var(--c-border-subtle);border-radius:var(--r-lg);padding:16px;margin-top:10px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-weight:700;font-size:13px">➕ Thêm bài học mới</div>
+      <div class="form-group"><label>Tên bài *</label><input id="_al_title" class="form-control" placeholder="Tên bài học" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>Loại</label>
+          <select id="_al_type" class="form-control">
+            <option value="text">📔 Văn bản</option>
+            <option value="video">🎬 Video YouTube</option>
+            <option value="link">🔗 Link tài liệu</option>
+          </select></div>
+        <div class="form-group"><label>Thời lượng (phút)</label><input id="_al_dur" class="form-control" type="number" min="1" value="15" /></div>
+      </div>
+      <div class="form-group"><label>Nội dung / URL *</label>
+        <textarea id="_al_content" class="form-control" rows="3" placeholder="Nội dung bài học (text) hoặc URL (video/link)"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-outline" onclick="document.getElementById('_ac_lesson_form').innerHTML=''">Hủy</button>
+        <button class="btn-primary" onclick="_adminSaveLesson()">✅ Lưu bài học</button>
+      </div>
+    </div>`;
+};
+
+window._adminSaveLesson = function() {
+  const title   = document.getElementById('_al_title')?.value.trim();
+  const type    = document.getElementById('_al_type')?.value || 'text';
+  const dur     = parseInt(document.getElementById('_al_dur')?.value) || 15;
+  const content = document.getElementById('_al_content')?.value.trim();
+  if (!title || !content) { showToast('⚠️ Nhập tên và nội dung bài!', 'error'); return; }
+  const c = window._adminEditingCourse;
+  if (!c.lessons) c.lessons = [];
+  c.lessons.push({ id: 'l_' + Date.now().toString(36), title, type, durationMins: dur, content });
+  window._adminRerenderCourseDialog?.();
+};
+
+window._adminRemoveLesson = function(idx) {
+  const c = window._adminEditingCourse;
+  if (!c?.lessons) return;
+  c.lessons.splice(idx, 1);
+  window._adminRerenderCourseDialog?.();
+};
+
+window._adminMoveLessonUp = function(idx) {
+  const c = window._adminEditingCourse;
+  if (!c?.lessons || idx <= 0) return;
+  [c.lessons[idx-1], c.lessons[idx]] = [c.lessons[idx], c.lessons[idx-1]];
+  window._adminRerenderCourseDialog?.();
+};
+
+window._adminMoveLessonDown = function(idx) {
+  const c = window._adminEditingCourse;
+  if (!c?.lessons || idx >= c.lessons.length-1) return;
+  [c.lessons[idx], c.lessons[idx+1]] = [c.lessons[idx+1], c.lessons[idx]];
+  window._adminRerenderCourseDialog?.();
+};
+
+window._adminEditLesson = function(idx) {
+  const c = window._adminEditingCourse;
+  const l = c?.lessons?.[idx];
+  if (!l) return;
+  const form = document.getElementById('_ac_lesson_form');
+  if (!form) return;
+  form.innerHTML = `
+    <div style="background:var(--c-surface);border:1.5px solid var(--c-primary);border-radius:var(--r-lg);padding:16px;margin-top:10px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-weight:700;font-size:13px">✏️ Sửa bài học #${idx+1}</div>
+      <div class="form-group"><label>Tên bài *</label><input id="_al_title" class="form-control" value="${l.title}" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>Loại</label>
+          <select id="_al_type" class="form-control">
+            <option value="text" ${l.type==='text'?'selected':''}>📔 Văn bản</option>
+            <option value="video" ${l.type==='video'?'selected':''}>🎬 Video YouTube</option>
+            <option value="link" ${l.type==='link'?'selected':''}>🔗 Link tài liệu</option>
+          </select></div>
+        <div class="form-group"><label>Thời lượng (phút)</label><input id="_al_dur" class="form-control" type="number" min="1" value="${l.durationMins}" /></div>
+      </div>
+      <div class="form-group"><label>Nội dung / URL</label>
+        <textarea id="_al_content" class="form-control" rows="3">${l.content||''}</textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-outline" onclick="document.getElementById('_ac_lesson_form').innerHTML=''">Hủy</button>
+        <button class="btn-primary" onclick="_adminUpdateLesson(${idx})">✅ Cập nhật</button>
+      </div>
+    </div>`;
+};
+
+window._adminUpdateLesson = function(idx) {
+  const c = window._adminEditingCourse;
+  if (!c?.lessons?.[idx]) return;
+  c.lessons[idx].title       = document.getElementById('_al_title')?.value.trim() || c.lessons[idx].title;
+  c.lessons[idx].type        = document.getElementById('_al_type')?.value  || c.lessons[idx].type;
+  c.lessons[idx].durationMins = parseInt(document.getElementById('_al_dur')?.value) || 15;
+  c.lessons[idx].content     = document.getElementById('_al_content')?.value.trim() || c.lessons[idx].content;
+  window._adminRerenderCourseDialog?.();
+};
+
+window._adminSaveCourse = function(courseId, isNew) {
+  const c = window._adminEditingCourse;
+  if (!c) return;
+  c.title       = document.getElementById('_ac_title')?.value.trim()  || c.title;
+  c.description = document.getElementById('_ac_desc')?.value.trim()   || '';
+  c.thumbnail   = document.getElementById('_ac_thumb')?.value.trim()  || '📚';
+  c.level       = document.getElementById('_ac_level')?.value         || 'beginner';
+  c.passingScore = parseInt(document.getElementById('_ac_pass')?.value) || 70;
+  c.durationMins = parseInt(document.getElementById('_ac_dur')?.value)  || 60;
+  const pathVal = document.getElementById('_ac_path')?.value;
+  c.pathIds = pathVal === 'onboarding' ? ['onboarding'] : [];
+
+  if (!c.title) { showToast('⚠️ Nhập tên khóa học!', 'error'); return; }
+
+  if (isNew) {
+    TRAINING_COURSES.push(c);
+  } else {
+    const idx = TRAINING_COURSES.findIndex(x => x.id === courseId);
+    if (idx > -1) TRAINING_COURSES[idx] = c;
+  }
+  document.getElementById('_dlg_admin_course')?.remove();
+  showToast(`✅ Đã ${isNew ? 'tạo' : 'cập nhật'} khóa học "${c.title}"!`, 'success');
+  renderTraining();
+};
+
+function deleteAdminCourse(courseId) {
+  const course = (TRAINING_COURSES||[]).find(c => c.id === courseId);
+  if (!course) return;
+  hrConfirm(
+    `Xóa khóa học "${course.title}"?`,
+    'Dữ liệu tiến độ của nhân viên sẽ không bị ảnh hưởng.',
+    () => {
+      const idx = TRAINING_COURSES.findIndex(c => c.id === courseId);
+      if (idx > -1) TRAINING_COURSES.splice(idx, 1);
+      showToast('🗑️ Đã xóa khóa học', 'info');
+      renderTraining();
+    }
+  );
 }
