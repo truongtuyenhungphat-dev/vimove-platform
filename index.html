@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="css/sprint1.css?v=3.0" />
   <link rel="stylesheet" href="css/attendance.css?v=1.0" />
   <link rel="stylesheet" href="css/positions.css?v=1.0" />
+  <link rel="stylesheet" href="css/training.css?v=1.0" />
   <link rel="manifest" href="manifest.json" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -155,6 +156,11 @@
         <span class="nav-icon">⏱</span>
         <span class="nav-label">Chấm công</span>
         <span class="nav-badge" id="badge-attendance" style="display:none"></span>
+      </a>
+      <a class="nav-item" id="nav-training" onclick="showModule('training')" href="#">
+        <span class="nav-icon">🎓</span>
+        <span class="nav-label">Đào tạo & PT</span>
+        <span class="nav-badge" id="badge-training"></span>
       </a>
 
       <div class="nav-section-label manager-up">Hệ thống</div>
@@ -946,6 +952,10 @@
   </div>
 </div>
 
+      <!-- ===== TRAINING PAGE ===== -->
+      <div class="page hidden" id="page-training">
+        <!-- Rendered by renderTraining() -->
+      </div>
 <!-- Toast -->
 <div id="toastContainer" class="toast-container"></div>
 
@@ -977,6 +987,8 @@
 <!-- Sprint 6: QR Check-in (jsQR + module) -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="js/qr-checkin.js?v=1.0"></script>
+<!-- Sprint 7: Training & Development -->
+<script src="js/training.js?v=1.0"></script>
 <script src="js/app.js?v=2.5"></script>
 </body>
 </html>

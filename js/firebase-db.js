@@ -285,3 +285,24 @@ window.fbListenAssignments = (callback) => {
 };
 
 console.log('[⚡ VIWORK] Firebase Database Services (Compat) loaded — incl. Attendance!');
+
+// ============ TRAINING ENROLLMENTS ============
+window.fbSaveEnrollment = async (userId, courseId, enrollment) => {
+  const db = getDB(); if (!db) return;
+  const docId = `${userId}_${courseId}`;
+  await db.collection('viwork_training').doc(docId).set({ ...enrollment, userId, courseId, updatedAt: new Date().toISOString() });
+};
+
+window.fbListenTraining = (userId, callback) => {
+  const db = getDB(); if (!db) return;
+  return db.collection('viwork_training')
+    .where('userId','==', userId)
+    .onSnapshot(snap => {
+      const enrollments = {};
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (!enrollments[d.courseId]) enrollments[d.courseId] = d;
+      });
+      callback(enrollments);
+    });
+};

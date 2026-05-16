@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    VIWORK — Data Store (Mock database)
    Simulates Firebase Firestore data locally
    ================================================ */
@@ -1130,3 +1130,143 @@ function formatCurrency(val) {
   if (val >= 1000) return (val/1000).toFixed(1) + ' tỷ';
   return val.toLocaleString('vi-VN') + ' triệu';
 }
+
+// ============ TRAINING COURSES (Sprint 7: L&D) ============
+const TRAINING_COURSES = [
+  {
+    id: 'course_onboard',
+    title: 'Onboarding Nhân viên mới',
+    description: 'Tổng quan về Vimove, văn hóa công ty, quy trình làm việc và các công cụ hàng ngày.',
+    thumbnail: '🚀',
+    color: 'linear-gradient(135deg,rgba(90,184,0,0.15),rgba(90,184,0,0.05))',
+    level: 'beginner',
+    durationMins: 60,
+    passingScore: 70,
+    positionIds: [],
+    pathIds: ['onboarding'],
+    lessons: [
+      {
+        id: 'ob_l1', title: 'Chào mừng đến Vimove', type: 'text', durationMins: 10,
+        content: 'Chào mừng bạn gia nhập Vimove!\n\nVimove là nền tảng thương mại điện tử thế hệ mới với sứ mệnh đưa thương mại Việt Nam lên tầm cao mới.\n\n**Sứ mệnh:** Kết nối người bán và người mua thông qua công nghệ thông minh.\n\n**Giá trị cốt lõi:**\n- Tốc độ: Hành động nhanh, học hỏi nhanh\n- Chất lượng: Mọi sản phẩm đều có giá trị thực\n- Đội nhóm: Cùng nhau phát triển\n\n**Cấu trúc tổ chức:**\nBan Giám đốc → Quản lý phòng ban → Nhân viên\n\nHãy đọc kỹ tài liệu nội bộ và đặt câu hỏi cho quản lý của bạn!',
+        quiz: {
+          questions: [
+            { q: 'Giá trị cốt lõi nào sau đây KHÔNG thuộc Vimove?', options: ['Tốc độ','Chất lượng','Cạnh tranh bằng mọi giá','Đội nhóm'], answer: 2 },
+            { q: 'Vimove là nền tảng thuộc lĩnh vực nào?', options: ['Logistics','Thương mại điện tử','Fintech','Edtech'], answer: 1 }
+          ]
+        }
+      },
+      {
+        id: 'ob_l2', title: 'Quy trình làm việc & VIWORK', type: 'text', durationMins: 15,
+        content: 'VIWORK là hệ thống quản lý nội bộ của Vimove.\n\n**Các module chính:**\n- **Command Center:** Tổng quan KPI, doanh thu theo thời gian thực\n- **Workflow Board:** Quản lý CVC (Chiến dịch Vận hành Chính)\n- **Giao việc:** Nhận và theo dõi nhiệm vụ từ quản lý\n- **Chấm công:** Check-in bằng GPS hoặc QR tại văn phòng\n- **Đào tạo:** Học và phát triển kỹ năng\n\n**Quy tắc sử dụng:**\n- Cập nhật trạng thái nhiệm vụ mỗi ngày\n- Check-in đúng giờ (8:00 AM)\n- Báo cáo tiến độ hàng tuần qua comment trong task',
+        quiz: {
+          questions: [
+            { q: 'Module nào dùng để check-in hàng ngày?', options: ['Command Center','Workflow Board','Chấm công','CRM'], answer: 2 },
+            { q: 'CVC viết tắt của cụm từ nào?', options: ['Công Việc Cần làm','Chiến dịch Vận hành Chính','Chỉ Tiêu Cá nhân','Không có đáp án đúng'], answer: 1 }
+          ]
+        }
+      },
+      {
+        id: 'ob_l3', title: 'Chính sách lương & KPI', type: 'text', durationMins: 20,
+        content: 'Hệ thống lương tại Vimove gồm 2 phần chính:\n\n**1. Lương cứng (Base Salary)**\nThanh toán vào ngày 5 hàng tháng. Được xác định theo vị trí.\n\n**2. Thưởng KPI**\nTính theo % hoàn thành mục tiêu:\n- Dưới 70%: Không có thưởng\n- 70-99%: Thưởng theo tỷ lệ\n- 100%+: Thưởng đầy đủ + bonus xuất sắc 20%\n\n**Phụ cấp:**\n- Ăn trưa, đi lại, điện thoại tùy vị trí\n\n**Theo dõi KPI:** Vào module HR > Thu nhập để xem chi tiết phiếu lương hàng tháng.',
+        quiz: {
+          questions: [
+            { q: 'Lương được thanh toán vào ngày mấy hàng tháng?', options: ['Ngày 1','Ngày 5','Ngày 10','Ngày 15'], answer: 1 },
+            { q: 'Đạt bao nhiêu % KPI mới được nhận thưởng?', options: ['50%','60%','70%','80%'], answer: 2 }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    id: 'course_sales',
+    title: 'Kỹ năng Bán hàng Vimove',
+    description: 'Quy trình bán hàng chuẩn, kỹ năng tư vấn, xử lý từ chối và chốt đơn hiệu quả trên các kênh.',
+    thumbnail: '🛒',
+    color: 'linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05))',
+    level: 'intermediate',
+    durationMins: 90,
+    passingScore: 75,
+    positionIds: ['pos_sales'],
+    pathIds: [],
+    lessons: [
+      {
+        id: 'sales_l1', title: 'Hiểu nhu cầu khách hàng', type: 'text', durationMins: 20,
+        content: '**Nguyên tắc vàng: Nghe trước, bán sau**\n\nKhách hàng không mua sản phẩm — họ mua giải pháp cho vấn đề của mình.\n\n**Mô hình SPIN Selling:**\n- **S**ituation (Tình huống): Khách đang ở đâu?\n- **P**roblem (Vấn đề): Họ đang gặp khó khăn gì?\n- **I**mplication (Ảnh hưởng): Vấn đề đó ảnh hưởng thế nào?\n- **N**eed-payoff (Giải pháp): Sản phẩm giải quyết được không?\n\n**Kỹ thuật lắng nghe tích cực:**\n1. Dừng suy nghĩ về câu trả lời khi khách đang nói\n2. Gật đầu, xác nhận (à, vâng, tôi hiểu...)\n3. Đặt câu hỏi mở: "Bạn có thể kể thêm về...?"\n4. Tóm tắt lại những gì khách nói',
+        quiz: {
+          questions: [
+            { q: 'SPIN Selling — chữ "I" đại diện cho điều gì?', options: ['Idea','Implication','Innovation','Impact'], answer: 1 },
+            { q: 'Trong kỹ thuật lắng nghe tích cực, bạn nên làm gì khi khách đang nói?', options: ['Chuẩn bị câu trả lời','Dừng suy nghĩ về câu trả lời','Kiểm tra điện thoại','Ghi chép thật nhiều'], answer: 1 }
+          ]
+        }
+      },
+      {
+        id: 'sales_l2', title: 'Xử lý từ chối & phản đối', type: 'text', durationMins: 25,
+        content: '**Từ chối KHÔNG phải là thất bại — đó là cơ hội!**\n\nCác loại từ chối phổ biến:\n\n**1. "Giá cao quá"**\n→ Không giảm giá ngay! Hỏi: "So với điều gì ạ?"\n→ Nhấn mạnh giá trị, không phải giá tiền\n→ Chia nhỏ: "Chỉ X đồng/ngày"\n\n**2. "Tôi cần nghĩ thêm"**\n→ "Bạn đang cân nhắc điều gì cụ thể?" \n→ Xác định phần chưa chắc chắn\n→ Đặt lịch follow-up cụ thể\n\n**3. "Tôi đang dùng của bên khác"**\n→ Hỏi về trải nghiệm hiện tại\n→ Đề xuất dùng thử song song\n→ Không chỉ trích đối thủ\n\n**Công thức: Acknowledge → Clarify → Respond → Confirm**',
+        quiz: {
+          questions: [
+            { q: 'Khi khách nói "giá cao quá", phản ứng đúng là gì?', options: ['Giảm giá ngay','Kết thúc cuộc gọi','Hỏi so với điều gì','Im lặng'], answer: 2 },
+            { q: 'Công thức xử lý từ chối là gì?', options: ['Ask-Listen-Respond','Acknowledge-Clarify-Respond-Confirm','Agree-Disagree-Close','None of above'], answer: 1 }
+          ]
+        }
+      },
+      {
+        id: 'sales_l3', title: 'Chốt đơn & Follow-up', type: 'video', durationMins: 30,
+        content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        linkTitle: 'Video: Kỹ thuật chốt đơn hiệu quả',
+        notes: 'Sau khi xem video, hãy ghi nhớ 3 kỹ thuật chốt đơn: Assumptive Close, Alternative Close, và Urgency Close.',
+        quiz: {
+          questions: [
+            { q: 'Assumptive Close là kỹ thuật gì?', options: ['Giả định khách đã đồng ý mua','Tạo áp lực thời gian','Đưa ra 2 lựa chọn','Giảm giá cuối cùng'], answer: 0 },
+            { q: 'Follow-up lý tưởng nên thực hiện trong vòng bao lâu?', options: ['1 tuần','24-48 giờ','1 tháng','Chờ khách gọi lại'], answer: 1 }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    id: 'course_marketing',
+    title: 'Marketing Digital Vimove',
+    description: 'Facebook Ads, TikTok content, SEO cơ bản và cách đo lường hiệu quả chiến dịch marketing.',
+    thumbnail: '📣',
+    color: 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05))',
+    level: 'intermediate',
+    durationMins: 100,
+    passingScore: 70,
+    positionIds: ['pos_marketing'],
+    pathIds: [],
+    lessons: [
+      {
+        id: 'mkt_l1', title: 'Facebook Ads — Cơ bản', type: 'text', durationMins: 30,
+        content: '**Facebook Ads — 3 cấp độ:**\n\n**1. Campaign (Chiến dịch)**\n- Mục tiêu: Awareness / Traffic / Conversion / Sales\n- Chọn mục tiêu phù hợp với giai đoạn funnel\n\n**2. Ad Set (Nhóm quảng cáo)**\n- Target audience: tuổi, giới tính, sở thích, hành vi\n- Ngân sách & lịch chạy\n- Placement: Feed, Stories, Reels\n\n**3. Ad (Mẫu quảng cáo)**\n- Creative: ảnh, video, carousel\n- Copy: Headline + Body + CTA\n\n**Chỉ số quan trọng:**\n- **CTR** (Click-Through Rate): > 1% là tốt\n- **CPC** (Cost Per Click): Càng thấp càng tốt\n- **ROAS** (Return on Ad Spend): Mục tiêu > 3x\n- **CPM** (Cost Per 1000 Impressions): Benchmark thị trường VN ~30-50k',
+        quiz: {
+          questions: [
+            { q: 'ROAS là viết tắt của gì?', options: ['Rate of Ad Spending','Return on Ad Spend','Revenue of Ad Sales','Result of Ad Strategy'], answer: 1 },
+            { q: 'CTR tốt trên Facebook thường là bao nhiêu?', options: ['> 0.1%','> 1%','> 10%','> 50%'], answer: 1 }
+          ]
+        }
+      },
+      {
+        id: 'mkt_l2', title: 'TikTok Content & Viral', type: 'link', durationMins: 25,
+        content: 'https://docs.google.com/document/d/vimove-tiktok-guide',
+        linkTitle: 'Tài liệu: Hướng dẫn tạo content TikTok Vimove',
+        notes: '**Công thức video TikTok viral:**\n\n- **3 giây đầu tiên:** Hook mạnh — câu hỏi, shock value, hoặc câu hỏi tò mò\n- **Giữ người xem:** Pacing nhanh, chuyển cảnh liên tục\n- **CTA cuối:** Like, Follow, Comment\n- **Hashtag:** 3-5 hashtag liên quan + 1 trending\n\n**Lịch đăng content Vimove:** Thứ 3, 5, 7 lúc 8h và 20h',
+        quiz: {
+          questions: [
+            { q: 'Lịch đăng TikTok của Vimove là ngày nào?', options: ['Thứ 2,4,6','Thứ 3,5,7','Mỗi ngày','Cuối tuần'], answer: 1 },
+            { q: 'Hook trong 3 giây đầu video nhằm mục đích gì?', options: ['Giới thiệu sản phẩm','Giữ người xem không bỏ qua','Bán hàng ngay','Tăng follower'], answer: 1 }
+          ]
+        }
+      },
+      {
+        id: 'mkt_l3', title: 'Đo lường & Báo cáo Marketing', type: 'text', durationMins: 20,
+        content: '**Vòng đời đo lường chiến dịch:**\n\n**1. Thiết lập KPI trước khi chạy**\n- Mục tiêu cụ thể: bao nhiêu leads, bao nhiêu đơn hàng\n- Ngân sách tối đa CPA (Cost Per Acquisition)\n\n**2. Theo dõi trong chiến dịch**\n- Kiểm tra số liệu mỗi 24h\n- Tắt ad không hiệu quả (CTR < 0.5% sau 3 ngày)\n- Scale ad hiệu quả (tăng ngân sách 20%/ngày)\n\n**3. Báo cáo kết quả**\n- So sánh với KPI ban đầu\n- Bài học rút ra\n- Kế hoạch tháng tiếp theo\n\n**Template báo cáo Vimove:**\nSpend → Reach → Click → Lead → Order → Revenue → ROAS',
+        quiz: {
+          questions: [
+            { q: 'Nên tắt ad khi CTR dưới bao nhiêu sau 3 ngày?', options: ['0.1%','0.5%','1%','2%'], answer: 1 },
+            { q: 'CPA viết tắt của gì?', options: ['Content Per Ad','Cost Per Acquisition','Click Per Action','Customer Per Ad'], answer: 1 }
+          ]
+        }
+      }
+    ]
+  }
+];

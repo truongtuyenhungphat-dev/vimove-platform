@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    VIWORK — App Main Entry Point
    Module routing, navigation, initialization
    ================================================ */
@@ -65,6 +65,7 @@ function showModule(module) {
     requests:    'Đề xuất & Phê duyệt',
     assignments: 'Quản lý Giao việc',
     attendance:  'Chấm công',
+    training:    'Đào tạo & Phát triển',
     settings:    'Cài đặt hệ thống',
   };
   document.getElementById('pageTitle').textContent = titles[module] || module;
@@ -91,6 +92,7 @@ function showModule(module) {
     case 'requests':    renderRequests();    break;
     case 'assignments': renderAssignments(); break;
     case 'attendance':  renderAttendance();  break;
+    case 'training':    renderTraining();    break;
     case 'settings':    renderSettingsPanel(); break;
   }
 
