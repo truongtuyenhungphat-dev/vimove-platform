@@ -92,11 +92,12 @@ function renderMyPath(el) {
   const uid  = currentUser?.id;
   const pos  = currentUser?.positionId || '';
 
-  // Lọc lộ trình phù hợp với vị trí + luôn thêm Onboarding
+  // Lọc lộ trình phù hợp: Onboarding (everyone) + gắn vị trí + được chỉ định trực tiếp
   const myPaths = (TRAINING_COURSES || []).filter(c =>
     c.pathIds?.includes('onboarding') ||
-    (c.positionIds?.length === 0) ||
-    (pos && c.positionIds?.includes(pos))
+    (c.positionIds?.length === 0 && (!c.assignedUserIds || c.assignedUserIds.length === 0)) ||
+    (pos && c.positionIds?.includes(pos)) ||
+    (c.assignedUserIds?.includes(uid))
   );
 
   // Tính overall progress
@@ -179,20 +180,49 @@ function renderMyBadges(uid, paths) {
 function renderCatalog(el) {
   const courses = TRAINING_COURSES || [];
   const uid = currentUser?.id;
+  const pos = currentUser?.positionId || '';
+  const isAdminUser = currentUser?.role === 'admin';
+
+  // Admin thấy tất cả, còn lại chỉ thấy khóa phù hợp
+  const visible = isAdminUser ? courses : courses.filter(c =>
+    c.pathIds?.includes('onboarding') ||
+    (c.positionIds?.length === 0 && (!c.assignedUserIds || c.assignedUserIds.length === 0)) ||
+    (pos && c.positionIds?.includes(pos)) ||
+    c.assignedUserIds?.includes(uid)
+  );
+
+  const audienceBadges = c => {
+    let badges = '';
+    if (c.pathIds?.includes('onboarding'))
+      badges += '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(245,158,11,0.15);color:#F59E0B;font-weight:700">🔗 Onboarding</span>';
+    (c.positionIds||[]).forEach(pid => {
+      const p = (POSITIONS||[]).find(x => x.id === pid);
+      if (p) badges += `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,0.12);color:#3B82F6;font-weight:700">${p.icon} ${p.name}</span>`;
+    });
+    (c.assignedUserIds||[]).slice(0,3).forEach(uid2 => {
+      const m = TEAM_MEMBERS.find(x => x.id === uid2);
+      if (m) badges += `<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(16,185,129,0.12);color:#10B981;font-weight:700">👤 ${m.name.split(' ').pop()}</span>`;
+    });
+    if ((c.assignedUserIds||[]).length > 3)
+      badges += `<span style="font-size:10px;color:var(--c-text-3)">+${c.assignedUserIds.length - 3}</span>`;
+    return badges;
+  };
 
   el.innerHTML = `
     <div class="course-grid">
-      ${courses.map(c => {
+      ${visible.map(c => {
         const pct = getCourseProgress(uid, c.id, c);
         const enr = getEnrollment(uid, c.id);
         const isDone = enr?.status === 'completed';
         const bg = c.color || 'rgba(90,184,0,0.1)';
+        const badges = audienceBadges(c);
         return `
         <div class="course-card" onclick="openCourse('${c.id}')">
           <div class="course-card-thumb" style="background:${bg}">${c.thumbnail}</div>
           <div class="course-card-body">
             <div class="course-card-title">${c.title}</div>
             <div class="course-card-desc">${c.description}</div>
+            ${badges ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${badges}</div>` : ''}
             <div class="course-card-meta">
               <span class="course-level level-${c.level}">${{beginner:'Cơ bản',intermediate:'Trung cấp',advanced:'Nâng cao'}[c.level]||c.level}</span>
               <span style="font-size:11px;color:var(--c-text-3)">⏱ ${c.durationMins} phút</span>
@@ -644,7 +674,45 @@ function openAdminCourseEdit(courseId) {
               </select></div>
           </div>
 
+          <!-- === ĐỐI TƯỢNG HỌC VIÊN === -->
           <div style="border-top:1px solid var(--c-border-subtle);padding-top:14px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:12px">🎯 Đối tượng học viên</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group">
+                <label style="margin-bottom:6px;display:block">📋 Vị trí công việc</label>
+                <div style="border:1px solid var(--c-border-subtle);border-radius:var(--r-md);padding:8px;max-height:140px;overflow-y:auto;background:var(--c-bg-3)">
+                  <label style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer">
+                    <input type="checkbox" id="_ac_pos_all" ${(!course.positionIds||course.positionIds.length===0)?'checked':''}
+                      onchange="if(this.checked){document.querySelectorAll('._ac_pos_cb').forEach(cb=>cb.checked=false)}">
+                    <span style="font-weight:600">🌐 Tất cả vị trí</span>
+                  </label>
+                  ${(POSITIONS||[]).map(p => `
+                  <label style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer">
+                    <input type="checkbox" class="_ac_pos_cb" value="${p.id}" ${(course.positionIds||[]).includes(p.id)?'checked':''}
+                      onchange="document.getElementById('_ac_pos_all').checked=false">
+                    <span>${p.icon} ${p.name}</span>
+                  </label>`).join('')}
+                </div>
+              </div>
+              <div class="form-group">
+                <label style="margin-bottom:6px;display:block">👤 Nhân viên cụ thể</label>
+                <div style="border:1px solid var(--c-border-subtle);border-radius:var(--r-md);padding:8px;max-height:140px;overflow-y:auto;background:var(--c-bg-3)">
+                  <label style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer">
+                    <input type="checkbox" id="_ac_user_all" ${(!course.assignedUserIds||course.assignedUserIds.length===0)?'checked':''}
+                      onchange="if(this.checked){document.querySelectorAll('._ac_user_cb').forEach(cb=>cb.checked=false)}">
+                    <span style="font-weight:600">👥 Tất cả nhân viên</span>
+                  </label>
+                  ${TEAM_MEMBERS.map(m => `
+                  <label style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer">
+                    <input type="checkbox" class="_ac_user_cb" value="${m.id}" ${(course.assignedUserIds||[]).includes(m.id)?'checked':''}
+                      onchange="document.getElementById('_ac_user_all').checked=false">
+                    <span>${m.avatar} ${m.name.split(' ').slice(-2).join(' ')}</span>
+                  </label>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+
             <div style="font-weight:700;font-size:13px;margin-bottom:10px">📖 Bài học (${(course.lessons||[]).length} bài)</div>
             <div id="_ac_lessons">${lessonRows()}</div>
             <button class="btn-outline" style="width:100%;margin-top:8px" onclick="_adminAddLessonForm()">➕ Thêm bài học</button>
@@ -773,6 +841,14 @@ window._adminSaveCourse = function(courseId, isNew) {
   c.durationMins = parseInt(document.getElementById('_ac_dur')?.value)  || 60;
   const pathVal = document.getElementById('_ac_path')?.value;
   c.pathIds = pathVal === 'onboarding' ? ['onboarding'] : [];
+
+  // Đọc vị trí được chọn
+  const posAll = document.getElementById('_ac_pos_all')?.checked;
+  c.positionIds = posAll ? [] : Array.from(document.querySelectorAll('._ac_pos_cb:checked')).map(cb => cb.value);
+
+  // Đọc nhân viên được chỉ định
+  const userAll = document.getElementById('_ac_user_all')?.checked;
+  c.assignedUserIds = userAll ? [] : Array.from(document.querySelectorAll('._ac_user_cb:checked')).map(cb => cb.value);
 
   if (!c.title) { showToast('⚠️ Nhập tên khóa học!', 'error'); return; }
 
