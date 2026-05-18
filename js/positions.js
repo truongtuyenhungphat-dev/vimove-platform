@@ -597,7 +597,7 @@ function _buildCompetencyMatrix(posId) {
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center;padding:16px 20px;gap:12px;border-bottom:1px solid var(--c-border-subtle)">
         ${Object.entries(COMP_LEVELS).map(([k,v]) =>
-          `<div style="background:${COMP_COLORS[k]}15;border-radius:var(--r-lg);padding:10px">
+          `<div onclick="showCompetencyLevelInfo('${k}')" style="background:${COMP_COLORS[k]}15;border-radius:var(--r-lg);padding:10px;cursor:pointer;transition:transform 0.2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Nhấn để xem chi tiết cấp độ">
             <div style="font-size:18px;font-weight:900;color:${COMP_COLORS[k]}">${k}</div>
             <div style="font-size:11px;color:var(--c-text-2);font-weight:600">${v}</div>
           </div>`
@@ -616,6 +616,16 @@ function _buildCompetencyMatrix(posId) {
       </table>
     </div>`;
 }
+
+window.showCompetencyLevelInfo = function(level) {
+  const descs = {
+    L1: 'Nhận thức cơ bản:\n- Hiểu các khái niệm cốt lõi nhưng cần người hướng dẫn trực tiếp.\n- Có thể thực hiện các tác vụ đơn giản, lặp đi lặp lại.',
+    L2: 'Cơ bản:\n- Có khả năng tự thực hiện các quy trình tiêu chuẩn.\n- Nhận diện được vấn đề nhưng chưa thể tự đưa ra giải pháp phức tạp.',
+    L3: 'Thành thạo:\n- Thực hiện độc lập các tác vụ chuyên môn phức tạp.\n- Có khả năng hướng dẫn người khác, tự xử lý các vấn đề phát sinh ngoài quy trình.',
+    L4: 'Chuyên gia:\n- Là người thiết lập quy trình, có tư duy chiến lược sâu sắc.\n- Dẫn dắt tổ chức, giải quyết các khủng hoảng chưa có tiền lệ.'
+  };
+  alert(`CẤP ĐỘ ${level} — ${COMP_LEVELS[level].toUpperCase()}\n\n${descs[level]}`);
+};
 
 // ============ TAB: CHECKLIST CONG VIEC ============
 // Storage key: 'viwork_checklists'
@@ -646,9 +656,10 @@ const DEFAULT_CHECKLISTS = {
   pos_design: ['Thiết kế banner tuần','Review và export file','Cập nhật brand assets','Kiểm tra kích thước file','Đồng bộ thư viện thiết kế'],
 };
 
-function renderChecklistTab(el) {
+function renderChecklistTab(el, forcePosId = null) {
   const uid = currentUser?.id;
-  const posId = currentUser?.positionId || POSITIONS[0].id;
+  // If user selected a specific posId from dropdown, use it. Otherwise use their own posId.
+  const posId = forcePosId || currentUser?.positionId || POSITIONS[0].id;
   const stored = _getChecklists();
   const userChk = stored[uid] || {};
   const defaultItems = DEFAULT_CHECKLISTS[posId] || ['Hoàn thành công việc hàng ngày','Báo cáo cuối ngày'];
@@ -660,17 +671,21 @@ function renderChecklistTab(el) {
   el.innerHTML = `
     <div style="max-width:700px">
       <!-- Header -->
-      <div class="lp-hero" style="margin-bottom:20px">
-        <div class="lp-hero-icon">✅</div>
+      <div class="page-header" style="margin-bottom:20px; align-items:flex-start">
         <div style="flex:1">
-          <h2 style="font-size:17px;font-weight:800;margin-bottom:4px">Checklist công việc — ${POSITIONS.find(p=>p.id===posId)?.name||'Của tôi'}</h2>
+          <h2 style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px">✅ Checklist vận hành định kỳ</h2>
           <p style="font-size:13px;color:var(--c-text-3)">${doneCount}/${items.length} nhiệm vụ hoàn thành</p>
-          <div class="lp-progress-bar-wrap">
+          <div class="lp-progress-bar-wrap" style="margin-top:8px">
             <div class="lp-progress-bar-bg"><div class="lp-progress-bar-fill" style="width:${pct}%"></div></div>
             <div class="lp-progress-pct">${pct}%</div>
           </div>
         </div>
-        ${isAdmin() ? `<button class="btn-outline sm" onclick="addChecklistItem()">+ Thêm</button>` : ''}
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <select class="form-control" style="width:220px" onchange="renderChecklistTab(document.getElementById('teamTabContent'), this.value)">
+            ${POSITIONS.map(p => `<option value="${p.id}" ${p.id===posId?'selected':''}>${p.icon} ${p.name}</option>`).join('')}
+          </select>
+          ${isAdmin() ? `<button class="btn-outline sm" onclick="addChecklistItem('${posId}')">+ Thêm Checklist</button>` : ''}
+        </div>
       </div>
 
       <!-- Items -->
@@ -702,6 +717,7 @@ function toggleChecklist(uid, itemId, done) {
   const doneCount = stored[uid].items.filter(i => i.done).length;
   const total = stored[uid].items.length;
   showToast(done ? `✅ Hoàn thành! ${doneCount}/${total} nhiệm vụ` : '↩️ Đã bỏ đánh dấu', done ? 'success' : 'info');
+  switchTeamTab('checklist');
 }
 
 function removeChecklistItem(uid, itemId) {
@@ -713,20 +729,67 @@ function removeChecklistItem(uid, itemId) {
   }
 }
 
-function addChecklistItem() {
+function addChecklistItem(posId) {
   const text = prompt('Nhập nội dung checklist:');
   if (!text?.trim()) return;
   const uid = currentUser?.id;
-  const posId = currentUser?.positionId || POSITIONS[0].id;
   const stored = _getChecklists();
   if (!stored[uid]) stored[uid] = { items: (DEFAULT_CHECKLISTS[posId]||[]).map((t,i) => ({ id:'ck_'+i, text:t, done:false })) };
   stored[uid].items.push({ id:'ck_'+Date.now(), text:text.trim(), done:false });
   _saveChecklists(stored);
-  switchTeamTab('checklist');
+  renderChecklistTab(document.getElementById('teamTabContent'), posId);
 }
 
 // ============ TAB: LO TRINH 90 NGAY ============
-const ONBOARDING_90 = [
+const ONBOARDING_PLANS = {
+  pos_ceo: [
+    {
+      phase: 1, range: 'Tháng 1 (Ngày 1–30)', title: 'Listen & Learn', color: '#3B82F6', icon: '🌱',
+      goal: 'Hiểu trước, thay đổi sau - Nắm vững P&L, hệ thống vận hành và văn hóa',
+      milestones: [
+        { day:1, text:'Họp bàn giao với HĐQT/Chủ tịch (P&L, Org chart, Chiến lược)' },
+        { day:1, text:'Gặp mặt toàn bộ nhân viên (All-hands), cam kết lắng nghe' },
+        { day:3, text:'Đọc P&L 12 tháng gần nhất (Phân tích chi phí & GMV)' },
+        { day:5, text:'Họp 1-1 với từng GĐ trực tiếp (Lắng nghe điểm nóng)' },
+        { day:5, text:'Xem dashboard GMV realtime từng sàn (Shopee, TikTok)' },
+        { day:7, text:'Ngồi cùng đội AM Shopee xem vận hành thực tế 1 ngày' },
+        { day:9, text:'Đọc 100 review khách hàng gần nhất (Top điểm mạnh/yếu)' },
+        { day:10, text:'Xem 1 buổi xử lý đơn tại kho (Kiểm tra t/gian đóng gói)' },
+        { day:14, text:'Phỏng vấn 10 nhân viên cấp thực thi (Nghe vấn đề từ dưới lên)' },
+        { day:14, text:'Phân tích 5 đối thủ chính ngành vali TMĐT' },
+        { day:20, text:'Hoàn thành khóa Onboarding Vimove' },
+        { day:30, text:'Báo cáo kết thúc 30 ngày: Tổng hợp các vấn đề cốt lõi' },
+      ],
+      deliverable: 'Bản phân tích thực trạng Vimove đa chiều (Không đưa giải pháp vội)'
+    },
+    {
+      phase: 2, range: 'Tháng 2 (Ngày 31–60)', title: 'Influence & Tăng tốc', color: '#F59E0B', icon: '⚡',
+      goal: 'Bắt đầu tạo ảnh hưởng, thay đổi các điểm nghẽn (bottleneck) lớn nhất',
+      milestones: [
+        { day:35, text:'Hoàn thành Đào tạo chuyên môn (Ads, Data TMĐT)' },
+        { day:40, text:'Loại bỏ 1 bottleneck lớn nhất trong vận hành/CSKH' },
+        { day:45, text:'Thiết lập hệ thống báo cáo CEO Dashboard hàng ngày' },
+        { day:50, text:'Chủ trì đánh giá lại toàn bộ ngân sách Marketing & ROAS' },
+        { day:55, text:'Tổ chức workshop với các GĐ để thống nhất OKR quý tới' },
+        { day:60, text:'Setup IDP (Kế hoạch phát triển cá nhân) cho C-Suite' },
+      ],
+      deliverable: 'Thay đổi hiệu suất Marketing/Ops & Củng cố đội ngũ quản lý'
+    },
+    {
+      phase: 3, range: 'Tháng 3 (Ngày 61–90)', title: 'Growth & Đóng góp', color: '#10B981', icon: '🏆',
+      goal: 'Đạt kết quả thực tế (Quick wins), chốt chiến lược năm tiếp theo',
+      milestones: [
+        { day:65, text:'Đàm phán thành công với sàn (Ưu đãi, Campaign lớn)' },
+        { day:70, text:'Hoàn tất tuyển dụng vị trí C-Suite/TP còn thiếu' },
+        { day:75, text:'Xây dựng Employer Branding (Tạo 2-3 post trên LinkedIn)' },
+        { day:80, text:'Đo lường sự cải thiện GMV & eNPS sau 3 tháng' },
+        { day:85, text:'Tổ chức All-hands 90 ngày (Chia sẻ đã làm gì & đi về đâu)' },
+        { day:90, text:'Báo cáo kết quả 90 ngày lên HĐQT & Phê duyệt chiến lược năm' },
+      ],
+      deliverable: 'GMV tăng trưởng rõ rệt, HĐQT thông qua định hướng chiến lược năm'
+    }
+  ],
+  default: [
   {
     phase: 1, range: 'Ngày 1 – 30', title: 'Khám phá & Hội nhập', color: '#3B82F6', icon: '🌱',
     goal: 'Hiểu văn hóa, quy trình, đội nhóm và bắt đầu đóng góp',
@@ -764,24 +827,33 @@ const ONBOARDING_90 = [
     ],
     deliverable: 'GMV tăng trưởng rõ rệt, HĐQT thông qua định hướng (Growth)'
   }
-];
+  ]
+};
 
-function renderOnboarding90Tab(el) {
+function renderOnboarding90Tab(el, forcePosId = null) {
   const uid = currentUser?.id;
+  const posId = forcePosId || currentUser?.positionId || POSITIONS[0].id;
   const stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}');
   const userProgress = stored[uid] || {};
+  
+  const onboardingData = ONBOARDING_PLANS[posId] || ONBOARDING_PLANS.default;
 
   el.innerHTML = `
-    <div class="page-header" style="margin-bottom:24px">
+    <div class="page-header" style="margin-bottom:24px; align-items:flex-start">
       <div>
         <h2 style="font-size:18px;font-weight:800">🗓️ Lộ trình gia nhập 90 ngày</h2>
         <p style="font-size:13px;color:var(--c-text-3)">Chương trình hội nhập có cấu trúc dành cho thành viên mới Vimove</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        <select class="form-control" style="width:220px" onchange="renderOnboarding90Tab(document.getElementById('teamTabContent'), this.value)">
+          ${POSITIONS.map(p => `<option value="${p.id}" ${p.id===posId?'selected':''}>${p.icon} ${p.name}</option>`).join('')}
+        </select>
       </div>
     </div>
 
     <!-- Timeline phases -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">
-      ${ONBOARDING_90.map(phase => {
+      ${onboardingData.map(phase => {
         const doneMiles = phase.milestones.filter(m => userProgress[`p${phase.phase}_d${m.day}`]).length;
         const pct = Math.round(doneMiles/phase.milestones.length*100);
         return `
@@ -804,7 +876,7 @@ function renderOnboarding90Tab(el) {
               const done = !!userProgress[key];
               return `
               <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;border-radius:var(--r-sm);background:${done?phase.color+'12':'transparent'}">
-                <input type="checkbox" ${done?'checked':''} onchange="_toggle90Day('${uid}','${key}',this.checked)"
+                <input type="checkbox" ${done?'checked':''} onchange="_toggle90Day('${uid}','${key}',this.checked, '${posId}')"
                   style="width:15px;height:15px;accent-color:${phase.color};flex-shrink:0;margin-top:1px">
                 <span style="font-size:12px;${done?'text-decoration:line-through;color:var(--c-text-3)':''}">
                   <span style="font-weight:700;color:${phase.color}">Ngày ${m.day}:</span> ${m.text}
@@ -838,12 +910,12 @@ function renderOnboarding90Tab(el) {
   `;
 }
 
-function _toggle90Day(uid, key, done) {
+function _toggle90Day(uid, key, done, posId) {
   const stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}');
   if (!stored[uid]) stored[uid] = {};
   stored[uid][key] = done;
   localStorage.setItem('viwork_90day', JSON.stringify(stored));
   showToast(done ? '✅ Mốc hoàn thành!' : '↩️ Đã bỏ đánh dấu', done ? 'success' : 'info');
-  // Refresh phase progress bars only
-  switchTeamTab('onboarding90');
+  // Refresh phase progress bars
+  renderOnboarding90Tab(document.getElementById('teamTabContent'), posId);
 }
