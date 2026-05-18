@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    VIWORK — Positions Module
    Sơ đồ tổ chức, Mô tả vị trí, KPI & Thu nhập
    ================================================ */
@@ -530,7 +530,7 @@ function renderAdminIncomeTable() {
 
 // ============ TAB: KHUNG NANG LUC ============
 const COMPETENCY_FRAMEWORK = {
-  pos_ceo:       { hard:['Quản trị chiến lược','Tài chính & ngân sách','Quản lý rủi ro'], soft:['Lãnh đạo','Tư duy hệ thống','Quyết đoán'], level:['L4','L4','L3'] },
+  pos_ceo:       { hard:['Kiến thức TMĐT (15%)','Phân tích Data (20%)','Tốc độ & Thực thi (10%)'], soft:['Năng lực Lãnh đạo (30%)','Giao tiếp & Truyền cảm hứng (15%)','Tư duy chiến lược (10%)'], level:['L4','L4','L4'] },
   pos_tech:      { hard:['Lập trình Web/App','Firebase & Cloud','SEO & Tracking'], soft:['Giải quyết vấn đề','Tự học','Tư duy logic'], level:['L4','L4','L3'] },
   pos_hr_mkt:    { hard:['Tuyển dụng','KPI & OKR','Phân tích HR'], soft:['Giao tiếp','Đàm phán','Tổ chức'], level:['L3','L3','L2'] },
   pos_digital:   { hard:['Facebook Ads','TikTok Ads','Google Analytics'], soft:['Sáng tạo','Tư duy số liệu','Linh hoạt'], level:['L3','L4','L3'] },
@@ -625,7 +625,18 @@ function _getChecklists() {
 function _saveChecklists(data) { localStorage.setItem('viwork_checklists', JSON.stringify(data)); }
 
 const DEFAULT_CHECKLISTS = {
-  pos_ceo:    ['Duyệt kế hoạch tháng','Họp tổng kết tuần','Review KPI toàn đội','Phê duyệt ngân sách','Gặp gỡ đối tác chiến lược'],
+  pos_ceo:    [
+    '[Hàng ngày] Xem dashboard GMV sáng sớm, xử lý alert',
+    '[Hàng ngày] Check email HĐQT, Đối tác chiến lược',
+    '[Thứ 2] Chủ trì họp Ban giám đốc tuần',
+    '[Thứ 4] Coaching 1-1 với 1-2 Giám đốc',
+    '[Thứ 5] Cập nhật brief cạnh tranh tuần',
+    '[Thứ 6] Review tuần & Gửi tin nhắn động viên toàn đội',
+    '[Đầu tháng] Phê duyệt ngân sách marketing & Review báo cáo tháng',
+    '[Cuối tháng] Lên kế hoạch tháng tới (Brief 1 trang)',
+    '[Hàng quý] Báo cáo HĐQT & Review OKR toàn công ty',
+    '[Hàng năm] Lập chiến lược năm, Year-end review'
+  ],
   pos_tech:   ['Setup môi trường dev','Kiểm tra uptime hệ thống','Deploy bản cập nhật','Review code','Backup dữ liệu'],
   pos_hr_mkt: ['Đăng tin tuyển dụng','Phỏng vấn ứng viên','Cập nhật KPI đội ngũ','Báo cáo nhân sự tháng','Tổ chức team building'],
   pos_digital:['Kiểm tra hiệu quả ads','Tối ưu chi phí CPA','Báo cáo ROAS tuần','A/B test creative','Cập nhật pixel tracking'],
@@ -720,38 +731,38 @@ const ONBOARDING_90 = [
     phase: 1, range: 'Ngày 1 – 30', title: 'Khám phá & Hội nhập', color: '#3B82F6', icon: '🌱',
     goal: 'Hiểu văn hóa, quy trình, đội nhóm và bắt đầu đóng góp',
     milestones: [
-      { day:1,  text:'Nhận tài khoản, thiết bị, giới thiệu đội nhóm' },
-      { day:3,  text:'Hoàn thành khóa Onboarding trên VIWORK' },
-      { day:7,  text:'Shadow 1-on-1 với quản lý & đồng nghiệp cùng vị trí' },
-      { day:14, text:'Nắm vững quy trình làm việc, công cụ hàng ngày' },
-      { day:21, text:'Tự mình thực hiện nhiệm vụ đầu tiên' },
-      { day:30, text:'Review 1-on-1 với quản lý: đánh giá hội nhập' },
+      { day:1,  text:'Họp nhận bàn giao từ HĐQT (P&L, Org chart, Chiến lược)' },
+      { day:2,  text:'All-hands giới thiệu bản thân & cam kết lắng nghe' },
+      { day:7,  text:'Ngồi cùng Account Manager Shopee xem vận hành thực tế' },
+      { day:14, text:'Phân tích 5 đối thủ chính & Phỏng vấn 10 nhân sự' },
+      { day:21, text:'Review 100 feedback khách hàng gần nhất' },
+      { day:30, text:'Hoàn thành khóa Onboarding Vimove' },
     ],
-    deliverable: 'Hoàn thành khóa Onboarding + 1 CVC đầu tiên tự thực hiện'
+    deliverable: 'Nắm vững P&L, hệ thống vận hành và văn hóa (Listen & Learn)'
   },
   {
     phase: 2, range: 'Ngày 31 – 60', title: 'Học hỏi & Tăng tốc', color: '#F59E0B', icon: '⚡',
     goal: 'Nắm vững chuyên môn, phát triển mạng lưới nội bộ, đạt KPI cơ bản',
     milestones: [
-      { day:35, text:'Hoàn thành khóa đào tạo chuyên môn vị trí' },
-      { day:40, text:'Đảm nhận 3+ CVC độc lập' },
-      { day:45, text:'Trình bày ý tưởng cải tiến trong cuộc họp nhóm' },
-      { day:50, text:'Đạt 70%+ KPI tháng đầu tiên' },
-      { day:60, text:'Review 1-on-1: đánh giá hiệu suất & lộ trình tiếp theo' },
+      { day:35, text:'Hoàn thành Đào tạo chuyên môn (Ads, Data TMĐT)' },
+      { day:45, text:'Thiết lập hệ thống báo cáo CEO Dashboard' },
+      { day:50, text:'Chủ trì đánh giá lại toàn bộ ngân sách Marketing' },
+      { day:55, text:'Bắt đầu tối ưu hóa quy trình (Loại bỏ bottleneck)' },
+      { day:60, text:'Setup IDP (Kế hoạch phát triển) cho C-Suite' },
     ],
-    deliverable: 'Đạt ≥70% KPI tháng 2 + đề xuất ít nhất 1 ý tưởng cải tiến'
+    deliverable: 'Thay đổi hiệu suất Marketing/Ops & Củng cố đội ngũ (Influence)'
   },
   {
     phase: 3, range: 'Ngày 61 – 90', title: 'Đóng góp & Phát triển', color: '#10B981', icon: '🏆',
     goal: 'Chứng minh giá trị độc lập, nhận feedback 360° và định hướng phát triển',
     milestones: [
-      { day:65, text:'Mentor hoặc hỗ trợ nhân viên mới hơn' },
-      { day:70, text:'Đạt 85%+ KPI tháng thứ 3' },
-      { day:75, text:'Tự lên kế hoạch công việc tuần không cần nhắc nhở' },
-      { day:80, text:'Nhận đánh giá 360° từ đồng nghiệp & quản lý' },
-      { day:90, text:'Review toàn diện với quản lý + lộ trình 6 tháng tiếp' },
+      { day:65, text:'Đàm phán thành công với sàn (Ưu đãi, Campaign)' },
+      { day:70, text:'Tổ chức workshop chiến lược quý' },
+      { day:80, text:'Xây dựng Employer Branding & tuyển dụng key' },
+      { day:85, text:'Đo lường sự cải thiện GMV & eNPS' },
+      { day:90, text:'Báo cáo kết quả 90 ngày lên HĐQT & Phê duyệt lộ trình' },
     ],
-    deliverable: 'Đạt ≥85% KPI + đánh giá 360° đạt "Đáp ứng kỳ vọng" trở lên'
+    deliverable: 'GMV tăng trưởng rõ rệt, HĐQT thông qua định hướng (Growth)'
   }
 ];
 

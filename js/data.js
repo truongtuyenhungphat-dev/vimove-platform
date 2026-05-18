@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    VIWORK — Data Store (Mock database)
    Simulates Firebase Firestore data locally
    ================================================ */
@@ -157,25 +157,28 @@ const TEAM_MEMBERS = [
 const POSITIONS = [
   {
     id: 'pos_ceo',
-    name: 'Giám đốc / Quản trị',
+    name: 'GĐ Vận hành',
     level: 0,
     reportsTo: null,
     icon: '👑',
     color: '#5AB800',
-    description: 'Định hướng chiến lược, phê duyệt ngân sách, quản lý toàn bộ hoạt động Vimove. Chịu trách nhiệm cuối cùng về doanh thu và đội ngũ.',
+    description: 'Chịu trách nhiệm cao nhất về tăng trưởng GMV bền vững trên sàn TMĐT, xây dựng đội ngũ xuất sắc và vận hành tổ chức hiệu quả.',
     members: ['u002'],
     taskTemplates: [
-      { title: 'Duyệt kế hoạch tháng', category: 'ops', priority: 'high' },
-      { title: 'Họp tổng kết tuần với team Lead', category: 'hr', priority: 'medium' },
-      { title: 'Review KPI toàn đội', category: 'hr', priority: 'high' },
-      { title: 'Phê duyệt ngân sách marketing', category: 'finance', priority: 'high' },
+      { title: 'Chủ trì họp ban giám đốc hàng tuần', category: 'ops', priority: 'high' },
+      { title: 'Review GMV, ROAS, issues và ra quyết định', category: 'marketing', priority: 'urgent' },
+      { title: 'Thiết lập và review hệ thống KPI toàn công ty', category: 'hr', priority: 'high' },
+      { title: 'Phê duyệt ngân sách marketing & đầu tư', category: 'finance', priority: 'high' },
+      { title: 'Làm việc với đối tác (AM sàn, NCC)', category: 'ops', priority: 'medium' },
+      { title: 'Xây dựng và phát triển đội ngũ C-suite', category: 'hr', priority: 'high' }
     ],
     kpiTargets: [
-      { metric: 'revenue', label: 'Doanh thu công ty', target: 150, unit: 'tỷ/năm' },
-      { metric: 'team_kpi', label: 'KPI đội ngũ trung bình', target: 85, unit: '%' },
-      { metric: 'tasks_done', label: 'CVC hoàn thành đúng hạn', target: 90, unit: '%' },
+      { metric: 'revenue', label: 'GMV (Đạt KH năm, tăng trưởng >30%)', target: 100, unit: '%' },
+      { metric: 'profit', label: 'EBITDA dương, GP% đạt mục tiêu', target: 100, unit: '%' },
+      { metric: 'team_kpi', label: 'Turnover < 20%, eNPS > 30', target: 100, unit: '%' },
+      { metric: 'tasks_done', label: 'KPI chiến lược & Đối tác', target: 100, unit: '%' },
     ],
-    salary: { base: 20000000, kpiBonus: 10000000, cvcBonus: 500000 },
+    salary: { base: 30000000, kpiBonus: 15000000, cvcBonus: 1000000 },
   },
   {
     id: 'pos_tech',
@@ -1133,6 +1136,34 @@ function formatCurrency(val) {
 
 // ============ TRAINING COURSES (Sprint 7: L&D) ============
 const TRAINING_COURSES = [
+  {
+    id: 'course_ceo',
+    title: 'Chương trình đào tạo GĐ Vận hành (CEO)',
+    description: 'Chương trình 21 module đào tạo thực chiến: 8 module chung, 8 module đặc thù, 5 module bên ngoài dành riêng cho Giám đốc điều hành.',
+    thumbnail: '👑',
+    color: 'linear-gradient(135deg,rgba(90,184,0,0.15),rgba(90,184,0,0.05))',
+    level: 'advanced',
+    durationMins: 1200,
+    passingScore: 80,
+    positionIds: ['pos_ceo'],
+    pathIds: [],
+    lessons: [
+      { id: 'l_ceo_1', title: 'Vai trò & Bức tranh Vimove (M1)', type: 'text', durationMins: 60, content: 'Mô hình kinh doanh TMĐT vali. Vai trò từng phòng. Cách các phòng kết nối tạo ra GMV. KPI cascade toàn công ty. CEO là người chia sẻ tầm nhìn.' },
+      { id: 'l_ceo_2', title: 'Vận hành sàn & Thuật toán ranking (M2)', type: 'text', durationMins: 60, content: 'Shopee algorithm: listing quality score, conversion, CTR, review, SLA. TikTok: watch time, engagement, affiliate seeding. Cách detect thay đổi sớm.' },
+      { id: 'l_ceo_3', title: 'Data TMĐT & Dashboard CEO (M3)', type: 'text', durationMins: 90, content: 'Shopee Business Insights, TikTok Seller Center analytics. KPI quan trọng: GMV, CTR, conversion, ROAS, CAC, LTV. CEO đọc data -> ra quyết định.' },
+      { id: 'l_ceo_4', title: 'Ads & ROAS Management (M4)', type: 'text', durationMins: 60, content: 'Shopee Ads (Search, Product Ads). TikTok Ads (In-Feed, Spark). Facebook/Meta Shopping. ROAS optimization, A/B testing concept.' },
+      { id: 'l_ceo_5', title: 'P&L & Tài chính TMĐT (M5)', type: 'text', durationMins: 90, content: 'Đọc P&L TMĐT: GMV -> doanh thu thuần -> GP% -> chi phí -> EBITDA. Working capital TMDT. Phân bổ ngân sách marketing theo ROI.' },
+      { id: 'l_ceo_6', title: 'Lãnh đạo trong môi trường TMĐT (M6)', type: 'text', durationMins: 60, content: 'Coaching GĐ trong startup TMDT tốc độ cao. Xây OKR có chất lượng. Ra quyết định với thông tin không đầy đủ.' },
+      { id: 'l_ceo_7', title: 'Quan hệ đối tác & Đàm phán (M7)', type: 'text', durationMins: 60, content: 'Đàm phán với AM sàn (Shopee/TikTok/Lazada): xin priority campaign, spotlight, credit ads. Đàm phán với NCC: exclusivity, MOQ.' },
+      { id: 'l_ceo_8', title: 'Module đặc thù & Ngoại khóa (M8-M21)', type: 'text', durationMins: 720, content: 'Executive Coach, Mini MBA thực chiến, Shopee Academy Masterclass. War room simulation xử lý khủng hoảng truyền thông/logistics.' }
+    ],
+    quiz: {
+      questions: [
+        { q: 'Theo framework của Vimove, yếu tố nào quan trọng nhất trong P&L TMĐT ảnh hưởng đến ngân sách Marketing?', options: ['GMV', 'GP%', 'Chi phí cố định', 'Số lượng đơn hàng'], answer: 1 },
+        { q: 'Chỉ số đo lường độ hài lòng và gắn kết của đội ngũ là gì?', options: ['Turnover Rate', 'eNPS', 'KPI', 'ROI'], answer: 1 }
+      ]
+    }
+  },
   {
     id: 'course_onboard',
     title: 'Onboarding Nhân viên mới',
