@@ -614,6 +614,9 @@ function _buildCompetencyMatrix(posId) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
+    </div>`;
+}
+
 window.showCompetencyLevelInfo = function(level) {
   const descs = {
     L1: {
