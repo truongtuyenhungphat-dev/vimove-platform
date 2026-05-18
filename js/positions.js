@@ -614,17 +614,72 @@ function _buildCompetencyMatrix(posId) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-    </div>`;
-}
-
 window.showCompetencyLevelInfo = function(level) {
   const descs = {
-    L1: 'Nhận thức cơ bản:\n- Hiểu các khái niệm cốt lõi nhưng cần người hướng dẫn trực tiếp.\n- Có thể thực hiện các tác vụ đơn giản, lặp đi lặp lại.',
-    L2: 'Cơ bản:\n- Có khả năng tự thực hiện các quy trình tiêu chuẩn.\n- Nhận diện được vấn đề nhưng chưa thể tự đưa ra giải pháp phức tạp.',
-    L3: 'Thành thạo:\n- Thực hiện độc lập các tác vụ chuyên môn phức tạp.\n- Có khả năng hướng dẫn người khác, tự xử lý các vấn đề phát sinh ngoài quy trình.',
-    L4: 'Chuyên gia:\n- Là người thiết lập quy trình, có tư duy chiến lược sâu sắc.\n- Dẫn dắt tổ chức, giải quyết các khủng hoảng chưa có tiền lệ.'
+    L1: {
+      title: 'Nhận thức cơ bản',
+      points: [
+        'Hiểu các khái niệm cốt lõi nhưng cần người hướng dẫn trực tiếp.',
+        'Có thể thực hiện các tác vụ đơn giản, lặp đi lặp lại.'
+      ]
+    },
+    L2: {
+      title: 'Cơ bản',
+      points: [
+        'Có khả năng tự thực hiện các quy trình tiêu chuẩn.',
+        'Nhận diện được vấn đề nhưng chưa thể tự đưa ra giải pháp phức tạp.'
+      ]
+    },
+    L3: {
+      title: 'Thành thạo',
+      points: [
+        'Thực hiện độc lập các tác vụ chuyên môn phức tạp.',
+        'Có khả năng hướng dẫn người khác, tự xử lý các vấn đề phát sinh ngoài quy trình.'
+      ]
+    },
+    L4: {
+      title: 'Chuyên gia',
+      points: [
+        'Là người thiết lập quy trình, có tư duy chiến lược sâu sắc.',
+        'Dẫn dắt tổ chức, giải quyết các khủng hoảng chưa có tiền lệ.'
+      ]
+    }
   };
-  alert(`CẤP ĐỘ ${level} — ${COMP_LEVELS[level].toUpperCase()}\n\n${descs[level]}`);
+  
+  const data = descs[level];
+  const color = COMP_COLORS[level];
+  
+  const modalHtml = `
+    <div id="compLevelModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadeIn 0.2s">
+      <div style="background:var(--c-surface);width:400px;max-width:90%;border-radius:var(--r-xl);box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);overflow:hidden;transform:scale(0.95);animation:slideUp 0.3s forwards">
+        <div style="padding:24px;border-bottom:1px solid var(--c-border-subtle);display:flex;align-items:center;gap:16px;background:${color}15">
+          <div style="width:56px;height:56px;border-radius:50%;background:${color}20;color:${color};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;flex-shrink:0">
+            ${level}
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Tiêu chuẩn năng lực</div>
+            <div style="font-size:20px;font-weight:800;color:var(--c-text);line-height:1.2">${data.title}</div>
+          </div>
+        </div>
+        <div style="padding:24px">
+          <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:12px;color:var(--c-text-2);font-size:14px;line-height:1.6">
+            ${data.points.map(p => `<li>${p}</li>`).join('')}
+          </ul>
+        </div>
+        <div style="padding:16px 24px;background:var(--c-bg-3);text-align:right">
+          <button onclick="document.getElementById('compLevelModal').remove()" style="padding:10px 24px;background:${color};color:#fff;border:none;border-radius:var(--r-lg);font-weight:700;font-size:14px;cursor:pointer;transition:opacity 0.2s;box-shadow:0 4px 6px -1px ${color}40" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Đã hiểu</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(20px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    </style>
+  `;
+  
+  const existing = document.getElementById('compLevelModal');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 };
 
 // ============ TAB: CHECKLIST CONG VIEC ============
@@ -671,20 +726,21 @@ function renderChecklistTab(el, forcePosId = null) {
   el.innerHTML = `
     <div style="max-width:700px">
       <!-- Header -->
-      <div class="page-header" style="margin-bottom:20px; align-items:flex-start">
-        <div style="flex:1">
-          <h2 style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px">✅ Checklist vận hành định kỳ</h2>
-          <p style="font-size:13px;color:var(--c-text-3)">${doneCount}/${items.length} nhiệm vụ hoàn thành</p>
-          <div class="lp-progress-bar-wrap" style="margin-top:8px">
-            <div class="lp-progress-bar-bg"><div class="lp-progress-bar-fill" style="width:${pct}%"></div></div>
-            <div class="lp-progress-pct">${pct}%</div>
+      <div class="lp-hero" style="margin-bottom:20px; display:flex; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div class="lp-hero-icon" style="background:#fff; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">✅</div>
+        <div style="flex:1; min-width:250px">
+          <h2 style="font-size:18px;font-weight:800;margin-bottom:6px;color:#166534">Checklist vận hành định kỳ</h2>
+          <p style="font-size:13px;color:#15803d;margin-bottom:10px;font-weight:600">${doneCount}/${items.length} nhiệm vụ hoàn thành</p>
+          <div class="lp-progress-bar-wrap" style="background:rgba(255,255,255,0.5)">
+            <div class="lp-progress-bar-bg" style="background:rgba(22,101,52,0.1)"><div class="lp-progress-bar-fill" style="width:${pct}%;background:#166534"></div></div>
+            <div class="lp-progress-pct" style="color:#166534">${pct}%</div>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-          <select class="form-control" style="width:220px" onchange="renderChecklistTab(document.getElementById('teamTabContent'), this.value)">
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+          <select class="form-control" style="width:200px;background:#fff;border-color:rgba(22,101,52,0.2);color:#166534;font-weight:600" onchange="renderChecklistTab(document.getElementById('teamTabContent'), this.value)">
             ${POSITIONS.map(p => `<option value="${p.id}" ${p.id===posId?'selected':''}>${p.icon} ${p.name}</option>`).join('')}
           </select>
-          ${isAdmin() ? `<button class="btn-outline sm" onclick="addChecklistItem('${posId}')">+ Thêm Checklist</button>` : ''}
+          ${isAdmin() ? `<button class="btn-primary sm" onclick="addChecklistItem('${posId}')" style="width:100%;background:#166534;border-color:#166534">+ Thêm nhiệm vụ</button>` : ''}
         </div>
       </div>
 
