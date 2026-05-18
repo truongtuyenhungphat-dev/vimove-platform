@@ -743,7 +743,7 @@ function renderChecklistTab(el, forcePosId = null) {
           <select class="form-control" style="width:200px;background:#fff;border-color:rgba(22,101,52,0.2);color:#166534;font-weight:600" onchange="renderChecklistTab(document.getElementById('teamTabContent'), this.value)">
             ${POSITIONS.map(p => `<option value="${p.id}" ${p.id===posId?'selected':''}>${p.icon} ${p.name}</option>`).join('')}
           </select>
-          ${isAdmin() ? `<button class="btn-primary sm" onclick="addChecklistItem('${posId}')" style="width:100%;background:#166534;border-color:#166534">+ Thêm nhiệm vụ</button>` : ''}
+          ${isAdmin() ? `<button class="btn-primary sm" onclick="addPosChecklistItem('${posId}')" style="width:100%;background:#166534;border-color:#166534">+ Thêm nhiệm vụ</button>` : ''}
         </div>
       </div>
 
@@ -751,11 +751,11 @@ function renderChecklistTab(el, forcePosId = null) {
       <div style="display:flex;flex-direction:column;gap:8px" id="checklistItems">
         ${items.map((item, i) => `
           <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--c-surface);border:1px solid var(--c-border-subtle);border-radius:var(--r-lg);transition:all 0.2s;${item.done?'opacity:0.6':''}">
-            <input type="checkbox" ${item.done?'checked':''} onchange="toggleChecklist('${uid}','${item.id}',this.checked)"
+            <input type="checkbox" ${item.done?'checked':''} onchange="togglePosChecklist('${uid}','${item.id}',this.checked)"
               style="width:18px;height:18px;accent-color:var(--c-primary);cursor:pointer;flex-shrink:0">
             <span style="flex:1;font-size:14px;${item.done?'text-decoration:line-through;color:var(--c-text-3)':''}">${item.text}</span>
             ${item.done ? '<span style="font-size:18px">✅</span>' : ''}
-            ${isAdmin() ? `<button onclick="removeChecklistItem('${uid}','${item.id}')" style="background:none;color:#EF4444;font-size:14px;cursor:pointer">×</button>` : ''}
+            ${isAdmin() ? `<button onclick="removePosChecklistItem('${uid}','${item.id}')" style="background:none;color:#EF4444;font-size:14px;cursor:pointer">×</button>` : ''}
           </div>`).join('')}
       </div>
 
@@ -766,7 +766,7 @@ function renderChecklistTab(el, forcePosId = null) {
   `;
 }
 
-function toggleChecklist(uid, itemId, done) {
+function togglePosChecklist(uid, itemId, done) {
   const stored = _getChecklists();
   const posId = currentUser?.positionId || POSITIONS[0].id;
   if (!stored[uid]) stored[uid] = { items: (DEFAULT_CHECKLISTS[posId]||[]).map((t,i) => ({ id:'ck_'+i, text:t, done:false })) };
@@ -776,19 +776,19 @@ function toggleChecklist(uid, itemId, done) {
   const doneCount = stored[uid].items.filter(i => i.done).length;
   const total = stored[uid].items.length;
   showToast(done ? `✅ Hoàn thành! ${doneCount}/${total} nhiệm vụ` : '↩️ Đã bỏ đánh dấu', done ? 'success' : 'info');
-  switchTeamTab('checklist');
+  renderChecklistTab(document.getElementById('teamTabContent'), posId);
 }
 
-function removeChecklistItem(uid, itemId) {
+function removePosChecklistItem(uid, itemId) {
   const stored = _getChecklists();
   if (stored[uid]?.items) {
     stored[uid].items = stored[uid].items.filter(i => i.id !== itemId);
     _saveChecklists(stored);
-    switchTeamTab('checklist');
+    renderChecklistTab(document.getElementById('teamTabContent'));
   }
 }
 
-function addChecklistItem(posId) {
+function addPosChecklistItem(posId) {
   const text = prompt('Nhập nội dung checklist:');
   if (!text?.trim()) return;
   const uid = currentUser?.id;
