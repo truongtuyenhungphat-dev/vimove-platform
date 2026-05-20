@@ -23,8 +23,12 @@ function renderTeam() {
         ✏️
       </button>` : '';
 
-    // Nút xóa: chỉ Admin mới xóa được (không xóa chính mình, không xóa admin khác nếu không phải admin)
-    const canDelete = currentUser?.role === 'admin' && m.id !== currentUser?.id;
+    // Nút xóa: Admin xóa tất cả, Manager xóa staff
+    const myRole = currentUser?.role;
+    const canDelete = m.id !== currentUser?.id && (
+      myRole === 'admin' ||
+      (myRole === 'manager' && m.role === 'staff')
+    );
     const deleteBtn = canDelete ? `
       <button class="member-delete-btn" onclick="confirmDeleteMember('${m.id}')" title="Xóa thành viên">
         🗑️
@@ -223,6 +227,27 @@ async function saveEditMember() {
     document.getElementById('sidebarName').textContent   = name;
     document.getElementById('sidebarAvatar').textContent = currentUser.avatar;
   }
+
+  // Lưu vào localStorage để không mất khi refresh
+  try {
+    const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
+    const sIdx = saved.findIndex(u => u.id === memberId);
+    const updatedData = {
+      id: memberId, name, department: dept, role,
+      avatar: getInitials(name), positionId, jobTitle,
+      ...(userEntry ? { email: userEntry[0] } : {}),
+      ...(newPass ? { password: newPass } : {}),
+    };
+    if (sIdx > -1) {
+      saved[sIdx] = { ...saved[sIdx], ...updatedData };
+    } else {
+      // User from hardcoded data, add to saved users
+      if (userEntry) {
+        saved.push({ ...DEMO_USERS[userEntry[0]], ...updatedData });
+      }
+    }
+    localStorage.setItem('viwork_users', JSON.stringify(saved));
+  } catch(e) { console.warn('[saveEditMember] localStorage error:', e); }
 
   closeModal('editMemberModal');
   syncAllViews();
