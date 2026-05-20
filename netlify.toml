@@ -1,4 +1,7 @@
 [build]
+  # Auto-version: mỗi lần deploy, thay tất cả ?v=X.X bằng ?v=TIMESTAMP
+  # => Trình duyệt buộc phải load file mới, không dùng cache cũ
+  command = "sed -i \"s/\\?v=[0-9.]*/?v=$(date +%s)/g\" index.html"
   publish = "."
 
 [[redirects]]
@@ -13,12 +16,21 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
 
+# index.html: KHÔNG BAO GIỜ cache — luôn lấy bản mới nhất
 [[headers]]
-  for = "/js/*"
+  for = "/index.html"
   [headers.values]
-    Cache-Control = "no-cache, must-revalidate"
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
 
+# JS files: phải validate lại với server mỗi lần load
 [[headers]]
-  for = "/css/*"
+  for = "/js/*.js"
   [headers.values]
-    Cache-Control = "no-cache, must-revalidate"
+    Cache-Control = "no-cache, must-revalidate, max-age=0"
+
+# CSS files: phải validate lại với server mỗi lần load
+[[headers]]
+  for = "/css/*.css"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate, max-age=0"
