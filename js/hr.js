@@ -434,7 +434,7 @@ async function saveChangePassword(userId, requireOld) {
   // Nếu đổi pass chính mình → cập nhật session
   if (userId === currentUser?.id && currentUser) {
     currentUser.password = newPass;
-    sessionStorage.setItem('vw_user', JSON.stringify(currentUser));
+    const {password, ...safeUser} = currentUser; sessionStorage.setItem('vw_user', JSON.stringify(safeUser));
   }
 
   document.getElementById('changePassModal')?.remove();

@@ -184,12 +184,13 @@ function startQrScan(video) {
 
   if (_qrScanInterval) clearInterval(_qrScanInterval);
   _qrScanInterval = setInterval(() => {
-    if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
-
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const cvs = document.getElementById('qrVideoCanvas');
+    if (!cvs || !video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    const context = cvs.getContext('2d');
+    cvs.width  = video.videoWidth;
+    cvs.height = video.videoHeight;
+    context.drawImage(video, 0, 0, cvs.width, cvs.height);
+    const imageData = context.getImageData(0, 0, cvs.width, cvs.height);
     const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
       inversionAttempts: 'dontInvert'
     });

@@ -223,7 +223,7 @@ async function saveEditMember() {
     currentUser.positionId = positionId;
     currentUser.jobTitle   = jobTitle;
     appState.currentUser   = currentUser;
-    sessionStorage.setItem('vw_user', JSON.stringify(currentUser));
+    const {password, ...safeUser} = currentUser; sessionStorage.setItem('vw_user', JSON.stringify(safeUser));
     document.getElementById('sidebarName').textContent   = name;
     document.getElementById('sidebarAvatar').textContent = currentUser.avatar;
     const sideRole = document.getElementById('sidebarRole');

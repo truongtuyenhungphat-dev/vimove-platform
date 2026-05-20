@@ -496,7 +496,8 @@ async function syncApprovalToAttendance(req, decision) {
             r.userId === req.requesterId && r.date === dateKey && r.isLeave && r.leaveReqId === req.id
           );
           if (toRemove) {
-            ATTENDANCE_RECORDS = ATTENDANCE_RECORDS.filter(r => r.id !== toRemove.id);
+            const aIdx = ATTENDANCE_RECORDS.findIndex(r => r.id === toRemove.id);
+            if (aIdx > -1) ATTENDANCE_RECORDS.splice(aIdx, 1);
             if (window.fbDeleteAttendance) await window.fbDeleteAttendance(toRemove.id);
           }
         }
@@ -698,7 +699,7 @@ function saveNewRequest() {
     requesterId:    currentUser?.id,
     status:         'pending',
     createdAt:      new Date().toISOString().split('T')[0],
-    slaDeadline:    slaDate.toISOString().split('T')[0],
+    slaDeadline:    slaDate.toISOString(),
     approvalSteps:  typeConfig.approvers.map(role => ({
       role, approverId: null, status: 'pending', note: '', at: null
     })),

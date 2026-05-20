@@ -342,14 +342,14 @@ function renderLessonViewer(lesson, idx, course, completed) {
         </a>
         <div>${lesson.notes || ''}</div>`;
     } else {
-      bodyHtml = `<div>${(lesson.content||'').replace(/\n/g,'<br>')}</div>`;
+      bodyHtml = `<div>${(typeof escHtml === 'function' ? escHtml(lesson.content||'') : (lesson.content||'')).replace(/\n/g,'<br>')}</div>`;
     }
   }
 
   return `
     <div class="lesson-viewer">
       <div class="lesson-viewer-header">
-        <span style="font-size:20px">{{${lesson.type==='video'?'🎬':lesson.type==='link'?'🔗':'📄'}}}</span>
+        <span style="font-size:20px">${lesson.type==='video'?'🎬':lesson.type==='link'?'🔗':'📄'}</span>
         <h3>${lesson.title}</h3>
         ${isDone ? '<span style="color:#10B981;font-weight:700">✅ Đã hoàn thành</span>' : ''}
       </div>
@@ -590,7 +590,7 @@ function renderManageCourses(el) {
   const courses = TRAINING_COURSES || [];
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-size:16px;font-weight:800">⚙️ Quản lý khóa học (ⵂ{courses.length} khóa)</div>
+      <div style="font-size:16px;font-weight:800">⚙️ Quản lý khóa học (${courses.length} khóa)</div>
       <button class="btn-primary" onclick="openAdminCourseEdit(null)">➕ Tạo khóa học mới</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -610,7 +610,7 @@ function renderManageCourses(el) {
           </div>
         </div>`).join('')}
     </div>
-  `.replace('ⵂ', courses.length);
+  `;
 }
 
 function openAdminCourseEdit(courseId) {

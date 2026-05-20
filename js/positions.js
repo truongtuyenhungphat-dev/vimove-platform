@@ -91,7 +91,7 @@ function switchTeamTab(tab) {
   activeTeamTab = tab;
   // Cập nhật active tab
   document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
-  event?.target?.classList.add('active');
+  try { event?.target?.classList?.add('active'); } catch(e) {}
   renderTeamTabContent();
 }
 
@@ -892,7 +892,7 @@ const ONBOARDING_PLANS = {
 function renderOnboarding90Tab(el, forcePosId = null) {
   const uid = currentUser?.id;
   const posId = forcePosId || currentUser?.positionId || POSITIONS[0].id;
-  const stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}');
+  let stored = {}; try { stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}'); } catch(e) {}
   const userProgress = stored[uid] || {};
   
   const onboardingData = ONBOARDING_PLANS[posId] || ONBOARDING_PLANS.default;
@@ -970,7 +970,7 @@ function renderOnboarding90Tab(el, forcePosId = null) {
 }
 
 function _toggle90Day(uid, key, done, posId) {
-  const stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}');
+  let stored = {}; try { stored = JSON.parse(localStorage.getItem('viwork_90day') || '{}'); } catch(e) {}
   if (!stored[uid]) stored[uid] = {};
   stored[uid][key] = done;
   localStorage.setItem('viwork_90day', JSON.stringify(stored));
