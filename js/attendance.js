@@ -222,27 +222,19 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
   renderAttendance();
 }
 
-/** Check-in văn phòng với xác minh GPS */
+/** Check-in văn phòng không yêu cầu GPS */
 async function checkInOffice() {
   const btn = document.getElementById('btnCheckIn');
-  if (btn) { btn.disabled = true; btn.querySelector('small').textContent = 'Đang xác định vị trí...'; }
+  if (btn) { btn.disabled = true; btn.querySelector('small').textContent = 'Đang xử lý...'; }
 
   try {
-    const gps = await getCurrentGPS();
-    const { inRange, distance } = isInOfficeRange(gps.lat, gps.lng);
-
-    if (inRange) {
-      await doCheckIn(false, gps, false);
-    } else {
-      // Ngoai pham vi — hien dialog xac nhan
-      showGpsOutOfRangeDialog(distance, gps);
-    }
+    // Bo qua check GPS, cho phep check-in ngay lap tuc
+    await doCheckIn(false, null, false);
   } catch (err) {
-    console.warn('GPS error:', err);
-    // GPS khong kha dung — cho phep check-in thu cong voi canh bao
-    showGpsUnavailableDialog();
+    console.warn('Check-in error:', err);
+    showToast('❌ Có lỗi xảy ra, vui lòng thử lại', 'error');
   } finally {
-    if (btn) { btn.disabled = false; }
+    if (btn) { btn.disabled = false; btn.querySelector('small').textContent = 'Bấm để check-in'; }
   }
 }
 
@@ -443,7 +435,7 @@ function renderCheckInWidget(record) {
             <span class="att-btn-icon">🏢</span>
             <span class="att-btn-text">
               <strong>Check-in Văn phòng</strong>
-              <small>📍 Xác minh GPS ±${ATT_CONFIG.office.radius}m</small>
+              <small>Bấm để check-in</small>
             </span>
           </button>
           <button class="att-btn checkin-qr" onclick="openQrScanModal()" id="btnCheckInQR">
