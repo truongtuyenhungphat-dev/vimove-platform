@@ -42,7 +42,7 @@ window.fbEnsureAllUsers = async () => {
       ref.get().then(snap => {
         if (!snap.exists) {
           console.log(`[VIWORK] Seed missing user: ${u.name} (${email})`);
-          return ref.catch(e => console.warn('[FB Set]', e));
+          return ref.set({ ...u, email });
         } else {
           const existing = snap.data();
           if (existing.password !== u.password || existing.name !== u.name || existing.role !== u.role) {
@@ -59,17 +59,17 @@ window.fbSeedTasks = async (tasksArray) => {
   const db = getDB();
   const batch = db.batch();
   for (const t of tasksArray) {
-    batch.catch(e => console.warn('[FB Set]', e));
+    batch.set(db.collection('viwork_tasks').doc(t.id), t);
   }
   await batch.commit();
 };
 
 window.fbSaveTask = async (taskObj) => {
-  return getDB().collection('viwork_tasks').doc(taskObj.id).catch(e => console.warn('[FB Set]', e));
+  return getDB().collection('viwork_tasks').doc(taskObj.id).set(taskObj);
 };
 
 window.fbDeleteTask = async (taskId) => {
-  return getDB().collection('viwork_tasks').doc(taskId).catch(e => console.warn('[FB Delete]', e));
+  return getDB().collection('viwork_tasks').doc(taskId).delete();
 };
 
 // ============ VIWORK_LEADS ============
@@ -77,17 +77,17 @@ window.fbSeedLeads = async (leadsArray) => {
   const db = getDB();
   const batch = db.batch();
   for (const l of leadsArray) {
-    batch.catch(e => console.warn('[FB Set]', e));
+    batch.set(db.collection('viwork_leads').doc(l.id), l);
   }
   await batch.commit();
 };
 
 window.fbSaveLead = async (leadObj) => {
-  return getDB().collection('viwork_leads').doc(leadObj.id).catch(e => console.warn('[FB Set]', e));
+  return getDB().collection('viwork_leads').doc(leadObj.id).set(leadObj);
 };
 
 window.fbDeleteLead = async (leadId) => {
-  return getDB().collection('viwork_leads').doc(leadId).catch(e => console.warn('[FB Delete]', e));
+  return getDB().collection('viwork_leads').doc(leadId).delete();
 };
 
 // ============ VIWORK_USERS ============
@@ -97,17 +97,17 @@ window.fbSeedUsers = async (usersObj) => {
   for (const email in usersObj) {
     const docId = email.replace(/[@.]/g,'_');
     // Đảm bảo field 'email' có trong document để fbListenUsers đọc được
-    batch.catch(e => console.warn('[FB Set]', e));
+    batch.set(db.collection('viwork_users').doc(docId), { ...usersObj[email], email });
   }
   await batch.commit();
 };
 
 window.fbSaveUser = async (userObj) => {
-  return getDB().collection('viwork_users').doc(userObj.email.replace(/[@.]/g,'_')).catch(e => console.warn('[FB Set]', e));
+  return getDB().collection('viwork_users').doc(userObj.email.replace(/[@.]/g,'_')).set(userObj);
 };
 
 window.fbDeleteUser = async (email) => {
-  return getDB().collection('viwork_users').doc(email.replace(/[@.]/g,'_')).catch(e => console.warn('[FB Delete]', e));
+  return getDB().collection('viwork_users').doc(email.replace(/[@.]/g,'_')).delete();
 };
 
 /**
@@ -129,7 +129,7 @@ window.fbMarkUserDeleted = async (userId) => {
       const snap = await db.collection('viwork_config').doc('deleted_users').get();
       const existing = snap.exists ? (snap.data().ids || []) : [];
       if (!existing.includes(userId)) existing.push(userId);
-      await db.collection('viwork_config').doc('deleted_users').catch(e => console.warn('[FB Set]', e));
+      await db.collection('viwork_config').doc('deleted_users').set({ ids: existing });
     } catch(e2) { console.warn('[fbMarkUserDeleted]', e2); }
   }
 };
@@ -184,17 +184,17 @@ window.fbSeedRequests = async (reqArray) => {
   const db = getDB();
   const batch = db.batch();
   for (const r of reqArray) {
-    batch.catch(e => console.warn('[FB Set]', e));
+    batch.set(db.collection('viwork_requests').doc(r.id), r);
   }
   await batch.commit();
 };
 
 window.fbSaveRequest = async (reqObj) => {
-  return getDB().collection('viwork_requests').doc(reqObj.id).catch(e => console.warn('[FB Set]', e));
+  return getDB().collection('viwork_requests').doc(reqObj.id).set(reqObj);
 };
 
 window.fbDeleteRequest = async (reqId) => {
-  return getDB().collection('viwork_requests').doc(reqId).catch(e => console.warn('[FB Delete]', e));
+  return getDB().collection('viwork_requests').doc(reqId).delete();
 };
 
 // ============ VIWORK_ASSIGNMENTS ============
@@ -202,62 +202,88 @@ window.fbSeedAssignments = async (asgnArray) => {
   const db = getDB();
   const batch = db.batch();
   for (const a of asgnArray) {
-    batch.catch(e => console.warn('[FB Set]', e));
+    batch.set(db.collection('viwork_assignments').doc(a.id), a);
   }
   await batch.commit();
 };
 
 window.fbSaveAssignment = async (asgnObj) => {
-  return getDB().collection('viwork_assignments').doc(asgnObj.id).catch(e => console.warn('[FB Set]', e));
+  return getDB().collection('viwork_assignments').doc(asgnObj.id).set(asgnObj);
 };
 
 window.fbDeleteAssignment = async (asgnId) => {
-  return getDB().collection('viwork_assignments').doc(asgnId).catch(e => console.warn('[FB Delete]', e));
+  return getDB().collection('viwork_assignments').doc(asgnId).delete();
 };
 
 // ============ VIWORK_ATTENDANCE ============
 window.fbSaveAttendance = async (record) => {
-  return getDB().collection('viwork_attendance').doc(record.id).catch(e => console.warn('[FB Set]', e));
+  return getDB().collection('viwork_attendance').doc(record.id).set(record);
 };
 
 window.fbDeleteAttendance = async (recordId) => {
-  return getDB().collection('viwork_attendance').doc(recordId).catch(e => console.warn('[FB Delete]', e));
+  return getDB().collection('viwork_attendance').doc(recordId).delete();
 };
 
 window.fbSeedAttendance = async (arr) => {
   const db = getDB();
   const batch = db.batch();
   for (const r of arr) {
-    batch.catch(e => console.warn('[FB Set]', e));
+    batch.set(db.collection('viwork_attendance').doc(r.id), r);
   }
   await batch.commit();
 };
 
 window.fbListenAttendance = (callback) => {
-  return getDB().collection('viwork_attendance'), err => console.warn('[FB Listen]', err));
+  return getDB().collection('viwork_attendance').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
 };
 
 // ============ LISTENERS ============
 window.fbListenTasks = (callback) => {
-  return getDB().collection('viwork_tasks'), err => console.warn('[FB Listen]', err));
+  return getDB().collection('viwork_tasks').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
 };
 
 window.fbListenLeads = (callback) => {
-  return getDB().collection('viwork_leads'), err => console.warn('[FB Listen]', err));
+  return getDB().collection('viwork_leads').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
 };
 
 window.fbListenUsers = (callback) => {
-  return getDB().collection('viwork_users'), err => console.warn('[FB Listen]', err));
+  return getDB().collection('viwork_users').onSnapshot(snapshot => {
+    const obj = {};
+    snapshot.forEach(doc => { 
+      // Dữ liệu trong document chứa email thực
+      const data = doc.data();
+      obj[data.email] = data; 
+    });
     callback(obj);
   });
 };
 
 window.fbListenRequests = (callback) => {
-  return getDB().collection('viwork_requests'), err => console.warn('[FB Listen]', err));
+  return getDB().collection('viwork_requests').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
 };
 
 window.fbListenAssignments = (callback) => {
-  return getDB().collection('viwork_assignments'), err => console.warn('[FB Listen]', err));
+  return getDB().collection('viwork_assignments').onSnapshot(snapshot => {
+    const arr = [];
+    snapshot.forEach(doc => arr.push(doc.data()));
+    callback(arr);
+  });
 };
 
 console.log('[⚡ VIWORK] Firebase Database Services (Compat) loaded — incl. Attendance!');
@@ -279,9 +305,9 @@ window.fbRenameUser = async (oldEmail, newEmail) => {
     // Preserve email field
     data.email = newEmail;
     // Write new doc
-    await db.collection('viwork_users').doc(newId).catch(e => console.warn('[FB Set]', e));
+    await db.collection('viwork_users').doc(newId).set(data);
     // Delete old doc
-    await db.collection('viwork_users').doc(oldId).catch(e => console.warn('[FB Delete]', e));
+    await db.collection('viwork_users').doc(oldId).delete();
     console.log(`[VIWORK] Renamed user ${oldEmail} → ${newEmail}`);
   } catch (e) {
     console.warn('[fbRenameUser]', e);
@@ -313,7 +339,7 @@ window.fbSyncEmailDomains = async () => {
 window.fbSaveEnrollment = async (userId, courseId, enrollment) => {
   const db = getDB(); if (!db) return;
   const docId = `${userId}_${courseId}`;
-  await db.collection('viwork_training').doc(docId).catch(e => console.warn('[FB Set]', e));
+  await db.collection('viwork_training').doc(docId).set({ ...enrollment, userId, courseId, updatedAt: new Date().toISOString() });
 };
 
 window.fbListenTraining = (userId, callback) => {
@@ -329,3 +355,74 @@ window.fbListenTraining = (userId, callback) => {
       callback(enrollments);
     });
 };
+// ============ SYNC LOCAL TO FIREBASE ============
+window.syncLocalToFirebase = async () => {
+  if (typeof showToast === 'function') showToast('? �ang d?ng b? d? li?u l�n Cloud...', 'info');
+  const db = getDB();
+  if (!db) {
+    if (typeof showToast === 'function') showToast('? Kh�ng k?t n?i du?c Firebase', 'error');
+    return;
+  }
+  
+  try {
+    const promises = [];
+    
+    // Sync Tasks
+    if (typeof appState !== 'undefined' && appState.tasks) {
+      appState.tasks.forEach(t => {
+        if (window.fbSaveTask) promises.push(window.fbSaveTask(t));
+      });
+    }
+    // Sync Leads
+    if (typeof appState !== 'undefined' && appState.leads) {
+      appState.leads.forEach(l => {
+        if (window.fbSaveLead) promises.push(window.fbSaveLead(l));
+      });
+    }
+    // Sync Requests
+    if (typeof appState !== 'undefined' && appState.requests) {
+      appState.requests.forEach(r => {
+        if (window.fbSaveRequest) promises.push(window.fbSaveRequest(r));
+      });
+    }
+    // Sync Assignments
+    if (typeof appState !== 'undefined' && appState.assignments) {
+      appState.assignments.forEach(a => {
+        if (window.fbSaveAssignment) promises.push(window.fbSaveAssignment(a));
+      });
+    }
+    // Sync Attendance
+    if (typeof ATTENDANCE_RECORDS !== 'undefined') {
+      ATTENDANCE_RECORDS.forEach(a => {
+        if (window.fbSaveAttendance) promises.push(window.fbSaveAttendance(a));
+      });
+    }
+    // Sync Training Enrollments
+    if (typeof TRAINING_ENROLLMENTS !== 'undefined') {
+      for (const uid in TRAINING_ENROLLMENTS) {
+        for (const cid in TRAINING_ENROLLMENTS[uid]) {
+          if (window.fbSaveEnrollment) promises.push(window.fbSaveEnrollment(uid, cid, TRAINING_ENROLLMENTS[uid][cid]));
+        }
+      }
+    }
+    // Sync Users (from DEMO_USERS + viwork_users localStorage)
+    try {
+      const localUsers = JSON.parse(localStorage.getItem('viwork_users') || '[]');
+      localUsers.forEach(u => {
+        if (window.fbSaveUser && u.email) promises.push(window.fbSaveUser(u));
+      });
+    } catch(e) {}
+    if (typeof DEMO_USERS !== 'undefined') {
+      for (const email in DEMO_USERS) {
+        if (window.fbSaveUser) promises.push(window.fbSaveUser(Object.assign({}, DEMO_USERS[email], { email })));
+      }
+    }
+
+    await Promise.allSettled(promises);
+    if (typeof showToast === 'function') showToast('? �� d?ng b? ' + promises.length + ' b?n ghi l�n Cloud!', 'success');
+  } catch(e) {
+    console.error(e);
+    if (typeof showToast === 'function') showToast('? L?i khi d?ng b? d? li?u!', 'error');
+  }
+};
+
