@@ -456,12 +456,14 @@ function saveAssignment() {
     appState.assignments.push(newAsgn);
     if (window.fbSaveAssignment) window.fbSaveAssignment(newAsgn);
 
-    // Thông báo cho người được giao (nếu là chính mình đang xem)
-    const assigneeName = getUserById(assigneeId)?.name || 'bạn';
+    // Thông báo cho người giao việc
+    const assigneeName = getUserById(assigneeId)?.name || 'Nhân viên';
+    const assignerName = currentUser?.name?.split(' ').pop() || 'Bạn';
     if (assigneeId === currentUser.id) {
-      showToast(`📌 Bạn vừa được giao việc: "${title}"`, 'info');
+      showToast(`📌 Bạn tự giao việc: "${title}"`, 'info');
     } else {
-      showToast(`🎉 Đã giao việc "${title}" cho ${assigneeName.split(' ').pop()}!`, 'success');
+      // Hiển thị rõ người giao và người nhận
+      showToast(`🎯 ${assignerName} → ${assigneeName.split(' ').pop()}: "${title}" — Đã gửi thông báo!`, 'success');
     }
   }
 

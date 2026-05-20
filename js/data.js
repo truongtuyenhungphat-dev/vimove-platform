@@ -1113,7 +1113,7 @@ function isOverdue(task) {
 }
 
 function getUserById(id) {
-  return TEAM_MEMBERS.find(m => m.id === id) || { name: 'Unknown', avatar: '??' };
+  return TEAM_MEMBERS.find(m => m.id === id) || { name: 'Người dùng', avatar: '👤' };
 }
 
 function getStageById(id) {

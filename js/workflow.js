@@ -314,23 +314,24 @@ function openTaskDetail(taskId) {
     stageEl.appendChild(dot);
   });
 
-  // Stage actions
+  // Stage actions — cho phep assignee chuyen giai doan cua viec minh
   const actionsEl = document.getElementById('stageActions');
-  if (canEdit()) {
+  const isAssignee = task.assigneeId === currentUser?.id;
+  const canChangeStage = canEdit() || isAssignee;
+  if (canChangeStage) {
     const stageIdx = STAGES.findIndex(s => s.id === task.stage);
     let html = '';
     if (stageIdx < STAGES.length - 1) {
       const next = STAGES[stageIdx + 1];
       html += `<button class="stage-action-btn" onclick="moveStage('${task.id}','${next.id}')">→ Chuyển sang: ${next.icon} ${next.name}</button>`;
     }
-    if (stageIdx > 0) {
+    if (stageIdx > 0 && canEdit()) {
       const prev = STAGES[stageIdx - 1];
       html += `<button class="stage-action-btn danger" onclick="moveStage('${task.id}','${prev.id}')">← Quay lại: ${prev.icon} ${prev.name}</button>`;
     }
-    if (task.stage !== 'blocked') {
+    if (task.stage !== 'blocked' && canEdit()) {
       html += `<button class="stage-action-btn danger" onclick="moveStage('${task.id}','blocked')">🔴 Đánh dấu bị chặn</button>`;
     }
-    actionsEl.querySelector('h4').insertAdjacentHTML('afterend', html.replace(/(<button)/g, '<br/>$1').replace('<br/>',''));
     actionsEl.innerHTML = `<h4>Chuyển giai đoạn</h4>${html}`;
   } else {
     actionsEl.innerHTML = '<h4>Chuyển giai đoạn</h4><p style="font-size:12px;color:var(--c-text-3)">Bạn không có quyền thay đổi.</p>';
