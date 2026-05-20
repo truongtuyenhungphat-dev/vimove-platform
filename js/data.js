@@ -58,71 +58,27 @@ const CHANNELS = {
    Tech Admin:    tuyen@vimove.vn / tuyen123 (⇒ Hỗ trợ kỹ thuật)
    ======================================================== */
 const DEMO_USERS = {
-  // ===== PRIMARY ADMIN — Phê duyệt & Quản trị =====
-  'ngan@vimove.vn': {
-    id: 'u002', name: 'Nguyễn Thị Thanh Ngân', role: 'admin',
-    password: 'ngan123', avatar: 'NTN',
-    department: 'Quản trị & Phê duyệt'
-  },
-  // ===== TECH ADMIN — Hỗ trợ kỹ thuật =====
-  'tuyen@vimove.vn': {
-    id: 'u001', name: 'Trương Ngọc Tuyền', role: 'admin',
-    password: 'tuyen123', avatar: 'TNT',
-    department: 'Digital & Hỗ trợ kỹ thuật'
-  },
+  // ===== PRIMARY ADMIN =====
+  'ngan@vimove.vn': { id: 'u002', name: 'Nguyễn Thị Thanh Ngân', role: 'admin', password: 'ngan123', avatar: 'NTN', department: 'Quản trị & Phê duyệt' },
+  'tuyen@vimove.vn': { id: 'u001', name: 'Trương Ngọc Tuyền', role: 'admin', password: 'tuyen123', avatar: 'TNT', department: 'Digital & Hỗ trợ kỹ thuật' },
+  'chi@vimove.vn': { id: 'u013', name: 'Trịnh Linh Chi', role: 'admin', password: 'chi123', avatar: 'TL', department: 'HR' },
+  
   // ===== MANAGER =====
-  'trang@vimove.vn': {
-    id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager',
-    password: 'trang123', avatar: 'NQT',
-    department: 'HR & MKT & Sale'
-  },
+  'trang@vimove.vn': { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', password: 'trang123', avatar: 'NQT', department: 'HR & MKT & Sale' },
+  'phuong@vimove.vn': { id: 'u005', name: 'Hoàng Quỳnh Phương', role: 'manager', password: 'phuong123', avatar: 'HQP', department: 'Content Lead' },
+  'dung.tx@vimove.vn': { id: 'u006', name: 'Trương Xuân Dũng', role: 'manager', password: 'dung123', avatar: 'TXD', department: 'Lead Sản phẩm' },
+  'hanh@vimove.vn': { id: 'u007', name: 'Vũ Phương Hạnh', role: 'manager', password: 'hanh123', avatar: 'VPH', department: 'Lead Sản phẩm' },
+  'loi@vimove.vn': { id: 'u008', name: 'Nguyễn Văn Lợi', role: 'manager', password: 'loi123', avatar: 'NV', department: 'Kênh cá nhân' },
+  
   // ===== STAFF =====
-  'duc@vimove.vn': {
-    id: 'u004', name: 'Dương Minh Đức', role: 'staff',
-    password: 'duc123', avatar: 'DMD',
-    department: 'Digital'
-  },
-  'phuong@vimove.vn': {
-    id: 'u005', name: 'Hoàng Quỳnh Phương', role: 'manager',
-    password: 'phuong123', avatar: 'HQP',
-    department: 'Content Lead'
-  },
-  'dung.tx@vimove.vn': {
-    id: 'u006', name: 'Trương Xuân Dũng', role: 'manager',
-    password: 'dung123', avatar: 'TXD',
-    department: 'Lead Sản phẩm'
-  },
-  'hanh@vimove.vn': {
-    id: 'u007', name: 'Vũ Phương Hạnh', role: 'manager',
-    password: 'hanh123', avatar: 'VPH',
-    department: 'Lead Sản phẩm'
-  },
-  'loi@vimove.vn': {
-    id: 'u008', name: 'Nguyễn Văn Lợi', role: 'staff',
-    password: 'loi123', avatar: 'NVL',
-    department: 'Kênh cá nhân'
-  },
-  'ngan.le@vimove.vn': {
-    id: 'u009', name: 'Lê Thị Ngân', role: 'staff',
-    password: 'nganle123', avatar: 'LTN',
-    department: 'Content'
-  },
-  'thai@vimove.vn': {
-    id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff',
-    password: 'thai123', avatar: 'LTAT',
-    department: 'Content'
-  },
-  'mai@vimove.vn': {
-    id: 'u011', name: 'Phạm Thanh Mai', role: 'staff',
-    password: 'mai123', avatar: 'PTM',
-    department: 'Thiết kế'
-  },
-  'dung.kt@vimove.vn': {
-    id: 'u012', name: 'Khuất Thị Dung', role: 'staff',
-    password: 'dung456', avatar: 'KTD',
-    department: 'Thiết kế'
-  },
-  // NOTE: Không có alias — mỗi user chỉ có 1 email duy nhất
+  'thai@vimove.vn': { id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff', password: 'thai123', avatar: 'LTAT', department: 'Content' },
+  'mai@vimove.vn': { id: 'u011', name: 'Phạm Thanh Mai', role: 'staff', password: 'mai123', avatar: 'PTM', department: 'Thiết kế' },
+  'dung.kt@vimove.vn': { id: 'u012', name: 'Khuất Thị Dung', role: 'staff', password: 'dung456', avatar: 'KT', department: 'Design' },
+  'duyen@vimove.vn': { id: 'u014', name: 'Phạm Mỹ Duyên', role: 'staff', password: 'duyen123', avatar: 'PM', department: 'Media' },
+  'ngan.le@vimove.vn': { id: 'u009', name: 'Lê Ngân', role: 'staff', password: 'nganle123', avatar: 'LN', department: 'Content Marketing' },
+  'sang@vimove.vn': { id: 'u015', name: 'Bùi Thị Ngọc Sang', role: 'staff', password: 'sang123', avatar: 'BT', department: 'Content Marketing' },
+  'phong@vimove.vn': { id: 'u016', name: 'Lương Văn Phong', role: 'staff', password: 'phong123', avatar: 'LV', department: 'Media' },
+  'bac@vimove.vn': { id: 'u017', name: 'Lý Việt Bắc', role: 'staff', password: 'bac123', avatar: 'LV', department: 'Content Marketing' },
 };
 
 /* ========================================================
@@ -133,22 +89,22 @@ const TEAM_MEMBERS = [
   // BAN LÃNH ĐẠO
   { id: 'u002', name: 'Nguyễn Thị Thanh Ngân',  role: 'admin',   avatar: 'NTN',  department: 'Quản trị & Phê duyệt',      kpi: 100, revenue: 0, tasks: 0 },
   { id: 'u001', name: 'Trương Ngọc Tuyền',      role: 'admin',   avatar: 'TNT',  department: 'Digital & Hỗ trợ kỹ thuật', kpi: 95,  revenue: 0, tasks: 0 },
-  // HR MKT SALE
+  { id: 'u013', name: 'Trịnh Linh Chi',         role: 'admin',   avatar: 'TL',   department: 'HR',                        kpi: 0,   revenue: 0, tasks: 0 },
+  // QUẢN LÝ
   { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', avatar: 'NQT',  department: 'HR & MKT & Sale',           kpi: 85,  revenue: 0, tasks: 0 },
-  // DIGITAL
-  { id: 'u004', name: 'Dương Minh Đức',          role: 'staff',   avatar: 'DMD',  department: 'Digital',                   kpi: 78,  revenue: 0, tasks: 0 },
-  // CONTENT
-  { id: 'u005', name: 'Hoàng Quỳnh Phương',      role: 'manager', avatar: 'HQP',  department: 'Lead Content',              kpi: 88,  revenue: 0, tasks: 0 },
-  { id: 'u009', name: 'Lê Thị Ngân',             role: 'staff',   avatar: 'LTN',  department: 'Content',                   kpi: 80,  revenue: 0, tasks: 0 },
-  { id: 'u010', name: 'Lê Thị Anh Thái',         role: 'staff',   avatar: 'LTAT', department: 'Content',                   kpi: 75,  revenue: 0, tasks: 0 },
-  // PHÁT TRIỂN SẢN PHẨM
+  { id: 'u005', name: 'Hoàng Quỳnh Phương',      role: 'manager', avatar: 'HQP',  department: 'Content Lead',              kpi: 88,  revenue: 0, tasks: 0 },
   { id: 'u006', name: 'Trương Xuân Dũng',        role: 'manager', avatar: 'TXD',  department: 'Lead Sản phẩm',             kpi: 82,  revenue: 0, tasks: 0 },
   { id: 'u007', name: 'Vũ Phương Hạnh',          role: 'manager', avatar: 'VPH',  department: 'Lead Sản phẩm',             kpi: 79,  revenue: 0, tasks: 0 },
-  // KÊNH CÁ NHÂN
-  { id: 'u008', name: 'Nguyễn Văn Lợi',          role: 'staff',   avatar: 'NVL',  department: 'Kênh cá nhân',             kpi: 72,  revenue: 0, tasks: 0 },
-  // THIẾT KẾ
+  { id: 'u008', name: 'Nguyễn Văn Lợi',          role: 'manager', avatar: 'NV',   department: 'Kênh cá nhân',              kpi: 72,  revenue: 0, tasks: 0 },
+  // NHÂN VIÊN
+  { id: 'u010', name: 'Lê Thị Anh Thái',         role: 'staff',   avatar: 'LTAT', department: 'Content',                   kpi: 75,  revenue: 0, tasks: 0 },
   { id: 'u011', name: 'Phạm Thanh Mai',          role: 'staff',   avatar: 'PTM',  department: 'Thiết kế',                  kpi: 85,  revenue: 0, tasks: 0 },
-  { id: 'u012', name: 'Khuất Thị Dung',          role: 'staff',   avatar: 'KTD',  department: 'Thiết kế',                  kpi: 83,  revenue: 0, tasks: 0 },
+  { id: 'u012', name: 'Khuất Thị Dung',          role: 'staff',   avatar: 'KT',   department: 'Design',                    kpi: 83,  revenue: 0, tasks: 0 },
+  { id: 'u014', name: 'Phạm Mỹ Duyên',           role: 'staff',   avatar: 'PM',   department: 'Media',                     kpi: 0,   revenue: 0, tasks: 0 },
+  { id: 'u009', name: 'Lê Ngân',                 role: 'staff',   avatar: 'LN',   department: 'Content Marketing',         kpi: 80,  revenue: 0, tasks: 0 },
+  { id: 'u015', name: 'Bùi Thị Ngọc Sang',       role: 'staff',   avatar: 'BT',   department: 'Content Marketing',         kpi: 0,   revenue: 0, tasks: 0 },
+  { id: 'u016', name: 'Lương Văn Phong',         role: 'staff',   avatar: 'LV',   department: 'Media',                     kpi: 0,   revenue: 0, tasks: 0 },
+  { id: 'u017', name: 'Lý Việt Bắc',             role: 'staff',   avatar: 'LV',   department: 'Content Marketing',         kpi: 0,   revenue: 0, tasks: 0 },
 ];
 
 /* ========================================================
@@ -1042,6 +998,53 @@ function initData() {
 
 function resetAllData() {
   if (!confirm('Vùng nguy hiểm: Tính năng Xóa Cloud chưa được mở.')) return;
+}
+
+async function cleanupZombieUsers() {
+  if (!confirm('⚠️ Hành động này sẽ QUÉT Firebase và XÓA VĨNH VIỄN các tài khoản rác (không nằm trong danh sách chuẩn 16 người).\nBạn có chắc chắn muốn dọn dẹp?')) return;
+  
+  const db = window.firebaseDB;
+  if (!db) {
+    showToast('⚠️ Không kết nối được Firebase.', 'error');
+    return;
+  }
+
+  // Danh sách email chuẩn của 16 tài khoản gốc
+  const approvedEmails = [
+    'ngan@vimove.vn', 'tuyen@vimove.vn', 'chi@vimove.vn', 'trang@vimove.vn',
+    'phuong@vimove.vn', 'dung.tx@vimove.vn', 'hanh@vimove.vn', 'loi@vimove.vn',
+    'thai@vimove.vn', 'mai@vimove.vn', 'dung.kt@vimove.vn', 'duyen@vimove.vn',
+    'ngan.le@vimove.vn', 'sang@vimove.vn', 'phong@vimove.vn', 'bac@vimove.vn'
+  ];
+
+  try {
+    const snap = await db.collection('viwork_users').get();
+    let deletedCount = 0;
+    
+    // Tạo mảng hứa hẹn để đợi tất cả thao tác xóa xong
+    const deletePromises = [];
+    
+    snap.forEach(doc => {
+      const u = doc.data();
+      // Xóa nếu email không nằm trong danh sách được phê duyệt ở trên
+      if (u.email && !approvedEmails.includes(u.email)) {
+        console.log('[CLEANUP] Deleting zombie:', u.email, u.name);
+        deletePromises.push(db.collection('viwork_users').doc(doc.id).delete());
+        deletedCount++;
+      }
+    });
+
+    if (deletedCount > 0) {
+      await Promise.all(deletePromises);
+      showToast(`✅ Đã xóa vĩnh viễn ${deletedCount} tài khoản rác khỏi Cloud!`, 'success');
+      setTimeout(() => window.location.reload(), 2000);
+    } else {
+      showToast('✨ Không có tài khoản rác nào cần xóa.', 'info');
+    }
+  } catch(e) {
+    console.error('Cleanup error:', e);
+    showToast('⚠️ Lỗi khi quét Firebase.', 'error');
+  }
 }
 
 // Bỏ saveData local
