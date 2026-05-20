@@ -1,8 +1,10 @@
-﻿// Lấy instance DB chung
+// Lấy instance DB chung
 const getDB = () => window.firebaseDB;
 
 // ============ VIWORK_TASKS ============
 window.fbCheckAndSeed = async () => {
+  // First, sync any remaining .vn emails to .net across devices.
+  await window.fbSyncEmailDomains?.();
   const db = getDB();
   const snap = await db.collection('viwork_users').limit(1).get();
   if (snap.empty) {
@@ -285,6 +287,53 @@ window.fbListenAssignments = (callback) => {
 };
 
 console.log('[⚡ VIWORK] Firebase Database Services (Compat) loaded — incl. Attendance!');
+
+// -------------------------------------------------
+// ==== EMAIL DOMAIN SYNC (vimove.vn -> vimove.net) ====
+// -------------------------------------------------
+// Renames a user document in Firestore when the email domain changes.
+// Uses the same document ID scheme: replace @ and . with '_' .
+window.fbRenameUser = async (oldEmail, newEmail) => {
+  const db = getDB();
+  if (!db) return;
+  const oldId = oldEmail.replace(/[@.]/g, '_');
+  const newId = newEmail.replace(/[@.]/g, '_');
+  try {
+    const oldDoc = await db.collection('viwork_users').doc(oldId).get();
+    if (!oldDoc.exists) return;
+    const data = oldDoc.data();
+    // Preserve email field
+    data.email = newEmail;
+    // Write new doc
+    await db.collection('viwork_users').doc(newId).set(data);
+    // Delete old doc
+    await db.collection('viwork_users').doc(oldId).delete();
+    console.log(`[VIWORK] Renamed user ${oldEmail} → ${newEmail}`);
+  } catch (e) {
+    console.warn('[fbRenameUser]', e);
+  }
+};
+
+// Scan local DEMO_USERS for outdated .vn emails and rename them in Firestore.
+window.fbSyncEmailDomains = async () => {
+  const db = getDB();
+  if (!db) return;
+  const promises = [];
+  for (const email in DEMO_USERS) {
+    if (email.endsWith('@vimove.vn')) {
+      const newEmail = email.replace('@vimove.vn', '@vimove.net');
+      promises.push(window.fbRenameUser(email, newEmail));
+      // Update local structures immediately
+      const user = DEMO_USERS[email];
+      delete DEMO_USERS[email];
+      DEMO_USERS[newEmail] = { ...user, email: newEmail };
+    }
+  }
+  await Promise.all(promises);
+  // Refresh UI after rename
+  if (typeof renderUserManager === 'function') renderUserManager();
+  if (typeof renderTeamPage === 'function') renderTeamPage();
+};
 
 // ============ TRAINING ENROLLMENTS ============
 window.fbSaveEnrollment = async (userId, courseId, enrollment) => {
