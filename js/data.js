@@ -19,9 +19,7 @@ const DATA_VERSION = 'viwork_v2.5';
 const STAGES = [
   { id: 'idea',       name: 'Lên kế hoạch',   color: '#94A3B8', icon: '💡', order: 0 },
   { id: 'inprogress', name: 'Đang triển khai', color: '#3B82F6', icon: '⚡', order: 1 },
-  { id: 'review',     name: 'Chờ duyệt',       color: '#F59E0B', icon: '👁', order: 2 },
-  { id: 'blocked',    name: 'Bị chặn',         color: '#EF4444', icon: '🔴', order: 3 },
-  { id: 'done',       name: 'Hoàn thành',      color: '#10B981', icon: '✅', order: 4 },
+  { id: 'done',       name: 'Hoàn thành',      color: '#10B981', icon: '✅', order: 2 },
 ];
 
 // ============ CATEGORIES ============
@@ -54,31 +52,31 @@ const CHANNELS = {
 // ============ DEMO ACCOUNTS ============
 /* ========================================================
    DEMO USERS — Nhân viên thật Vimove (v2.2)
-   Primary Admin: ngan@vimove.vn / ngan123  (⇒ Phê duyệt, quản trị)
-   Tech Admin:    tuyen@vimove.vn / tuyen123 (⇒ Hỗ trợ kỹ thuật)
+   Primary Admin: ngan@vimove.net / ngan123  (⇒ Phê duyệt, quản trị)
+   Tech Admin:    tuyen@vimove.net / tuyen123 (⇒ Hỗ trợ kỹ thuật)
    ======================================================== */
 const DEMO_USERS = {
   // ===== PRIMARY ADMIN =====
-  'ngan@vimove.vn': { id: 'u002', name: 'Nguyễn Thị Thanh Ngân', role: 'admin', password: 'ngan123', avatar: 'NTN', department: 'Quản trị & Phê duyệt' },
-  'tuyen@vimove.vn': { id: 'u001', name: 'Trương Ngọc Tuyền', role: 'admin', password: 'tuyen123', avatar: 'TNT', department: 'Digital & Hỗ trợ kỹ thuật' },
-  'chi@vimove.vn': { id: 'u013', name: 'Trịnh Linh Chi', role: 'admin', password: 'chi123', avatar: 'TL', department: 'HR' },
+  'ngan@vimove.net': { id: 'u002', name: 'Nguyễn Thị Thanh Ngân', role: 'admin', password: 'ngan123', avatar: 'NTN', department: 'Quản trị & Phê duyệt' },
+  'tuyen@vimove.net': { id: 'u001', name: 'Trương Ngọc Tuyền', role: 'admin', password: 'tuyen123', avatar: 'TNT', department: 'Digital & Hỗ trợ kỹ thuật' },
+  'chi@vimove.net': { id: 'u013', name: 'Trịnh Linh Chi', role: 'admin', password: 'chi123', avatar: 'TL', department: 'HR' },
   
   // ===== MANAGER =====
-  'trang@vimove.vn': { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', password: 'trang123', avatar: 'NQT', department: 'HR & MKT & Sale' },
-  'phuong@vimove.vn': { id: 'u005', name: 'Hoàng Quỳnh Phương', role: 'manager', password: 'phuong123', avatar: 'HQP', department: 'Content Lead' },
-  'dung.tx@vimove.vn': { id: 'u006', name: 'Trương Xuân Dũng', role: 'manager', password: 'dung123', avatar: 'TXD', department: 'Lead Sản phẩm' },
-  'hanh@vimove.vn': { id: 'u007', name: 'Vũ Phương Hạnh', role: 'manager', password: 'hanh123', avatar: 'VPH', department: 'Lead Sản phẩm' },
-  'loi@vimove.vn': { id: 'u008', name: 'Nguyễn Văn Lợi', role: 'manager', password: 'loi123', avatar: 'NV', department: 'Kênh cá nhân' },
+  'trang@vimove.net': { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', password: 'trang123', avatar: 'NQT', department: 'HR & MKT & Sale' },
+  'phuong@vimove.net': { id: 'u005', name: 'Hoàng Quỳnh Phương', role: 'manager', password: 'phuong123', avatar: 'HQP', department: 'Content Lead' },
+  'dung.tx@vimove.net': { id: 'u006', name: 'Trương Xuân Dũng', role: 'manager', password: 'dung123', avatar: 'TXD', department: 'Lead Sản phẩm' },
+  'hanh@vimove.net': { id: 'u007', name: 'Vũ Phương Hạnh', role: 'manager', password: 'hanh123', avatar: 'VPH', department: 'Lead Sản phẩm' },
+  'loi@vimove.net': { id: 'u008', name: 'Nguyễn Văn Lợi', role: 'manager', password: 'loi123', avatar: 'NV', department: 'Kênh cá nhân' },
   
   // ===== STAFF =====
-  'thai@vimove.vn': { id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff', password: 'thai123', avatar: 'LTAT', department: 'Content' },
-  'mai@vimove.vn': { id: 'u011', name: 'Phạm Thanh Mai', role: 'staff', password: 'mai123', avatar: 'PTM', department: 'Thiết kế' },
-  'dung.kt@vimove.vn': { id: 'u012', name: 'Khuất Thị Dung', role: 'staff', password: 'dung456', avatar: 'KT', department: 'Design' },
-  'duyen@vimove.vn': { id: 'u014', name: 'Phạm Mỹ Duyên', role: 'staff', password: 'duyen123', avatar: 'PM', department: 'Media' },
-  'ngan.le@vimove.vn': { id: 'u009', name: 'Lê Ngân', role: 'staff', password: 'nganle123', avatar: 'LN', department: 'Content Marketing' },
-  'sang@vimove.vn': { id: 'u015', name: 'Bùi Thị Ngọc Sang', role: 'staff', password: 'sang123', avatar: 'BT', department: 'Content Marketing' },
-  'phong@vimove.vn': { id: 'u016', name: 'Lương Văn Phong', role: 'staff', password: 'phong123', avatar: 'LV', department: 'Media' },
-  'bac@vimove.vn': { id: 'u017', name: 'Lý Việt Bắc', role: 'staff', password: 'bac123', avatar: 'LV', department: 'Content Marketing' },
+  'thai@vimove.net': { id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff', password: 'thai123', avatar: 'LTAT', department: 'Content' },
+  'mai@vimove.net': { id: 'u011', name: 'Phạm Thanh Mai', role: 'staff', password: 'mai123', avatar: 'PTM', department: 'Thiết kế' },
+  'dung.kt@vimove.net': { id: 'u012', name: 'Khuất Thị Dung', role: 'staff', password: 'dung456', avatar: 'KT', department: 'Design' },
+  'duyen@vimove.net': { id: 'u014', name: 'Phạm Mỹ Duyên', role: 'staff', password: 'duyen123', avatar: 'PM', department: 'Media' },
+  'ngan.le@vimove.net': { id: 'u009', name: 'Lê Ngân', role: 'staff', password: 'nganle123', avatar: 'LN', department: 'Content Marketing' },
+  'sang@vimove.net': { id: 'u015', name: 'Bùi Thị Ngọc Sang', role: 'staff', password: 'sang123', avatar: 'BT', department: 'Content Marketing' },
+  'phong@vimove.net': { id: 'u016', name: 'Lương Văn Phong', role: 'staff', password: 'phong123', avatar: 'LV', department: 'Media' },
+  'bac@vimove.net': { id: 'u017', name: 'Lý Việt Bắc', role: 'staff', password: 'bac123', avatar: 'LV', department: 'Content Marketing' },
 };
 
 /* ========================================================
@@ -1011,10 +1009,10 @@ async function cleanupZombieUsers() {
 
   // Danh sách email chuẩn của 16 tài khoản gốc
   const approvedEmails = [
-    'ngan@vimove.vn', 'tuyen@vimove.vn', 'chi@vimove.vn', 'trang@vimove.vn',
-    'phuong@vimove.vn', 'dung.tx@vimove.vn', 'hanh@vimove.vn', 'loi@vimove.vn',
-    'thai@vimove.vn', 'mai@vimove.vn', 'dung.kt@vimove.vn', 'duyen@vimove.vn',
-    'ngan.le@vimove.vn', 'sang@vimove.vn', 'phong@vimove.vn', 'bac@vimove.vn'
+    'ngan@vimove.net', 'tuyen@vimove.net', 'chi@vimove.net', 'trang@vimove.net',
+    'phuong@vimove.net', 'dung.tx@vimove.net', 'hanh@vimove.net', 'loi@vimove.net',
+    'thai@vimove.net', 'mai@vimove.net', 'dung.kt@vimove.net', 'duyen@vimove.net',
+    'ngan.le@vimove.net', 'sang@vimove.net', 'phong@vimove.net', 'bac@vimove.net'
   ];
 
   try {

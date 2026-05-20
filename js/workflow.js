@@ -190,6 +190,17 @@ function renderTimeline(tasks) {
 // ============ FILTER / VIEW ============
 function getFilteredTasks() {
   let tasks = [...appState.tasks];
+
+  // Các tk trừ quản lý (staff), chỉ hiện các việc mình được giao 
+  // (CVC hiện tại không có assignedBy nên ta chỉ check assigneeId, 
+  // hoặc người comment đầu tiên nếu coi đó là người tạo)
+  if (currentUser?.role === 'staff') {
+    tasks = tasks.filter(t => 
+      t.assigneeId === currentUser.id || 
+      (t.comments && t.comments[0] && t.comments[0].author === currentUser.id)
+    );
+  }
+
   const filter = document.getElementById('wfFilter')?.value || 'all';
   const category = document.getElementById('wfCategory')?.value || 'all';
   const search = (document.getElementById('globalSearch')?.value || '').toLowerCase();
@@ -328,9 +339,6 @@ function openTaskDetail(taskId) {
     if (stageIdx > 0 && canEdit()) {
       const prev = STAGES[stageIdx - 1];
       html += `<button class="stage-action-btn danger" onclick="moveStage('${task.id}','${prev.id}')">← Quay lại: ${prev.icon} ${prev.name}</button>`;
-    }
-    if (task.stage !== 'blocked' && canEdit()) {
-      html += `<button class="stage-action-btn danger" onclick="moveStage('${task.id}','blocked')">🔴 Đánh dấu bị chặn</button>`;
     }
     actionsEl.innerHTML = `<h4>Chuyển giai đoạn</h4>${html}`;
   } else {

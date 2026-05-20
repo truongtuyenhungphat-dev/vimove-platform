@@ -7,8 +7,6 @@
 const SLA_CONFIG = {
   idea:       { hours: 72,  label: '3 ngày',   warnAt: 0.25 },  // Lên kế hoạch: 3 ngày
   inprogress: { hours: 168, label: '7 ngày',   warnAt: 0.25 },  // Đang triển khai: 7 ngày
-  review:     { hours: 24,  label: '1 ngày',   warnAt: 0.25 },  // Chờ duyệt: 1 ngày
-  blocked:    { hours: 48,  label: '2 ngày',   warnAt: 0.25 },  // Bị chặn: 2 ngày
   done:       { hours: null, label: null,      warnAt: null  },  // Hoàn thành: không có SLA
 };
 
