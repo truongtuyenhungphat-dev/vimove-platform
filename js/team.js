@@ -334,6 +334,7 @@ async function doDeleteMember(memberId, member) {
 
   // 6. Lưu deleted_ids + viwork_users vào localStorage
   try {
+    if (typeof _deletedUserIds !== 'undefined') _deletedUserIds.add(memberId);
     const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
     localStorage.setItem('viwork_users', JSON.stringify(saved.filter(u => u.id !== memberId)));
 

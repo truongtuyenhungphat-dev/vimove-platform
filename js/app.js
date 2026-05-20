@@ -347,7 +347,7 @@ function canDeleteUser(u) {
   // Prevent self-deletion
   if (u.id === currentUser?.id) return false;
   // Admin can delete any other account
-  if (currentUser?.role === 'admin') return u.role !== 'admin';
+  if (currentUser?.role === 'admin') return true;
   // Manager can delete only staff accounts
   if (currentUser?.role === 'manager') return u.role === 'staff';
   return false;
