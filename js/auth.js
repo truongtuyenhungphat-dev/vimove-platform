@@ -134,9 +134,17 @@ function getAdminLabel(user) {
   return '🔧 Admin kỹ thuật';
 }
 
-function togglePassword() {
-  const inp = document.getElementById('loginPass');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
+function togglePassword() { togglePassField('loginPass'); }
+
+// Generic: toggle visibility for any password input by ID
+function togglePassField(inputId) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  // Update the eye button text if it's wrapped in .input-with-icon
+  const btn = inp.parentElement?.querySelector('.toggle-pass');
+  if (btn) btn.textContent = isHidden ? '🙈' : '👁';
 }
 
 function canEdit() {

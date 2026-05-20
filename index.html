@@ -865,7 +865,10 @@
       </div>
       <div class="form-group">
         <label>Mật khẩu <span class="req">*</span></label>
-        <input type="password" id="newUserPass" placeholder="••••••••" />
+          <div class="input-with-icon">
+            <input type="password" id="newUserPass" placeholder="••••••••" />
+            <button type="button" class="toggle-pass" onclick="togglePassField('newUserPass')" title="Hiện/ẩn mật khẩu">👁</button>
+          </div>
       </div>
       <div class="form-group">
         <label>🏢 Vị trí / Nhiệm vụ <span class="req">*</span></label>
@@ -918,7 +921,10 @@
         </div>
         <div class="form-group">
           <label>Mật khẩu mới <span style="font-size:11px;color:var(--c-text-3);font-weight:normal">(để trống = giữ nguyên)</span></label>
-          <input type="password" id="editMemberPass" placeholder="••••••••" />
+          <div class="input-with-icon">
+            <input type="password" id="editMemberPass" placeholder="••••••••" />
+            <button type="button" class="toggle-pass" onclick="togglePassField('editMemberPass')" title="Hiện/ẩn mật khẩu">👁</button>
+          </div>
         </div>
         <!-- VỊ TRÍ / NHIỆM VỤ -->
         <div class="form-group full-width">

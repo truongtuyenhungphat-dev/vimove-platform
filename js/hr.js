@@ -377,15 +377,24 @@ function openChangePasswordModal(targetUserId) {
         ${isSelf && !isAdmin ? `
         <div class="form-group">
           <label>Mật khẩu hiện tại</label>
-          <input type="password" class="form-input" id="cpCurrentPass" placeholder="Nhập mật khẩu cũ">
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="cpCurrentPass" placeholder="Nhập mật khẩu cũ">
+            <button type="button" class="toggle-pass" onclick="togglePassField('cpCurrentPass')" title="Hiện/ẩn">👁</button>
+          </div>
         </div>` : `<div class="info-banner">🔐 Admin có thể đặt lại mật khẩu trực tiếp không cần xác nhận</div>`}
         <div class="form-group">
           <label>Mật khẩu mới</label>
-          <input type="password" class="form-input" id="cpNewPass" placeholder="Tối thiểu 6 ký tự">
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="cpNewPass" placeholder="Tối thiểu 6 ký tự">
+            <button type="button" class="toggle-pass" onclick="togglePassField('cpNewPass')" title="Hiện/ẩn">👁</button>
+          </div>
         </div>
         <div class="form-group">
           <label>Xác nhận mật khẩu mới</label>
-          <input type="password" class="form-input" id="cpConfirmPass" placeholder="Nhập lại mật khẩu mới">
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="cpConfirmPass" placeholder="Nhập lại mật khẩu mới">
+            <button type="button" class="toggle-pass" onclick="togglePassField('cpConfirmPass')" title="Hiện/ẩn">👁</button>
+          </div>
         </div>
         <div id="cpError" style="color:#EF4444;font-size:12px;margin-top:6px"></div>
       </div>
