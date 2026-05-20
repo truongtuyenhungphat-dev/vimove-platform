@@ -335,10 +335,34 @@ function renderUserManager() {
 // - Admin xóa được tất cả (trừ admin khác)
 // - Manager chỉ xóa được staff trong mảng của mình
 function canDeleteUser(u) {
+  // Prevent self-deletion
   if (u.id === currentUser?.id) return false;
-  if (currentUser?.role === 'admin') return u.role !== 'admin';
+  // Admin can delete any other account
+  if (currentUser?.role === 'admin') return true;
+  // Manager can delete only staff accounts
   if (currentUser?.role === 'manager') return u.role === 'staff';
   return false;
+}
+
+// Wrapper called by UI button to initiate deletion
+function deleteUser(userId) {
+  // Find user object to get role info (required for permission check)
+  const user = TEAM_MEMBERS.find(m => m.id === userId) || Object.values(DEMO_USERS).find(u => u.id === userId);
+  if (!user) {
+    console.warn('User not found for deletion:', userId);
+    return;
+  }
+  // Permission check already done in canDeleteUser, but double‑check before proceeding
+  if (!canDeleteUser(user)) {
+    showToast('⚠️ Bạn không có quyền xóa tài khoản này!', 'error');
+    return;
+  }
+  // Show confirm dialog defined in team.js
+  if (typeof confirmDeleteMember === 'function') {
+    confirmDeleteMember(userId);
+  } else {
+    console.warn('confirmDeleteMember not available');
+  }
 }
 
 function openAddUserModal() {

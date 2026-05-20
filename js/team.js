@@ -231,14 +231,31 @@ async function saveEditMember() {
 
 // ============ DELETE MEMBER ============
 function confirmDeleteMember(memberId) {
-  if (currentUser?.role !== 'admin') {
-    showToast('⚠️ Chỉ Admin mới có quyền xóa thành viên!', 'error'); return;
+  // Debug: in ra role hiện tại
+  console.log('[DELETE] currentUser role:', currentUser?.role, '| memberId:', memberId);
+
+  const role = currentUser?.role;
+  if (role !== 'admin' && role !== 'manager') {
+    showToast('⚠️ Chỉ Admin hoặc Manager mới có quyền xóa thành viên!', 'error'); return;
   }
   if (memberId === currentUser?.id) {
     showToast('⚠️ Không thể xóa tài khoản đang đăng nhập!', 'error'); return;
   }
-  const member = TEAM_MEMBERS.find(m => m.id === memberId);
-  if (!member) return;
+
+  // Lấy member từ TEAM_MEMBERS hoặc DEMO_USERS
+  let member = TEAM_MEMBERS.find(m => m.id === memberId);
+  if (!member) {
+    const entry = Object.values(DEMO_USERS).find(u => u.id === memberId);
+    if (entry) member = entry;
+  }
+  if (!member) { showToast('⚠️ Không tìm thấy thành viên!', 'error'); return; }
+
+  // Manager chỉ xóa được staff
+  if (role === 'manager' && member.role !== 'staff') {
+    showToast('⚠️ Manager chỉ có thể xóa nhân viên (staff)!', 'error'); return;
+  }
+
+  // Bảo vệ admin cuối cùng
   if (member.role === 'admin') {
     const adminCount = TEAM_MEMBERS.filter(m => m.role === 'admin').length;
     if (adminCount <= 1) { showToast('⚠️ Hệ thống cần ít nhất 1 Admin!', 'error'); return; }
