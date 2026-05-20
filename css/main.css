@@ -183,6 +183,23 @@ img { max-width: 100%; }
 .input-with-icon { position: relative; display: flex; align-items: center; }
 .input-with-icon input,
 .input-with-icon .form-input { padding-right: 44px; flex: 1; width: 100%; }
+
+/* Form input for dynamic modals (hr.js, etc.) */
+.form-input {
+  width: 100%;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  color: var(--c-text);
+  font-size: 14px;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.form-input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(90,184,0,0.15);
+  outline: none;
+}
 .toggle-pass {
   position: absolute;
   right: 10px; top: 50%;
