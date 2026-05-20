@@ -111,7 +111,9 @@ function initRequests() {
 }
 
 function saveRequests() {
-  // Lược bỏ localStorage vì đã đẩy bằng API riêng rẻ lên Firebase
+  try {
+    localStorage.setItem('viwork_requests', JSON.stringify(appState?.requests || requestState?.requests || []));
+  } catch(e) { console.warn('[saveRequests] localStorage error:', e); }
 }
 
 // ============ RENDER REQUEST PAGE ============

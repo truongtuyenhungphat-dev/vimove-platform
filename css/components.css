@@ -81,17 +81,6 @@
   flex-shrink: 0;
 }
 
-/* Info banner (used in hr.js change password) */
-.info-banner {
-  background: rgba(90,184,0,0.08);
-  border: 1px solid rgba(90,184,0,0.22);
-  border-radius: var(--r-md);
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--c-text-2);
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
 
 /* Form grid */
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }

@@ -100,6 +100,11 @@ function handleLogout() {
     loginScreen.style.opacity = '1';
   }, 50);
 
+  // Cleanup intervals
+  if (typeof _notifWatcherInterval !== 'undefined') clearInterval(_notifWatcherInterval);
+  if (typeof attCheckInterval !== 'undefined') clearInterval(attCheckInterval);
+  if (typeof elapsedTimer !== 'undefined') clearInterval(elapsedTimer);
+
   showToast('Đã đăng xuất thành công!', 'info');
 }
 

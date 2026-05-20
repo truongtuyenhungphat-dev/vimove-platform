@@ -411,7 +411,7 @@ async function saveChangePassword(userId, requireOld) {
   const newPass  = document.getElementById('cpNewPass')?.value || '';
   const confirm  = document.getElementById('cpConfirmPass')?.value || '';
 
-  if (requireOld === 'true') {
+  if (requireOld === 'true' || requireOld === true) {
     const currentPass = document.getElementById('cpCurrentPass')?.value || '';
     const entry = Object.values(DEMO_USERS).find(u => u.id === userId);
     if (!entry || entry.password !== currentPass) {

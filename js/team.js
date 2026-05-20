@@ -17,8 +17,8 @@ function renderTeam() {
     const isMe     = m.id === currentUser?.id;
 
     // Nút chỉnh sửa: Admin thấy tất cả, Manager thấy staff của mình
-    const canEdit = canManage && !( m.role === 'admin' && currentUser?.role !== 'admin' );
-    const editBtn = canEdit ? `
+    const canEditMember = canManage && !( m.role === 'admin' && currentUser?.role !== 'admin' );
+    const editBtn = canEditMember ? `
       <button class="member-edit-btn" onclick="openEditMemberModal('${m.id}')" title="Chỉnh sửa thành viên">
         ✏️
       </button>` : '';
@@ -226,6 +226,8 @@ async function saveEditMember() {
     sessionStorage.setItem('vw_user', JSON.stringify(currentUser));
     document.getElementById('sidebarName').textContent   = name;
     document.getElementById('sidebarAvatar').textContent = currentUser.avatar;
+    const sideRole = document.getElementById('sidebarRole');
+    if (sideRole && typeof getAdminLabel === 'function') sideRole.textContent = getAdminLabel(currentUser);
   }
 
   // Lưu vào localStorage để không mất khi refresh
@@ -365,8 +367,8 @@ function hrConfirm(title, message, onConfirm) {
     <div class="modal" style="max-width:400px;width:90%;text-align:center;padding:0;">
       <div class="modal-body" style="padding:32px 28px 24px;">
         <div style="font-size:40px;margin-bottom:12px">⚠️</div>
-        <div style="font-weight:700;font-size:17px;margin-bottom:10px;color:var(--c-text-1)">${title}</div>
-        <div style="font-size:13px;color:var(--c-text-3);margin-bottom:24px;line-height:1.5">${message}</div>
+        <div style="font-weight:700;font-size:17px;margin-bottom:10px;color:var(--c-text-1)">${typeof escHtml === 'function' ? escHtml(title) : title}</div>
+        <div style="font-size:13px;color:var(--c-text-3);margin-bottom:24px;line-height:1.5">${typeof escHtml === 'function' ? escHtml(message) : message}</div>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button
             style="padding:10px 24px;border-radius:8px;border:1.5px solid var(--c-border);background:var(--c-surface);color:var(--c-text-1);font-weight:600;cursor:pointer;font-size:14px"

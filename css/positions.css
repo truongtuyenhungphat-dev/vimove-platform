@@ -44,7 +44,7 @@
 
 /* ── PAYSLIP REDESIGN ────────────────────────────── */
 .ps-breakdown-list {
-  background: var(--c-surface-2, #1e1e1e);
+  background: var(--c-surface-2);
   border-radius: 14px;
   padding: 4px 0;
   margin: 4px 0 14px;
@@ -57,7 +57,7 @@
   letter-spacing: 0.8px;
   color: var(--c-text-3);
   padding: 10px 16px 6px;
-  background: var(--c-surface, #141414);
+  background: var(--c-surface);
   border-top: 1px solid var(--c-border-subtle);
   margin-top: 2px;
 }
@@ -69,7 +69,7 @@
   padding: 9px 16px;
   font-size: 13px;
   color: var(--c-text-2);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--c-border-subtle);
 }
 .ps-line:last-child { border-bottom: none; }
 .ps-amount {
@@ -84,7 +84,7 @@
 .ps-amount.ps-red   { color: #EF4444; }
 .ps-tag {
   display: inline-block;
-  background: rgba(255,255,255,0.08);
+  background: var(--c-surface-3);
   border-radius: 4px;
   padding: 1px 5px;
   font-size: 11px;
@@ -505,7 +505,7 @@
 }
 
 .income-breakdown {
-  background: rgba(255,255,255,0.04);
+  background: var(--c-surface-2);
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 14px;
@@ -535,7 +535,7 @@
   font-size: 12px;
   color: var(--c-text-2);
   padding: 10px 14px;
-  background: rgba(255,255,255,0.05);
+  background: var(--c-surface-2);
   border-radius: 8px;
   margin-bottom: 10px;
 }
@@ -573,7 +573,7 @@
   vertical-align: middle;
 }
 .income-table tbody tr:last-child td { border-bottom: none; }
-.income-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.income-table tbody tr:hover { background: var(--c-surface-2); }
 .income-table tfoot td {
   background: var(--c-surface-2);
   font-size: 13px;

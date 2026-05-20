@@ -33,7 +33,7 @@ function getSLAInfo(task) {
   const elapsedMs  = nowMs - enteredAt.getTime();
   const elapsedH   = elapsedMs / 3600000;
   const totalH     = config.hours;
-  const remainingH = Math.max(totalH - elapsedH, 0);
+  const remainingH = totalH - elapsedH;
   const usedPct    = Math.min(elapsedH / totalH, 1); // 0→1 (0% dùng → 100% dùng)
   const remainPct  = 1 - usedPct;                    // phần còn lại
 
@@ -57,9 +57,10 @@ function getSLAInfo(task) {
 
 function formatSLATime(hours, isOverdue) {
   const prefix = isOverdue ? 'Quá ' : 'Còn ';
-  if (hours < 1) return prefix + Math.round(hours * 60) + 'p';
-  if (hours < 24) return prefix + Math.round(hours) + 'h';
-  return prefix + Math.round(hours / 24) + 'ng';
+  const absH = Math.abs(hours);
+  if (absH < 1) return prefix + Math.round(absH * 60) + 'p';
+  if (absH < 24) return prefix + Math.round(absH) + 'h';
+  return prefix + Math.round(absH / 24) + 'ng';
 }
 
 /**

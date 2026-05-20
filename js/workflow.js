@@ -264,6 +264,7 @@ function onDrop(e, stageId) {
   const task = appState.tasks.find(t => t.id === draggedTaskId);
   if (!task) return;
   const oldStage = task.stage;
+  if (typeof recordStageEntry === 'function') recordStageEntry(task, stageId);
   task.stage = stageId;
   task.comments = task.comments || [];
   task.comments.push({
@@ -290,7 +291,7 @@ function openTaskDetail(taskId) {
   const isOD  = isOverdue(task);
 
   document.getElementById('detailTaskTitle').textContent = task.title;
-  document.getElementById('detailDesc').innerHTML = task.desc || '<em style="color:var(--c-text-3)">Chưa có mô tả</em>';
+  document.getElementById('detailDesc').innerHTML = task.desc ? escHtml(task.desc).replace(/\n/g, '<br>') : '<span style="color:var(--c-text-3)">Chưa có mô tả</span>';
 
   // Meta tags
   document.getElementById('detailMeta').innerHTML = `
@@ -521,6 +522,7 @@ function editTask(taskId) {
 }
 
 function saveEditTask(taskId) {
+  if (!canEdit()) { showToast('⚠️ Bạn không có quyền chỉnh sửa!', 'error'); return; }
   const title = document.getElementById('taskTitle').value.trim();
   if (!title) { showToast('⚠️ Vui lòng nhập tên CVC!', 'error'); return; }
 

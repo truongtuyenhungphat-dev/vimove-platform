@@ -29,6 +29,7 @@
 
   /* ======= TEXT (Dark on Light) ======= */
   --c-text:       #1A2332;
+  --c-text-1:     #1A2332;
   --c-text-2:     #4A5568;
   --c-text-3:     #8A9BB0;
   --c-text-muted: #B0BEC8;
@@ -177,7 +178,7 @@ img { max-width: 100%; }
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   border-color: var(--c-primary);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+  box-shadow: 0 0 0 3px rgba(90,184,0,0.15);
 }
 
 .input-with-icon { position: relative; display: flex; align-items: center; }
@@ -196,6 +197,21 @@ img { max-width: 100%; }
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 .form-input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(90,184,0,0.15);
+  outline: none;
+}
+.form-control {
+  width: 100%;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  color: var(--c-text);
+  font-size: 14px;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.form-control:focus {
   border-color: var(--c-primary);
   box-shadow: 0 0 0 3px rgba(90,184,0,0.15);
   outline: none;
@@ -261,7 +277,7 @@ img { max-width: 100%; }
   background: rgba(239,68,68,0.1);
   border: 1px solid rgba(239,68,68,0.3);
   border-radius: var(--r-sm);
-  color: #FCA5A5;
+  color: #DC2626;
   font-size: 13px;
 }
 .login-error:empty { display: none; }
@@ -474,7 +490,7 @@ img { max-width: 100%; }
   min-width: 220px;
   transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
 }
-.search-box:focus-within { border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+.search-box:focus-within { border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(90,184,0,0.1); }
 .search-box svg { width: 15px; height: 15px; color: var(--c-text-3); flex-shrink: 0; }
 .search-box input { background: none; border: none; color: var(--c-text); font-size: 13px; flex: 1; }
 .search-box input::placeholder { color: var(--c-text-3); }

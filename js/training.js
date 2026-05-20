@@ -447,7 +447,7 @@ function renderQuizUI(lesson, course) {
             </div>`).join('')}
         </div>`).join('')}
       <button class="btn-primary"
-        style="${qs.answers.length < questions.length ? 'opacity:0.5;pointer-events:none' : ''}"
+        style="${qs.answers.filter(a => a !== undefined).length < questions.length ? 'opacity:0.5;pointer-events:none' : ''}"
         onclick="submitQuiz('${lesson.id}','${course.id}')">
         Nộp bài →
       </button>

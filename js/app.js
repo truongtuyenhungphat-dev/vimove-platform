@@ -42,6 +42,18 @@ function initApp() {
     startUserListener();
     // Lắng nghe xóa user từ máy khác (cross-device delete sync)
     if (window.fbListenDeletedUsers) window.fbListenDeletedUsers();
+
+    // Global Escape key handler for modals
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal-overlay:not(.hidden)');
+        if (modals.length > 0) {
+          const topModal = modals[modals.length - 1];
+          if (topModal.id) closeModal(topModal.id);
+          else topModal.remove();
+        }
+      }
+    });
   });
 }
 
@@ -159,7 +171,7 @@ function renderSettingsPanel() {
   renderUserManager();
   // Danger zone
   const dangerCard = document.getElementById('dangerZoneCard');
-  if (dangerCard) dangerCard.style.display = currentUser?.id === 'u001' ? '' : 'none';
+  if (dangerCard) dangerCard.style.display = currentUser?.role === 'admin' ? '' : 'none';
 }
 
 // ---- ADD STAGE ----
@@ -280,10 +292,7 @@ function getAppUsers() {
 
 function saveAppUsers(users) {
   // Luu danh sach user tuong them (tu DEMO_USERS, ko phai hardcoded)
-  const hardcodedIds = new Set([
-    'u001','u002','u003','u004','u005','u006',
-    'u007','u008','u009','u010','u011','u012'
-  ]);
+  const hardcodedIds = new Set(Object.values(DEMO_USERS).map(u => u.id));
   const added = users.filter(u => !hardcodedIds.has(u.id));
   localStorage.setItem('viwork_users', JSON.stringify(added));
 }
@@ -294,7 +303,7 @@ function renderUserManager() {
   if (!el) return;
 
   // Manager chỉ thấy user trong mảng của mình + admin thấy tất cả
-  const isAdmin = currentUser?.role === 'admin';
+  const userIsAdmin = currentUser?.role === 'admin';
   const myDept  = currentUser?.department || '';
 
   // Loại bỏ duplicate (cùng id giữ 1 bản mới nhất)
@@ -302,13 +311,13 @@ function renderUserManager() {
   const users = allUsers.filter(u => {
     if (seen.has(u.id)) return false;
     seen.add(u.id);
-    if (isAdmin) return true;
+    if (userIsAdmin) return true;
     // Manager: thấy mình + các user cùng department hoặc chưa có department
     return u.id === currentUser?.id ||
            u.role === 'staff' && (u.department?.includes(myDept.split(' ')[0]) || !u.department);
   });
 
-  const addBtnLabel = isAdmin ? '+ Thêm người dùng' : '+ Thêm nhân viên';
+  const addBtnLabel = userIsAdmin ? '+ Thêm người dùng' : '+ Thêm nhân viên';
 
   el.innerHTML = users.map(u => `
     <div class="stage-item" style="padding:10px 12px;height:auto">
@@ -338,7 +347,7 @@ function canDeleteUser(u) {
   // Prevent self-deletion
   if (u.id === currentUser?.id) return false;
   // Admin can delete any other account
-  if (currentUser?.role === 'admin') return true;
+  if (currentUser?.role === 'admin') return u.role !== 'admin';
   // Manager can delete only staff accounts
   if (currentUser?.role === 'manager') return u.role === 'staff';
   return false;
@@ -494,7 +503,7 @@ function syncAllViews() {
   if (typeof renderTeamPage === 'function') renderTeamPage();
   if (typeof renderTeam === 'function') renderTeam();
   if (typeof renderUserManager === 'function') renderUserManager();
-  if (typeof renderPositions === 'function') renderPositions();
+  if (typeof renderTeamPage === 'function') renderTeamPage();
   updateBadges?.();
 }
 

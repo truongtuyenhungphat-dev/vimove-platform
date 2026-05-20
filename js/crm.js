@@ -297,10 +297,12 @@ function moveLeadStage(leadId) {
 }
 
 function deleteLead(leadId) {
-  if (!confirm('Xóa khách hàng này?')) return;
-  appState.leads = appState.leads.filter(l => l.id !== leadId);
-  if (window.fbDeleteLead) window.fbDeleteLead(leadId);
-  saveData();
-  renderCRM();
-  showToast('🗑️ Đã xóa khách hàng', 'info');
+  hrConfirm('Xóa khách hàng?', 'Bạn có chắc muốn xóa lead này khỏi hệ thống?', () => {
+    appState.leads = appState.leads.filter(l => l.id !== leadId);
+    if (window.fbDeleteLead) window.fbDeleteLead(leadId);
+    saveData();
+    closeModal('requestDetailModal');
+    renderCRM();
+    showToast('🗑️ Đã xóa khách hàng', 'info');
+  });
 }
