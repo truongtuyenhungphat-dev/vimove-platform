@@ -1,8 +1,32 @@
 // Lấy instance DB chung
 const getDB = () => window.firebaseDB;
 
+// ============ PURGE PERMANENTLY DELETED ACCOUNTS ============
+// Danh sach tai khoan bi xoa vinh vien (khong the phuc hoi)
+const PURGED_ACCOUNTS = [
+  { email: 'duc@vimove.net', id: 'u004' },
+];
+
+window.fbPurgeDeletedAccounts = async () => {
+  const db = getDB();
+  if (!db) return;
+  for (const acc of PURGED_ACCOUNTS) {
+    const docId = acc.email.replace(/[@.]/g, '_');
+    try {
+      await db.collection('viwork_users').doc(docId).delete();
+      // Ghi vao deleted_users config de tat ca thiet bi nhan biet
+      await db.collection('viwork_config').doc('deleted_users').set(
+        { ids: window.firebase?.firestore?.FieldValue?.arrayUnion?.(acc.id) || [acc.id] },
+        { merge: true }
+      );
+    } catch(e) { /* doc khong ton tai thi bo qua */ }
+  }
+};
+
 // ============ VIWORK_TASKS ============
 window.fbCheckAndSeed = async () => {
+  // Xoa cac tai khoan bi purge truoc tien
+  await window.fbPurgeDeletedAccounts();
   // First, sync any remaining .vn emails to .net across devices.
   await window.fbSyncEmailDomains?.();
   const db = getDB();

@@ -631,10 +631,16 @@ async function loadUsersFromFirebase(callback) {
  * Su dung _deletedUserIds da duoc load tu truoc.
  */
 function applyFirebaseUsers(snapshot) {
+  // u004 (duc@vimove.net) da bi xoa vinh vien - dam bao khong seed lai
+  const PERMANENTLY_DELETED = new Set(['u004']);
   const hardcodedIds = new Set([
-    'u001','u002','u003','u004','u005','u006',
+    'u001','u002','u003','u005','u006',
     'u007','u008','u009','u010','u011','u012'
   ]);
+  // Merge vao _deletedUserIds de ngan resurrection
+  if (typeof _deletedUserIds !== 'undefined') {
+    PERMANENTLY_DELETED.forEach(id => _deletedUserIds.add(id));
+  }
 
   // BUOC 1: Doc snapshot, dedup theo ID
   const fbAllDocs = {};

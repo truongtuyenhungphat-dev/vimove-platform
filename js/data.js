@@ -69,7 +69,7 @@ const DEMO_USERS = {
   'loi@vimove.net': { id: 'u008', name: 'Nguyễn Văn Lợi', role: 'manager', password: 'loi123', avatar: 'NV', department: 'Kênh cá nhân' },
   
   // ===== STAFF =====
-  'duc@vimove.net': { id: 'u004', name: 'Dương Minh Đức', password: 'duc123', role: 'staff', department: 'Digital Marketing', avatar: '🧑💻', phone: '0909000004', jobTitle: 'Nhân viên Digital Marketing' },
+
   'thai@vimove.net': { id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff', password: 'thai123', avatar: 'LTAT', department: 'Content' },
   'mai@vimove.net': { id: 'u011', name: 'Phạm Thanh Mai', role: 'staff', password: 'mai123', avatar: 'PTM', department: 'Thiết kế' },
   'dung.kt@vimove.net': { id: 'u012', name: 'Khuất Thị Dung', role: 'staff', password: 'dung456', avatar: 'KT', department: 'Design' },
@@ -96,7 +96,7 @@ const TEAM_MEMBERS = [
   { id: 'u007', name: 'Vũ Phương Hạnh',          role: 'manager', avatar: 'VPH',  department: 'Lead Sản phẩm',             kpi: 79,  revenue: 0, tasks: 0 },
   { id: 'u008', name: 'Nguyễn Văn Lợi',          role: 'manager', avatar: 'NV',   department: 'Kênh cá nhân',              kpi: 72,  revenue: 0, tasks: 0 },
   // NHÂN VIÊN
-  { id: 'u004', name: 'Dương Minh Đức',            role: 'staff',   avatar: '🧑💻', department: 'Digital Marketing',          kpi: 78,  revenue: 0.5, tasks: 6 },
+
   { id: 'u010', name: 'Lê Thị Anh Thái',         role: 'staff',   avatar: 'LTAT', department: 'Content',                   kpi: 75,  revenue: 0, tasks: 0 },
   { id: 'u011', name: 'Phạm Thanh Mai',          role: 'staff',   avatar: 'PTM',  department: 'Thiết kế',                  kpi: 85,  revenue: 0, tasks: 0 },
   { id: 'u012', name: 'Khuất Thị Dung',          role: 'staff',   avatar: 'KT',   department: 'Design',                    kpi: 83,  revenue: 0, tasks: 0 },
