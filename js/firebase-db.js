@@ -233,12 +233,18 @@ window.fbSeedAttendance = async (arr) => {
   await batch.commit();
 };
 
-window.fbListenAttendance = (callback) => {
-  return getDB().collection('viwork_attendance').onSnapshot(snapshot => {
-    const arr = [];
-    snapshot.forEach(doc => arr.push(doc.data()));
-    callback(arr);
-  });
+window.fbListenAttendance = (callback, errorHandler) => {
+  return getDB().collection('viwork_attendance').onSnapshot(
+    snapshot => {
+      const arr = [];
+      snapshot.forEach(doc => arr.push(doc.data()));
+      callback(arr);
+    },
+    err => {
+      console.warn('[FB] viwork_attendance onSnapshot error:', err);
+      if (errorHandler) errorHandler(err);
+    }
+  );
 };
 
 // ============ LISTENERS ============
@@ -357,10 +363,10 @@ window.fbListenTraining = (userId, callback) => {
 };
 // ============ SYNC LOCAL TO FIREBASE ============
 window.syncLocalToFirebase = async () => {
-  if (typeof showToast === 'function') showToast('? Ðang d?ng b? d? li?u lên Cloud...', 'info');
+  if (typeof showToast === 'function') showToast('? ï¿½ang d?ng b? d? li?u lï¿½n Cloud...', 'info');
   const db = getDB();
   if (!db) {
-    if (typeof showToast === 'function') showToast('? Không k?t n?i du?c Firebase', 'error');
+    if (typeof showToast === 'function') showToast('? Khï¿½ng k?t n?i du?c Firebase', 'error');
     return;
   }
   
@@ -419,7 +425,7 @@ window.syncLocalToFirebase = async () => {
     }
 
     await Promise.allSettled(promises);
-    if (typeof showToast === 'function') showToast('? Ðã d?ng b? ' + promises.length + ' b?n ghi lên Cloud!', 'success');
+    if (typeof showToast === 'function') showToast('? ï¿½ï¿½ d?ng b? ' + promises.length + ' b?n ghi lï¿½n Cloud!', 'success');
   } catch(e) {
     console.error(e);
     if (typeof showToast === 'function') showToast('? L?i khi d?ng b? d? li?u!', 'error');

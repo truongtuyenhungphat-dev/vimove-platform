@@ -23,22 +23,78 @@ const ATT_CONFIG = {
 let ATTENDANCE_RECORDS = [];   // Loaded from Firebase
 let attUnsubscribe = null;     // Firebase listener handle
 let attCheckInterval = null;   // Auto-reminder interval
+const ATT_LS_KEY = 'viwork_attendance_local'; // localStorage key
+
+// ============ LOCAL STORAGE HELPERS ============
+function attSaveLocal(record) {
+  try {
+    const arr = attLoadLocal();
+    const idx = arr.findIndex(r => r.id === record.id);
+    if (idx > -1) arr[idx] = record; else arr.push(record);
+    localStorage.setItem(ATT_LS_KEY, JSON.stringify(arr));
+  } catch(e) { console.warn('[ATT] localStorage save error', e); }
+}
+
+function attLoadLocal() {
+  try {
+    return JSON.parse(localStorage.getItem(ATT_LS_KEY) || '[]');
+  } catch(e) { return []; }
+}
+
+/** Merge local records vào ATTENDANCE_RECORDS (chống race condition với Firebase) */
+function attMergeLocalPending() {
+  const local = attLoadLocal();
+  if (!local.length) return;
+  local.forEach(loc => {
+    const idx = ATTENDANCE_RECORDS.findIndex(r => r.id === loc.id);
+    if (idx === -1) {
+      // Record chưa lên Firebase → thêm vào local state + retry push
+      ATTENDANCE_RECORDS.push(loc);
+      if (window.fbSaveAttendance) {
+        window.fbSaveAttendance(loc).catch(e => console.warn('[ATT] retry push failed', e));
+      }
+    } else {
+      // Firebase có rồi → cập nhật local cache
+      ATTENDANCE_RECORDS[idx] = { ...loc, ...ATTENDANCE_RECORDS[idx] };
+    }
+  });
+}
 
 // ============ INIT ============
 function initAttendance() {
+  // Restore local cache trước khi Firebase trả về
+  const cached = attLoadLocal();
+  if (cached.length > 0) ATTENDANCE_RECORDS = cached;
+
   // Listen to Firebase real-time
   if (window.fbListenAttendance) {
     if (attUnsubscribe) attUnsubscribe();
-    attUnsubscribe = window.fbListenAttendance((records) => {
-      ATTENDANCE_RECORDS = records;
-      // Re-render if page is active
-      const page = document.getElementById('page-attendance');
-      if (page && !page.classList.contains('hidden')) {
-        renderAttendance();
+    attUnsubscribe = window.fbListenAttendance(
+      (records) => {
+        // Merge: ưu tiên Firebase nhưng không bỏ mất record local chưa sync
+        ATTENDANCE_RECORDS = records;
+        attMergeLocalPending();
+        // Re-render nếu trang đang active
+        const page = document.getElementById('page-attendance');
+        if (page && !page.classList.contains('hidden')) {
+          renderAttendance();
+        }
+        checkAttendanceReminder();
+      },
+      (err) => {
+        console.warn('[ATT] Firebase listener error, using local cache:', err);
+        // Fallback: dùng localStorage nếu Firebase lỗi
+        const cached2 = attLoadLocal();
+        if (cached2.length > 0) {
+          ATTENDANCE_RECORDS = cached2;
+          const page = document.getElementById('page-attendance');
+          if (page && !page.classList.contains('hidden')) renderAttendance();
+        }
       }
-      // Update badge & reminder
-      checkAttendanceReminder();
-    });
+    );
+  } else {
+    // Firebase chưa sẵn sàng — dùng localStorage
+    ATTENDANCE_RECORDS = attLoadLocal();
   }
   // Check reminder every minute
   if (attCheckInterval) clearInterval(attCheckInterval);
@@ -210,8 +266,21 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
     gps: gpsData || null,
   };
 
+  // 1. Lưu vào local state NGAY LẬP TỨC (chống race condition)
   ATTENDANCE_RECORDS.push(record);
-  if (window.fbSaveAttendance) await window.fbSaveAttendance(record);
+
+  // 2. Lưu vào localStorage làm backup (chống mất dữ liệu khi Firebase lỗi)
+  attSaveLocal(record);
+
+  // 3. Đẩy lên Firebase với error handling + retry
+  if (window.fbSaveAttendance) {
+    try {
+      await window.fbSaveAttendance(record);
+    } catch(e) {
+      console.warn('[ATT] Firebase save failed, will retry on next sync:', e);
+      showToast('⚠️ Chấm công đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
+    }
+  }
 
   let msg;
   if (viaQR)       msg = `✅ QR Check-in lúc ${formatTime(now)} — Tại văn phòng`;
@@ -312,9 +381,23 @@ async function doCheckOut() {
   const duration = now - record.checkIn;
 
   const updated = { ...record, checkOut: now, duration, status: getAttStatus({ ...record, checkOut: now }) };
+
+  // 1. Cập nhật local state ngay lập tức
   const idx = ATTENDANCE_RECORDS.findIndex(r => r.id === record.id);
   if (idx > -1) ATTENDANCE_RECORDS[idx] = updated;
-  if (window.fbSaveAttendance) await window.fbSaveAttendance(updated);
+
+  // 2. Lưu localStorage backup
+  attSaveLocal(updated);
+
+  // 3. Đẩy lên Firebase với error handling
+  if (window.fbSaveAttendance) {
+    try {
+      await window.fbSaveAttendance(updated);
+    } catch(e) {
+      console.warn('[ATT] Firebase checkout save failed, will retry:', e);
+      showToast('⚠️ Check-out đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
+    }
+  }
 
   showToast(`🏁 Đã check-out lúc ${formatTime(now)} · Làm việc ${formatDuration(duration)}`, 'success');
   renderAttendance();
