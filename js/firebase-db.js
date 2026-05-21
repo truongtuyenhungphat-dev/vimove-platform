@@ -273,47 +273,62 @@ window.fbListenAttendance = (callback, errorHandler) => {
 
 // ============ LISTENERS ============
 window.fbListenTasks = (callback) => {
-  return getDB().collection('viwork_tasks').onSnapshot(snapshot => {
+  return getDB().collection('viwork_tasks').onSnapshot(
+    snapshot => {
     const arr = [];
     snapshot.forEach(doc => arr.push(doc.data()));
     callback(arr);
-  });
+  },
+    err => console.warn('[FB] onSnapshot error:', err)
+  );
 };
 
 window.fbListenLeads = (callback) => {
-  return getDB().collection('viwork_leads').onSnapshot(snapshot => {
+  return getDB().collection('viwork_leads').onSnapshot(
+    snapshot => {
     const arr = [];
     snapshot.forEach(doc => arr.push(doc.data()));
     callback(arr);
-  });
+  },
+    err => console.warn('[FB] onSnapshot error:', err)
+  );
 };
 
 window.fbListenUsers = (callback) => {
-  return getDB().collection('viwork_users').onSnapshot(snapshot => {
+  return getDB().collection('viwork_users').onSnapshot(
+    snapshot => {
     const obj = {};
     snapshot.forEach(doc => { 
       // Dữ liệu trong document chứa email thực
       const data = doc.data();
       obj[data.email] = data; 
-    });
+    },
+    err => console.warn('[FB] onSnapshot error:', err)
+  );
     callback(obj);
   });
 };
 
 window.fbListenRequests = (callback) => {
-  return getDB().collection('viwork_requests').onSnapshot(snapshot => {
+  return getDB().collection('viwork_requests').onSnapshot(
+    snapshot => {
     const arr = [];
     snapshot.forEach(doc => arr.push(doc.data()));
     callback(arr);
-  });
+  },
+    err => console.warn('[FB] onSnapshot error:', err)
+  );
 };
 
 window.fbListenAssignments = (callback) => {
-  return getDB().collection('viwork_assignments').onSnapshot(snapshot => {
+  return getDB().collection('viwork_assignments').onSnapshot(
+    snapshot => {
     const arr = [];
     snapshot.forEach(doc => arr.push(doc.data()));
     callback(arr);
-  });
+  },
+    err => console.warn('[FB] onSnapshot error:', err)
+  );
 };
 
 console.log('[⚡ VIWORK] Firebase Database Services (Compat) loaded — incl. Attendance!');
