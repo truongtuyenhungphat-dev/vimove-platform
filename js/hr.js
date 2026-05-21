@@ -354,87 +354,234 @@ function renderPolicyTab(el) {
 }
 
 // ============ ĐỔI MẬT KHẨU ============
-function openChangePasswordModal(targetUserId) {
-  const isAdmin  = currentUser?.role === 'admin';
-  const isSelf   = !targetUserId || targetUserId === currentUser?.id;
-  if (!isAdmin && !isSelf) { showToast('⚠️ Không có quyền!', 'error'); return; }
 
-  const uid  = targetUserId || currentUser?.id;
-  const name = TEAM_MEMBERS.find(m => m.id === uid)?.name || 'Tài khoản';
+// ============ CHANGE PASSWORD MODAL (REDESIGNED) ============
+function openChangePasswordModal(targetUserId) {
+  const isAdmin = currentUser?.role === 'admin';
+  const isSelf  = !targetUserId || targetUserId === currentUser?.id;
+
+  // Staff chỉ đổi được mật khẩu của chính mình
+  if (!isSelf && !isAdmin) {
+    showToast('⚠️ Bạn chỉ có thể đổi mật khẩu của chính mình!', 'error');
+    return;
+  }
+
+  const uid    = targetUserId || currentUser?.id;
+  const target = Object.values(DEMO_USERS).find(u => u.id === uid);
+  const name   = target?.name || TEAM_MEMBERS.find(m => m.id === uid)?.name || 'Tài khoản';
+  const needOld = isSelf; // Luôn yêu cầu mk cũ khi đổi cho chính mình
 
   document.getElementById('changePassModal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'changePassModal';
   modal.className = 'modal-overlay';
   modal.onclick = e => { if (e.target === modal) modal.remove(); };
+
   modal.innerHTML = `
-    <div class="modal-box" style="max-width:420px">
-      <div class="modal-header">
-        <h3>🔑 Đổi mật khẩu — ${escHtml(name)}</h3>
-        <button class="modal-close" onclick="document.getElementById('changePassModal').remove()">✕</button>
+    <div class="cpw-modal-box" id="cpwBox">
+      <!-- Header -->
+      <div class="cpw-header">
+        <div class="cpw-header-icon">🔑</div>
+        <div class="cpw-header-info">
+          <div class="cpw-title">Đổi mật khẩu</div>
+          <div class="cpw-subtitle">${escHtml(name)}</div>
+        </div>
+        <button class="cpw-close-btn" onclick="document.getElementById('changePassModal').remove()" title="Đóng">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <div class="modal-body">
-        ${isSelf && !isAdmin ? `
-        <div class="form-group">
-          <label>Mật khẩu hiện tại</label>
-          <div class="input-with-icon">
-            <input type="password" class="form-input" id="cpCurrentPass" placeholder="Nhập mật khẩu cũ">
-            <button type="button" class="toggle-pass" onclick="togglePassField('cpCurrentPass')" title="Hiện/ẩn">👁</button>
+
+      <!-- Body -->
+      <div class="cpw-body">
+        ${isAdmin && !isSelf ? `
+        <div class="cpw-admin-banner">
+          <span class="cpw-admin-icon">🛡️</span>
+          <span>Bạn đang đặt lại mật khẩu với quyền Admin — không cần xác nhận mật khẩu cũ</span>
+        </div>` : ''}
+
+        ${needOld ? `
+        <div class="cpw-field-group" id="cpwGroupOld">
+          <label class="cpw-label">
+            <span class="cpw-label-dot"></span>Mật khẩu hiện tại
+          </label>
+          <div class="cpw-input-wrap">
+            <span class="cpw-input-icon">🔒</span>
+            <input type="password" id="cpCurrentPass" class="cpw-input" placeholder="Nhập mật khẩu hiện tại" autocomplete="current-password" oninput="cpwClearError()">
+            <button type="button" class="cpw-eye-btn" onclick="cpwToggle('cpCurrentPass',this)" tabindex="-1">
+              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
-        </div>` : `<div class="info-banner">🔐 Admin có thể đặt lại mật khẩu trực tiếp không cần xác nhận</div>`}
-        <div class="form-group">
-          <label>Mật khẩu mới</label>
-          <div class="input-with-icon">
-            <input type="password" class="form-input" id="cpNewPass" placeholder="Tối thiểu 6 ký tự">
-            <button type="button" class="toggle-pass" onclick="togglePassField('cpNewPass')" title="Hiện/ẩn">👁</button>
+        </div>` : ''}
+
+        <div class="cpw-field-group">
+          <label class="cpw-label">
+            <span class="cpw-label-dot"></span>Mật khẩu mới
+          </label>
+          <div class="cpw-input-wrap">
+            <span class="cpw-input-icon">✨</span>
+            <input type="password" id="cpNewPass" class="cpw-input" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" oninput="cpwCheckStrength(this.value); cpwCheckMatch()">
+            <button type="button" class="cpw-eye-btn" onclick="cpwToggle('cpNewPass',this)" tabindex="-1">
+              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <!-- Strength bar -->
+          <div class="cpw-strength-wrap" id="cpwStrengthWrap" style="display:none">
+            <div class="cpw-strength-bar">
+              <div class="cpw-strength-fill" id="cpwStrengthFill"></div>
+            </div>
+            <span class="cpw-strength-label" id="cpwStrengthLabel"></span>
           </div>
         </div>
-        <div class="form-group">
-          <label>Xác nhận mật khẩu mới</label>
-          <div class="input-with-icon">
-            <input type="password" class="form-input" id="cpConfirmPass" placeholder="Nhập lại mật khẩu mới">
-            <button type="button" class="toggle-pass" onclick="togglePassField('cpConfirmPass')" title="Hiện/ẩn">👁</button>
+
+        <div class="cpw-field-group">
+          <label class="cpw-label">
+            <span class="cpw-label-dot"></span>Xác nhận mật khẩu mới
+          </label>
+          <div class="cpw-input-wrap" id="cpwConfirmWrap">
+            <span class="cpw-input-icon">✅</span>
+            <input type="password" id="cpConfirmPass" class="cpw-input" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" oninput="cpwCheckMatch()">
+            <button type="button" class="cpw-eye-btn" onclick="cpwToggle('cpConfirmPass',this)" tabindex="-1">
+              <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
+          <div class="cpw-match-hint" id="cpwMatchHint"></div>
         </div>
-        <div id="cpError" style="color:#EF4444;font-size:12px;margin-top:6px"></div>
+
+        <div class="cpw-error" id="cpError"></div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="document.getElementById('changePassModal').remove()">✕ Hủy</button>
-        <button class="btn btn-save" onclick="saveChangePassword('${uid}','${isSelf && !isAdmin}')">💾 Đổi mật khẩu</button>
+
+      <!-- Footer -->
+      <div class="cpw-footer">
+        <button class="cpw-btn-cancel" onclick="document.getElementById('changePassModal').remove()">Hủy</button>
+        <button class="cpw-btn-save" id="cpwSaveBtn" onclick="saveChangePassword('${uid}','${needOld}')">
+          <span class="cpw-save-icon">💾</span> Đổi mật khẩu
+        </button>
       </div>
     </div>`;
+
   document.body.appendChild(modal);
+  requestAnimationFrame(() => {
+    modal.querySelector('#cpwBox').classList.add('cpw-open');
+    const firstInput = needOld
+      ? modal.querySelector('#cpCurrentPass')
+      : modal.querySelector('#cpNewPass');
+    firstInput?.focus();
+  });
+}
+
+// ---- Helpers for the redesigned modal ----
+function cpwToggle(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  // Swap eye icon
+  btn.querySelector('.eye-icon').innerHTML = show
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/><circle cx="12" cy="12" r="3" style="opacity:0"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+}
+
+function cpwCheckStrength(val) {
+  const wrap = document.getElementById('cpwStrengthWrap');
+  const fill = document.getElementById('cpwStrengthFill');
+  const label = document.getElementById('cpwStrengthLabel');
+  if (!wrap || !val) { if(wrap) wrap.style.display='none'; return; }
+  wrap.style.display = 'flex';
+
+  let score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { pct:'20%', color:'#EF4444', text:'Rất yếu' },
+    { pct:'40%', color:'#F97316', text:'Yếu' },
+    { pct:'60%', color:'#EAB308', text:'Trung bình' },
+    { pct:'80%', color:'#22C55E', text:'Mạnh' },
+    { pct:'100%',color:'#10B981', text:'Rất mạnh 💪' },
+  ];
+  const lv = levels[Math.min(score - 1, 4)] || levels[0];
+  fill.style.width = lv.pct;
+  fill.style.background = lv.color;
+  label.textContent = lv.text;
+  label.style.color = lv.color;
+}
+
+function cpwCheckMatch() {
+  const np = document.getElementById('cpNewPass')?.value || '';
+  const cp = document.getElementById('cpConfirmPass')?.value || '';
+  const hint = document.getElementById('cpwMatchHint');
+  const wrap = document.getElementById('cpwConfirmWrap');
+  if (!hint || !cp) { if(hint) hint.textContent=''; return; }
+  if (np === cp) {
+    hint.innerHTML = '<span style="color:#22C55E">✅ Mật khẩu khớp</span>';
+    wrap?.classList.remove('cpw-no-match');
+    wrap?.classList.add('cpw-match');
+  } else {
+    hint.innerHTML = '<span style="color:#EF4444">❌ Mật khẩu chưa khớp</span>';
+    wrap?.classList.add('cpw-no-match');
+    wrap?.classList.remove('cpw-match');
+  }
+}
+
+function cpwClearError() {
+  const el = document.getElementById('cpError');
+  if (el) el.textContent = '';
 }
 
 async function saveChangePassword(userId, requireOld) {
-  const errEl    = document.getElementById('cpError');
-  const newPass  = document.getElementById('cpNewPass')?.value || '';
-  const confirm  = document.getElementById('cpConfirmPass')?.value || '';
+  const errEl   = document.getElementById('cpError');
+  const saveBtn = document.getElementById('cpwSaveBtn');
+  const newPass = document.getElementById('cpNewPass')?.value?.trim() || '';
+  const confirm = document.getElementById('cpConfirmPass')?.value?.trim() || '';
 
   if (requireOld === 'true' || requireOld === true) {
     const currentPass = document.getElementById('cpCurrentPass')?.value || '';
     const entry = Object.values(DEMO_USERS).find(u => u.id === userId);
     if (!entry || entry.password !== currentPass) {
-      errEl.textContent = '❌ Mật khẩu hiện tại không đúng!'; return;
+      if (errEl) errEl.textContent = '❌ Mật khẩu hiện tại không đúng!';
+      document.getElementById('cpCurrentPass')?.focus();
+      return;
     }
   }
-  if (newPass.length < 6) { errEl.textContent = '❌ Mật khẩu mới phải từ 6 ký tự!'; return; }
-  if (newPass !== confirm) { errEl.textContent = '❌ Xác nhận mật khẩu không khớp!'; return; }
+
+  if (newPass.length < 6) {
+    if (errEl) errEl.textContent = '❌ Mật khẩu mới phải có ít nhất 6 ký tự!';
+    document.getElementById('cpNewPass')?.focus();
+    return;
+  }
+  if (newPass !== confirm) {
+    if (errEl) errEl.textContent = '❌ Xác nhận mật khẩu không khớp!';
+    document.getElementById('cpConfirmPass')?.focus();
+    return;
+  }
+
+  // Loading state
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '⏳ Đang lưu...'; }
 
   // Cập nhật DEMO_USERS
-  const entry = Object.entries(DEMO_USERS).find(([,u]) => u.id === userId);
+  const entry = Object.entries(DEMO_USERS).find(([, u]) => u.id === userId);
   if (entry) {
     DEMO_USERS[entry[0]].password = newPass;
-    // Sync Firebase
     if (window.fbSaveUser) {
       try { await window.fbSaveUser({ ...DEMO_USERS[entry[0]], email: entry[0] }); } catch(e) {}
     }
   }
 
+  // Cập nhật localStorage (viwork_users)
+  try {
+    const saved = JSON.parse(localStorage.getItem('viwork_users') || '[]');
+    const idx = saved.findIndex(u => u.id === userId);
+    if (idx > -1) { saved[idx].password = newPass; localStorage.setItem('viwork_users', JSON.stringify(saved)); }
+  } catch(e) {}
+
   // Nếu đổi pass chính mình → cập nhật session
   if (userId === currentUser?.id && currentUser) {
     currentUser.password = newPass;
-    const {password, ...safeUser} = currentUser; sessionStorage.setItem('vw_user', JSON.stringify(safeUser));
+    const { password, ...safeUser } = currentUser;
+    sessionStorage.setItem('vw_user', JSON.stringify(safeUser));
   }
 
   document.getElementById('changePassModal')?.remove();
