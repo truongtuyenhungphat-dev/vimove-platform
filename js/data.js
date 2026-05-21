@@ -970,7 +970,16 @@ function initData() {
     // 5. Lắng nghe Dữ liệu Người dùng (Users)
     window.fbListenUsers(users => {
       // Ghi đè vào biến DEMO_USERS gốc để dùng cho toàn app
-      Object.keys(users).forEach(k => DEMO_USERS[k] = users[k]);
+      Object.keys(users).forEach(k => {
+        DEMO_USERS[k] = users[k];
+        // Nếu user hiện tại bị thay đổi thông tin từ thiết bị khác, cập nhật session ngay lập tức
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.id === users[k].id) {
+          const oldRole = currentUser.role;
+          currentUser = { ...users[k], password: currentUser.password }; // Giữ password session local
+          sessionStorage.setItem('vw_user', JSON.stringify(currentUser));
+          if (oldRole !== currentUser.role) window.location.reload(); // Reload nếu đổi Role
+        }
+      });
       if (typeof renderUserManager === 'function' && document.getElementById('userManager')) {
         renderUserManager();
       }
