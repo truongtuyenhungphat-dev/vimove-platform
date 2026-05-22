@@ -265,6 +265,13 @@ window.fbCleanupAttendanceDuplicates = async (records) => {
   const validRecords = [];
 
   records.forEach(r => {
+    // Nếu r không có id (dữ liệu lỗi cũ), bỏ qua không đưa vào map hay validRecords
+    const recordId = r.id;
+    if (!recordId) {
+      console.warn('[ATT] Found record without ID, skipping:', r);
+      return; 
+    }
+
     const key = r.userId + '_' + r.date;
     if (!map[key]) {
       map[key] = r;
@@ -275,20 +282,20 @@ window.fbCleanupAttendanceDuplicates = async (records) => {
         toDelete.push(existing.id);
         Object.assign(existing, r); // Update in place to keep the reference in validRecords
       } else if (!r.checkIn && existing.checkIn) {
-        toDelete.push(r.id);
+        toDelete.push(recordId);
       } else {
-        toDelete.push(r.id);
+        toDelete.push(recordId);
       }
     }
   });
 
   if (toDelete.length > 0) {
     console.log('[ATT] Found duplicates, cleaning up...', toDelete);
-    const batch = db.batch();
-    toDelete.forEach(id => {
-      batch.delete(db.collection('viwork_attendance').doc(id));
-    });
     try {
+      const batch = db.batch();
+      toDelete.forEach(id => {
+        if (id) batch.delete(db.collection('viwork_attendance').doc(id));
+      });
       await batch.commit();
       console.log('[ATT] Cleaned up ' + toDelete.length + ' duplicates');
     } catch (e) {
@@ -301,10 +308,22 @@ window.fbCleanupAttendanceDuplicates = async (records) => {
 window.fbListenAttendance = (callback, errorHandler) => {
   return getDB().collection('viwork_attendance').onSnapshot(
     async snapshot => {
-      const arr = [];
-      snapshot.forEach(doc => arr.push(doc.data()));
-      const cleanedArr = await window.fbCleanupAttendanceDuplicates(arr);
-      callback(cleanedArr);
+      try {
+        const arr = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (!data.id) data.id = doc.id; // Fallback nếu trong document thiếu trường id
+          arr.push(data);
+        });
+        const cleanedArr = await window.fbCleanupAttendanceDuplicates(arr);
+        callback(cleanedArr);
+      } catch (err) {
+        console.error('[ATT] Error processing snapshot:', err);
+        // Fallback: send the raw array if cleanup fails so UI doesn't break
+        const raw = [];
+        snapshot.forEach(doc => raw.push(doc.data()));
+        callback(raw);
+      }
     },
     err => {
       console.warn('[FB] viwork_attendance onSnapshot error:', err);
