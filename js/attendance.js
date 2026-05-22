@@ -53,6 +53,7 @@ function attMergeLocalPending() {
       if (window.fbSaveAttendance) {
         window.fbSaveAttendance(loc).catch(e => console.warn('[ATT] retry push failed', e));
       }
+    } else {
       // Firebase có rồi → kiểm tra xem local có dữ liệu mới hơn không
       const fbRecord = ATTENDANCE_RECORDS[idx];
       let needsSync = false;
