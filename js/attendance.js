@@ -53,11 +53,34 @@ function attMergeLocalPending() {
       if (window.fbSaveAttendance) {
         window.fbSaveAttendance(loc).catch(e => console.warn('[ATT] retry push failed', e));
       }
-    } else {
-      // Firebase có rồi → cập nhật local cache
-      ATTENDANCE_RECORDS[idx] = { ...loc, ...ATTENDANCE_RECORDS[idx] };
+      // Firebase có rồi → kiểm tra xem local có dữ liệu mới hơn không
+      const fbRecord = ATTENDANCE_RECORDS[idx];
+      let needsSync = false;
+      
+      if (loc.checkIn && !fbRecord.checkIn) {
+        fbRecord.checkIn = loc.checkIn;
+        fbRecord.isLate = loc.isLate;
+        fbRecord.isOnline = loc.isOnline;
+        fbRecord.note = loc.note;
+        fbRecord.status = loc.status;
+        needsSync = true;
+      }
+      if (loc.checkOut && !fbRecord.checkOut) {
+        fbRecord.checkOut = loc.checkOut;
+        fbRecord.duration = loc.duration;
+        fbRecord.status = loc.status;
+        needsSync = true;
+      }
+
+      if (needsSync && window.fbSaveAttendance) {
+        window.fbSaveAttendance(fbRecord).catch(e => console.warn('[ATT] retry push failed', e));
+      }
+      
+      // Update local storage to match the merged truth
+      Object.assign(loc, fbRecord);
     }
   });
+  localStorage.setItem(ATT_LS_KEY, JSON.stringify(local));
 }
 
 // ============ INIT ============
@@ -250,24 +273,38 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
   const lateLimit = 8 * 60 + ATT_CONFIG.lateThreshold;
   const isLate = ciMins > lateLimit;
 
-  const record = {
-    id:         generateId('att'),
-    userId:     user.id,
-    userName:   user.name,
-    date:       today,
-    checkIn:    now,
-    checkOut:   null,
-    duration:   null,
-    isOnline:   !!isOnline,
-    note:       viaQR ? 'QR check-in tại văn phòng' : '',
-    isLate,
-    status:     'working',
-    checkInMethod: viaQR ? 'qr' : (isOnline ? 'online' : 'manual'),
-    gps: gpsData || null,
-  };
-
-  // 1. Lưu vào local state NGAY LẬP TỨC (chống race condition)
-  ATTENDANCE_RECORDS.push(record);
+  let record;
+  if (existing) {
+    record = {
+      ...existing,
+      checkIn:    now,
+      isOnline:   existing.remoteApproved ? true : !!isOnline,
+      note:       (existing.note ? existing.note + ' | ' : '') + (viaQR ? 'QR check-in tại văn phòng' : ''),
+      isLate,
+      status:     'working',
+      checkInMethod: viaQR ? 'qr' : (isOnline ? 'online' : 'manual'),
+      gps:        gpsData || null,
+    };
+    const idx = ATTENDANCE_RECORDS.findIndex(r => r.id === existing.id);
+    if (idx > -1) ATTENDANCE_RECORDS[idx] = record;
+  } else {
+    record = {
+      id:         generateId('att'),
+      userId:     user.id,
+      userName:   user.name,
+      date:       today,
+      checkIn:    now,
+      checkOut:   null,
+      duration:   null,
+      isOnline:   !!isOnline,
+      note:       viaQR ? 'QR check-in tại văn phòng' : '',
+      isLate,
+      status:     'working',
+      checkInMethod: viaQR ? 'qr' : (isOnline ? 'online' : 'manual'),
+      gps:        gpsData || null,
+    };
+    ATTENDANCE_RECORDS.push(record);
+  }
 
   // 2. Lưu vào localStorage làm backup (chống mất dữ liệu khi Firebase lỗi)
   attSaveLocal(record);

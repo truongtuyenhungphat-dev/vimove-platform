@@ -257,12 +257,54 @@ window.fbSeedAttendance = async (arr) => {
   await batch.commit();
 };
 
+window.fbCleanupAttendanceDuplicates = async (records) => {
+  const db = getDB();
+  if (!db) return records;
+  const map = {};
+  const toDelete = [];
+  const validRecords = [];
+
+  records.forEach(r => {
+    const key = r.userId + '_' + r.date;
+    if (!map[key]) {
+      map[key] = r;
+      validRecords.push(r);
+    } else {
+      const existing = map[key];
+      if (r.checkIn && !existing.checkIn) {
+        toDelete.push(existing.id);
+        Object.assign(existing, r); // Update in place to keep the reference in validRecords
+      } else if (!r.checkIn && existing.checkIn) {
+        toDelete.push(r.id);
+      } else {
+        toDelete.push(r.id);
+      }
+    }
+  });
+
+  if (toDelete.length > 0) {
+    console.log('[ATT] Found duplicates, cleaning up...', toDelete);
+    const batch = db.batch();
+    toDelete.forEach(id => {
+      batch.delete(db.collection('viwork_attendance').doc(id));
+    });
+    try {
+      await batch.commit();
+      console.log('[ATT] Cleaned up ' + toDelete.length + ' duplicates');
+    } catch (e) {
+      console.warn('[ATT] Failed to cleanup duplicates', e);
+    }
+  }
+  return validRecords;
+};
+
 window.fbListenAttendance = (callback, errorHandler) => {
   return getDB().collection('viwork_attendance').onSnapshot(
-    snapshot => {
+    async snapshot => {
       const arr = [];
       snapshot.forEach(doc => arr.push(doc.data()));
-      callback(arr);
+      const cleanedArr = await window.fbCleanupAttendanceDuplicates(arr);
+      callback(cleanedArr);
     },
     err => {
       console.warn('[FB] viwork_attendance onSnapshot error:', err);
