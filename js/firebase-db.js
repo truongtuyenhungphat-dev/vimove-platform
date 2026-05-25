@@ -316,12 +316,15 @@ window.fbListenAttendance = (callback, errorHandler) => {
           arr.push(data);
         });
         const cleanedArr = await window.fbCleanupAttendanceDuplicates(arr);
+        // Cache FULL history to localStorage for offline fallback
+        try { localStorage.setItem('viwork_attendance_full_cache', JSON.stringify(cleanedArr)); } catch(e) {}
         callback(cleanedArr);
       } catch (err) {
         console.error('[ATT] Error processing snapshot:', err);
         // Fallback: send the raw array if cleanup fails so UI doesn't break
         const raw = [];
         snapshot.forEach(doc => raw.push(doc.data()));
+        try { localStorage.setItem('viwork_attendance_full_cache', JSON.stringify(raw)); } catch(e) {}
         callback(raw);
       }
     },

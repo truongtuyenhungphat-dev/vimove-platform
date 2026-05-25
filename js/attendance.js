@@ -107,13 +107,22 @@ function initAttendance() {
       },
       (err) => {
         console.warn('[ATT] Firebase listener error, using local cache:', err);
-        // Fallback: dùng localStorage nếu Firebase lỗi
-        const cached2 = attLoadLocal();
-        if (cached2.length > 0) {
-          ATTENDANCE_RECORDS = cached2;
-          const page = document.getElementById('page-attendance');
-          if (page && !page.classList.contains('hidden')) renderAttendance();
+        // Fallback: dùng full cache nếu Firebase lỗi
+        try {
+          const cachedFull = JSON.parse(localStorage.getItem('viwork_attendance_full_cache') || '[]');
+          if (cachedFull.length > 0) {
+            ATTENDANCE_RECORDS = cachedFull;
+            attMergeLocalPending(); // Merge pending local over full cache
+          } else {
+            const cached2 = attLoadLocal();
+            if (cached2.length > 0) ATTENDANCE_RECORDS = cached2;
+          }
+        } catch(e) {
+          const cached2 = attLoadLocal();
+          if (cached2.length > 0) ATTENDANCE_RECORDS = cached2;
         }
+        const page = document.getElementById('page-attendance');
+        if (page && !page.classList.contains('hidden')) renderAttendance();
       }
     );
   } else {
@@ -310,14 +319,12 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
   // 2. Lưu vào localStorage làm backup (chống mất dữ liệu khi Firebase lỗi)
   attSaveLocal(record);
 
-  // 3. Đẩy lên Firebase với error handling + retry
+  // 3. Đẩy lên Firebase (Optimistic)
   if (window.fbSaveAttendance) {
-    try {
-      await window.fbSaveAttendance(record);
-    } catch(e) {
+    window.fbSaveAttendance(record).catch(e => {
       console.warn('[ATT] Firebase save failed, will retry on next sync:', e);
       showToast('⚠️ Chấm công đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
-    }
+    });
   }
 
   let msg;
@@ -427,14 +434,12 @@ async function doCheckOut() {
   // 2. Lưu localStorage backup
   attSaveLocal(updated);
 
-  // 3. Đẩy lên Firebase với error handling
+  // 3. Đồng bộ nền lên Firebase (Optimistic UI)
   if (window.fbSaveAttendance) {
-    try {
-      await window.fbSaveAttendance(updated);
-    } catch(e) {
+    window.fbSaveAttendance(updated).catch(e => {
       console.warn('[ATT] Firebase checkout save failed, will retry:', e);
       showToast('⚠️ Check-out đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
-    }
+    });
   }
 
   showToast(`🏁 Đã check-out lúc ${formatTime(now)} · Làm việc ${formatDuration(duration)}`, 'success');
