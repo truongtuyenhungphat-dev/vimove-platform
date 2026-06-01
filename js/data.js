@@ -110,7 +110,7 @@ const TEAM_MEMBERS = [
 /* ========================================================
    POSITIONS — Vị trí & KPI & Thu nhập Vimove 2026
    ======================================================== */
-const POSITIONS = [
+let POSITIONS = [
   {
     id: 'pos_ceo',
     name: 'GĐ Vận hành',
@@ -313,7 +313,7 @@ const POSITIONS = [
 /* ========================================================
    SALARY POLICY — Chính sách lương thưởng Vimove
    ======================================================== */
-const SALARY_POLICY = {
+let SALARY_POLICY = {
   version: '1.0',
   effectiveDate: '2026-04-01',
   tiers: [
@@ -344,7 +344,7 @@ const SALARY_POLICY = {
 /* ========================================================
    USER ALLOWANCES — Phụ cấp từng người (Admin nhập riêng)
    ======================================================== */
-const USER_ALLOWANCES = {
+let USER_ALLOWANCES = {
   'u001': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0,       other: 0,       note: 'Phụ cấp kỹ thuật' },
   'u002': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0,       other: 0,       note: 'Phụ cấp quản trị' },
   'u003': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
@@ -933,6 +933,28 @@ const STORAGE_KEY = 'viwork_data';
     console.log('[⚡ VIWORK] Data auto-reset: upgraded to', DATA_VERSION);
   }
 })();
+
+// ===== TẢI CẤU HÌNH TỪ LOCALSTORAGE =====
+function loadHrConfig() {
+  try {
+    const savedPositions = localStorage.getItem('viwork_hr_positions');
+    if (savedPositions) {
+      POSITIONS = JSON.parse(savedPositions);
+    }
+    const savedAllowances = localStorage.getItem('viwork_hr_allowances');
+    if (savedAllowances) {
+      USER_ALLOWANCES = JSON.parse(savedAllowances);
+    }
+    const savedPolicy = localStorage.getItem('viwork_hr_policy');
+    if (savedPolicy) {
+      SALARY_POLICY = JSON.parse(savedPolicy);
+    }
+  } catch (err) {
+    console.error('Error loading HR config', err);
+  }
+}
+// Gọi hàm ngay khi file data.js load để ghi đè dữ liệu mặc định
+loadHrConfig();
 
 // ============ INIT DATA (CLOUD FIRESTORE) ============
 function initData() {

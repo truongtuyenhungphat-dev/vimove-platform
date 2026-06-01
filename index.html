@@ -538,6 +538,18 @@
             <div id="userManager" style="margin-bottom:12px"></div>
             <button id="btnAddUserMain" class="btn-outline" onclick="openAddUserModal()" style="width:100%;justify-content:center">+ Thêm người dùng</button>
           </div>
+          
+          <!-- BỔ SUNG: Quản lý Lương & Phụ cấp -->
+          <div class="settings-card" id="hrManagerCard" style="border-color:rgba(245,158,11,0.3)">
+            <h3 style="color:#D97706">💰 Lương, Thưởng & Phụ cấp</h3>
+            <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Thiết lập Lương cứng, KPIs, Thưởng CVC cho từng Vị trí, và Phụ cấp cho từng Nhân viên.</p>
+            <button class="btn-outline" onclick="openPositionSalaryModal()" style="width:100%;justify-content:center;margin-bottom:8px">
+              ⚙️ Thiết lập Vị trí & Lương
+            </button>
+            <button class="btn-outline" onclick="openAllowanceSettingsModal()" style="width:100%;justify-content:center">
+              🧧 Cấu hình Phụ cấp NV
+            </button>
+          </div>
           <div class="settings-card" id="dangerZoneCard" style="border-color:rgba(239,68,68,0.3);display:none">
             <h3 style="color:#DC2626">⚠️ Vùng nguy hiểm</h3>
             <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Reset toàn bộ dữ liệu về trạng thái demo ban đầu. Chỉ dành cho Admin kỹ thuật.</p>
@@ -982,7 +994,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js?v=3.9"></script>
-<script src="js/data.js?v=3.9"></script>
+<script src="js/data.js?v=4.2"></script>
 <script src="js/firebase-db.js?v=3.9"></script>
 <script src="js/auth.js?v=3.9"></script>
 <!-- Sprint 1 -->
@@ -1002,7 +1014,7 @@
 <!-- Sprint 4: Positions, Org Chart, Income -->
 <script src="js/positions.js?v=3.9"></script>
 <!-- Sprint 5: HR — KPI entry, Payslip, Policy, Password -->
-<script src="js/hr.js?v=3.9"></script>
+<script src="js/hr.js?v=4.2"></script>
 <!-- Sprint 6: QR Check-in (jsQR + module) -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="js/qr-checkin.js?v=3.9"></script>

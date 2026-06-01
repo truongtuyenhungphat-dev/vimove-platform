@@ -587,3 +587,148 @@ async function saveChangePassword(userId, requireOld) {
   document.getElementById('changePassModal')?.remove();
   showToast('✅ Đổi mật khẩu thành công!', 'success');
 }
+
+// ========================================================
+// QUẢN LÝ LƯƠNG & PHỤ CẤP (SETTINGS)
+// ========================================================
+
+// 1. Cấu hình Vị trí & Lương
+window.openPositionSalaryModal = function() {
+  document.getElementById('posSalModal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'posSalModal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:900px;width:95vw;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <h3>⚙️ Cấu hình Lương Cơ Bản & KPI (Theo vị trí)</h3>
+        <button class="btn-icon" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;flex:1;padding:0">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width:25%">Vị trí</th>
+              <th style="text-align:right">Lương cứng (VND)</th>
+              <th style="text-align:right">Thưởng KPI tối đa (VND)</th>
+              <th style="text-align:right">Thưởng CVC vượt (VND)</th>
+            </tr>
+          </thead>
+          <tbody id="posSalTbody">
+            ${POSITIONS.map(p => `
+              <tr>
+                <td style="font-weight:600">${p.name}</td>
+                <td><input type="number" class="settings-input" style="text-align:right;width:100%" id="base_${p.id}" value="${p.salary?.base || 0}" /></td>
+                <td><input type="number" class="settings-input" style="text-align:right;width:100%" id="kpiBonus_${p.id}" value="${p.salary?.kpiBonus || 0}" /></td>
+                <td><input type="number" class="settings-input" style="text-align:right;width:100%" id="cvcBonus_${p.id}" value="${p.salary?.cvcBonus || 0}" /></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="padding:16px;border-top:1px solid var(--c-border);display:flex;justify-content:flex-end;gap:12px">
+        <button class="btn-outline" onclick="this.closest('.modal-overlay').remove()">Hủy</button>
+        <button class="btn-primary" onclick="savePositionSalarySettings()">💾 Lưu Cấu hình</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+window.savePositionSalarySettings = function() {
+  const newPositions = [...POSITIONS];
+  for (let p of newPositions) {
+    const baseInput = document.getElementById(\`base_\${p.id}\`);
+    const kpiBonusInput = document.getElementById(\`kpiBonus_\${p.id}\`);
+    const cvcBonusInput = document.getElementById(\`cvcBonus_\${p.id}\`);
+    if (baseInput && kpiBonusInput && cvcBonusInput) {
+      if (!p.salary) p.salary = {};
+      p.salary.base = parseInt(baseInput.value) || 0;
+      p.salary.kpiBonus = parseInt(kpiBonusInput.value) || 0;
+      p.salary.cvcBonus = parseInt(cvcBonusInput.value) || 0;
+    }
+  }
+  
+  POSITIONS = newPositions;
+  localStorage.setItem('viwork_hr_positions', JSON.stringify(POSITIONS));
+  showToast('✅ Đã lưu cấu hình Lương vị trí', 'success');
+  document.getElementById('posSalModal')?.remove();
+}
+
+// 2. Cấu hình Phụ cấp theo cá nhân
+window.openAllowanceSettingsModal = function() {
+  document.getElementById('allowanceModal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'allowanceModal';
+  modal.className = 'modal-overlay';
+  
+  // Render danh sách user
+  const trs = TEAM_MEMBERS.map(u => {
+    const allow = USER_ALLOWANCES[u.id] || { lunch:0, transport:0, phone:0, housing:0, other:0, note:'' };
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:600">${u.name}</div>
+          <div style="font-size:12px;color:var(--c-text-3)">${u.role}</div>
+        </td>
+        <td><input type="number" class="settings-input" style="text-align:right" id="lunch_${u.id}" value="${allow.lunch||0}" /></td>
+        <td><input type="number" class="settings-input" style="text-align:right" id="trans_${u.id}" value="${allow.transport||0}" /></td>
+        <td><input type="number" class="settings-input" style="text-align:right" id="phone_${u.id}" value="${allow.phone||0}" /></td>
+        <td><input type="number" class="settings-input" style="text-align:right" id="house_${u.id}" value="${allow.housing||0}" /></td>
+        <td><input type="text" class="settings-input" id="note_${u.id}" value="${allow.note||''}" placeholder="Ghi chú..." /></td>
+      </tr>
+    `;
+  }).join('');
+
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:1100px;width:95vw;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <h3>🧧 Cấu hình Phụ cấp (Theo nhân viên)</h3>
+        <button class="btn-icon" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;flex:1;padding:0">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Nhân viên</th>
+              <th style="text-align:right">Ăn trưa (VND)</th>
+              <th style="text-align:right">Đi lại (VND)</th>
+              <th style="text-align:right">Điện thoại (VND)</th>
+              <th style="text-align:right">Nhà ở (VND)</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${trs}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="padding:16px;border-top:1px solid var(--c-border);display:flex;justify-content:flex-end;gap:12px">
+        <button class="btn-outline" onclick="this.closest('.modal-overlay').remove()">Hủy</button>
+        <button class="btn-primary" onclick="saveAllowanceSettings()">💾 Lưu Phụ cấp</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+window.saveAllowanceSettings = function() {
+  for (let u of TEAM_MEMBERS) {
+    const lunchInput = document.getElementById(\`lunch_\${u.id}\`);
+    if (lunchInput) {
+      USER_ALLOWANCES[u.id] = {
+        lunch: parseInt(lunchInput.value) || 0,
+        transport: parseInt(document.getElementById(\`trans_\${u.id}\`).value) || 0,
+        phone: parseInt(document.getElementById(\`phone_\${u.id}\`).value) || 0,
+        housing: parseInt(document.getElementById(\`house_\${u.id}\`).value) || 0,
+        other: 0,
+        note: document.getElementById(\`note_\${u.id}\`).value || ''
+      };
+    }
+  }
+  
+  localStorage.setItem('viwork_hr_allowances', JSON.stringify(USER_ALLOWANCES));
+  showToast('✅ Đã lưu cấu hình Phụ cấp', 'success');
+  document.getElementById('allowanceModal')?.remove();
+}
+
