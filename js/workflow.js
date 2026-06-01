@@ -616,8 +616,18 @@ function renderMyTasks() {
 
   const prioIcon = p => ({ urgent:'🔴', high:'🟠', medium:'🟡', low:'⚪' }[p] || '');
   const stIcon   = s => ({ pending:'⏳', accepted:'👍', in_progress:'⚡', done:'✅', rejected:'❌' }[s] || '');
-  const stName   = s => ({ pending:'Chờ xác nhận', accepted:'Đã nhận', in_progress:'Đang làm', done:'Hoàn thành', rejected:'Từ chối' }[s] || s);
-
+  const stName   = (s, a) => {
+    if (s === 'done' && a && a.deadline) {
+      const dlDate = new Date(a.deadline);
+      if (a.dueTime) {
+        const [h, m] = a.dueTime.split(':');
+        dlDate.setHours(h, m, 0, 0);
+      }
+      const cDate = a.completedAt ? new Date(a.completedAt) : new Date(a.updatedAt);
+      if (cDate > dlDate) return 'Hoàn thành & Trễ hạn';
+    }
+    return ({ pending:'Chờ xác nhận', accepted:'Đã nhận', in_progress:'Đang làm', done:'Hoàn thành', rejected:'Từ chối' }[s] || s);
+  };
   const renderAsgnMiniCard = (a, isReceiver) => {
     const other = isReceiver ? getUserById(a.assignedBy) : getUserById(a.assignedTo);
     const dl = a.deadline ? `📅 ${formatDateRelative(a.deadline)}` : '';
@@ -634,7 +644,7 @@ function renderMyTasks() {
            onclick="openAsgnDetail('${a.id}')">
         <div class="asgn-mini-top">
           <span class="asgn-mini-title">${prioIcon(a.priority)} ${escHtml(a.title)}</span>
-          <span class="asgn-mini-status">${stIcon(a.status)} ${stName(a.status)}</span>
+          <span class="asgn-mini-status">${stIcon(a.status)} ${stName(a.status, a)}</span>
         </div>
         <div class="asgn-mini-meta">
           <span>${isReceiver ? '← Từ' : '→ Giao'}: <strong>${other.name.split(' ').pop()}</strong></span>

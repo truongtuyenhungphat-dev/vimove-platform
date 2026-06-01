@@ -486,6 +486,9 @@ function renderAttendance() {
       </div>
       <div class="page-actions" style="gap:8px">
         ${isAdminOrMgr ? `
+          <button class="att-admin-qr-btn" onclick="openMonthlyReportModal()" style="background:#10B981;color:white;border:none" title="Xem bảng chấm công và tính lương">
+            📊 Báo cáo Tháng
+          </button>
           <button class="att-admin-qr-btn" onclick="openQrDisplayModal()" title="Sinh mã QR cho nhân viên quét">
             📋 Mã QR VP
           </button>
@@ -843,6 +846,113 @@ function renderTeamAttendanceSection() {
         </table>
       </div>
     </div>
+  `;
+}
+
+// ============ BÁO CÁO TỔNG HỢP (ADMIN) ============
+function openMonthlyReportModal(ym) {
+  if (currentUser?.role !== 'admin' && currentUser?.role !== 'manager') return;
+  const now = new Date();
+  const yearMonth = ym || `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  document.getElementById('monthlyReportModal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'monthlyReportModal';
+  modal.className = 'modal-overlay';
+  modal.style.zIndex = '9999';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:1200px;width:95vw;max-height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <h3>📊 Bảng Chấm Công & Tính Lương Tổng Hợp</h3>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="month" id="reportMonthPicker" class="form-input" value="${yearMonth}" onchange="openMonthlyReportModal(this.value)" style="width:150px;padding:6px">
+          <button class="btn btn-save" onclick="window.print()">🖨️ In / PDF</button>
+          <button class="modal-close" onclick="document.getElementById('monthlyReportModal').remove()">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" style="flex:1;overflow:auto;padding:0">
+        ${renderMonthlyReportTable(yearMonth)}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function renderMonthlyReportTable(yearMonth) {
+  const [y, m] = yearMonth.split('-').map(Number);
+  const users = getAppUsers();
+  
+  let rows = users.map(u => {
+    // Attendance stats
+    const records = getUserMonthRecords(u.id, y, m);
+    const totalDays  = records.filter(r => r.checkIn).length;
+    const lateDays   = records.filter(r => r.isLate).length;
+    const leaveDays  = records.filter(r => r.isLeave).length;
+    
+    // Payroll stats (using existing hr.js function if available)
+    let psHtml = '';
+    if (typeof calcPayslip === 'function') {
+      const ps = calcPayslip(u.id, yearMonth);
+      if (ps) {
+        psHtml = `
+          <td style="text-align:center"><strong>${ps.kpiPct}%</strong></td>
+          <td style="text-align:right">${fmtVND(ps.basePaid)}</td>
+          <td style="text-align:right;color:#10B981">+${fmtVND(ps.kpiBonus + ps.excelBonus + ps.cvcBonus)}</td>
+          <td style="text-align:right">+${fmtVND(ps.totalAllowance)}</td>
+          <td style="text-align:right;color:#EF4444">${ps.tax > 0 ? '-' : ''}${fmtVND(ps.tax)}</td>
+          <td style="text-align:right"><strong style="color:#10B981;font-size:15px">${fmtVND(ps.net)}</strong></td>
+          <td style="text-align:center">
+            <button class="btn-outline sm" onclick="openPayslip('${u.id}', '${yearMonth}')">📄 Xem</button>
+          </td>
+        `;
+      } else {
+        psHtml = `<td colspan="7" style="text-align:center;color:var(--c-text-3)">Chưa có dữ liệu lương</td>`;
+      }
+    } else {
+        psHtml = `<td colspan="7" style="text-align:center;color:var(--c-text-3)">Mô-đun lương chưa tải</td>`;
+    }
+
+    return `
+      <tr style="border-bottom:1px solid var(--c-border-subtle)">
+        <td style="padding:10px">
+          <div style="font-weight:600">${escHtml(u.name)}</div>
+          <div style="font-size:11px;color:var(--c-text-3)">${escHtml(u.department||'')}</div>
+        </td>
+        <td style="text-align:center"><strong>${totalDays}</strong></td>
+        <td style="text-align:center;${lateDays>0?'color:#F59E0B;font-weight:bold':''}">${lateDays}</td>
+        <td style="text-align:center;${leaveDays>0?'color:#8B5CF6':''}">${leaveDays}</td>
+        ${psHtml}
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <table class="att-table" style="width:100%;white-space:nowrap;margin:0;border-collapse:collapse">
+      <thead style="position:sticky;top:0;z-index:10;background:var(--c-surface)">
+        <tr>
+          <th rowspan="2" style="border-bottom:2px solid var(--c-border);text-align:left;padding:10px">Nhân sự</th>
+          <th colspan="3" style="text-align:center;border-bottom:1px solid var(--c-border);border-left:1px solid var(--c-border-subtle)">Dữ liệu Chấm công</th>
+          <th colspan="7" style="text-align:center;border-bottom:1px solid var(--c-border);border-left:1px solid var(--c-border-subtle)">Dữ liệu Lương & Thưởng</th>
+        </tr>
+        <tr>
+          <th style="border-bottom:2px solid var(--c-border);border-left:1px solid var(--c-border-subtle);text-align:center">Công</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:center">Muộn</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:center">Nghỉ</th>
+          <th style="border-bottom:2px solid var(--c-border);border-left:1px solid var(--c-border-subtle);text-align:center">KPI</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:right">Lương cứng</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:right">Thưởng</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:right">Phụ cấp</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:right">Khấu trừ</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:right">Thực nhận</th>
+          <th style="border-bottom:2px solid var(--c-border);text-align:center">Chi tiết</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows || '<tr><td colspan="11" style="text-align:center;padding:20px">Không có dữ liệu</td></tr>'}
+      </tbody>
+    </table>
   `;
 }
 

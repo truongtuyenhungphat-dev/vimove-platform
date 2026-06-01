@@ -178,7 +178,22 @@ function sortAsgnScore(a) {
 function renderAsgnCard(asgn, currentUid) {
   const assignee = getUserById(asgn.assignedTo);
   const assigner = getUserById(asgn.assignedBy);
-  const st       = ASGN_STATUS[asgn.status]  || ASGN_STATUS.pending;
+  let st       = { ...(ASGN_STATUS[asgn.status]  || ASGN_STATUS.pending) };
+
+  // Check if done but overdue
+  if (asgn.status === 'done' && asgn.deadline) {
+    const dlDate = new Date(asgn.deadline);
+    if (asgn.dueTime) {
+      const [h, m] = asgn.dueTime.split(':');
+      dlDate.setHours(h, m, 0, 0);
+    }
+    const compDate = asgn.completedAt ? new Date(asgn.completedAt) : new Date(asgn.updatedAt);
+    if (compDate > dlDate) {
+      st.name = 'Hoàn thành & Trễ hạn';
+      st.color = '#F59E0B';
+      st.bg = 'rgba(245,158,11,0.15)';
+    }
+  }
   const pr       = PRIORITIES[asgn.priority] || PRIORITIES.medium;
   const cat      = CATEGORIES[asgn.category] || {};
 
@@ -243,7 +258,21 @@ function openAsgnDetail(id) {
 
   const assignee  = getUserById(asgn.assignedTo);
   const assigner  = getUserById(asgn.assignedBy);
-  const st        = ASGN_STATUS[asgn.status] || ASGN_STATUS.pending;
+  let st        = { ...(ASGN_STATUS[asgn.status] || ASGN_STATUS.pending) };
+  
+  if (asgn.status === 'done' && asgn.deadline) {
+    const dlDate = new Date(asgn.deadline);
+    if (asgn.dueTime) {
+      const [h, m] = asgn.dueTime.split(':');
+      dlDate.setHours(h, m, 0, 0);
+    }
+    const compDate = asgn.completedAt ? new Date(asgn.completedAt) : new Date(asgn.updatedAt);
+    if (compDate > dlDate) {
+      st.name = 'Hoàn thành & Trễ hạn';
+      st.color = '#F59E0B';
+      st.bg = 'rgba(245,158,11,0.15)';
+    }
+  }
   const pr        = PRIORITIES[asgn.priority] || PRIORITIES.medium;
   const cat       = CATEGORIES[asgn.category] || {};
   const uid       = currentUser?.id;
