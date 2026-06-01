@@ -638,9 +638,9 @@ window.openPositionSalaryModal = function() {
 window.savePositionSalarySettings = function() {
   const newPositions = [...POSITIONS];
   for (let p of newPositions) {
-    const baseInput = document.getElementById(\`base_\${p.id}\`);
-    const kpiBonusInput = document.getElementById(\`kpiBonus_\${p.id}\`);
-    const cvcBonusInput = document.getElementById(\`cvcBonus_\${p.id}\`);
+    const baseInput = document.getElementById(`base_${p.id}`);
+    const kpiBonusInput = document.getElementById(`kpiBonus_${p.id}`);
+    const cvcBonusInput = document.getElementById(`cvcBonus_${p.id}`);
     if (baseInput && kpiBonusInput && cvcBonusInput) {
       if (!p.salary) p.salary = {};
       p.salary.base = parseInt(baseInput.value) || 0;
@@ -714,15 +714,15 @@ window.openAllowanceSettingsModal = function() {
 
 window.saveAllowanceSettings = function() {
   for (let u of TEAM_MEMBERS) {
-    const lunchInput = document.getElementById(\`lunch_\${u.id}\`);
+    const lunchInput = document.getElementById(`lunch_${u.id}`);
     if (lunchInput) {
       USER_ALLOWANCES[u.id] = {
         lunch: parseInt(lunchInput.value) || 0,
-        transport: parseInt(document.getElementById(\`trans_\${u.id}\`).value) || 0,
-        phone: parseInt(document.getElementById(\`phone_\${u.id}\`).value) || 0,
-        housing: parseInt(document.getElementById(\`house_\${u.id}\`).value) || 0,
+        transport: parseInt(document.getElementById(`trans_${u.id}`).value) || 0,
+        phone: parseInt(document.getElementById(`phone_${u.id}`).value) || 0,
+        housing: parseInt(document.getElementById(`house_${u.id}`).value) || 0,
         other: 0,
-        note: document.getElementById(\`note_\${u.id}\`).value || ''
+        note: document.getElementById(`note_${u.id}`).value || ''
       };
     }
   }
