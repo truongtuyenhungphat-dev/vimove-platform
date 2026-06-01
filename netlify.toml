@@ -1,7 +1,4 @@
 [build]
-  # Auto-version: mỗi lần deploy, thay tất cả ?v=X.X bằng ?v=TIMESTAMP
-  # => Trình duyệt buộc phải load file mới, không dùng cache cũ
-  command = "sed -i \"s/\\?v=[0-9.]*/?v=$(date +%s)/g\" index.html"
   publish = "."
 
 [[redirects]]
