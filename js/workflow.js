@@ -264,6 +264,11 @@ function onDrop(e, stageId) {
   const task = appState.tasks.find(t => t.id === draggedTaskId);
   if (!task) return;
   const oldStage = task.stage;
+  // FIX: Không làm gì nếu drag vào cùng stage
+  if (oldStage === stageId) {
+    draggedTaskId = null;
+    return;
+  }
   if (typeof recordStageEntry === 'function') recordStageEntry(task, stageId);
   task.stage = stageId;
   task.comments = task.comments || [];
@@ -425,7 +430,23 @@ function openNewTaskModal() {
   sel.innerHTML = TEAM_MEMBERS.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
   // Set default deadline to 7 days from now
   document.getElementById('taskDeadline').value = getFutureDate(7);
-  document.getElementById('newTaskModal').classList.remove('hidden');
+  // Reset title, desc, value
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+  document.getElementById('taskValue').value = '';
+  document.querySelectorAll('.channel-tags input').forEach(i => i.checked = false);
+  // QUAN TRỌNG: Xóa stale targetStage mỗi lần mở modal mới
+  const modal = document.getElementById('newTaskModal');
+  delete modal.dataset.targetStage;
+  delete modal.dataset.editId;
+  // Reset modal về create mode
+  modal.querySelector('h2').textContent = '➕ Tạo Luồng Công Việc Chính (CVC) Mới';
+  const saveBtn = modal.querySelector('.modal-footer .btn-primary');
+  if (saveBtn) {
+    saveBtn.textContent = 'Tạo CVC';
+    saveBtn.setAttribute('onclick', 'saveNewTask()');
+  }
+  modal.classList.remove('hidden');
 }
 
 function openNewTaskInStage(stageId) {
@@ -437,6 +458,17 @@ function openNewTaskInStage(stageId) {
 function saveNewTask() {
   const title   = document.getElementById('taskTitle').value.trim();
   if (!title) { showToast('⚠️ Vui lòng nhập tên CVC!', 'error'); return; }
+
+  // Validate deadline không được là ngày quá khứ
+  const deadlineVal = document.getElementById('taskDeadline').value;
+  if (deadlineVal) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dlDate = new Date(deadlineVal);
+    if (dlDate < today) {
+      showToast('⚠️ Deadline không được là ngày trong quá khứ!', 'error');
+      return;
+    }
+  }
 
   const channels = [...document.querySelectorAll('.channel-tags input:checked')].map(i => i.value);
   const targetStage = document.getElementById('newTaskModal').dataset.targetStage || 'idea';
@@ -679,11 +711,11 @@ function renderMyTasks() {
 // ============ BADGES ============
 function updateBadges() {
   const total = appState.tasks.filter(t => t.stage !== 'done').length;
-  const urgent = appState.tasks.filter(t => isOverdue(t) || t.priority === 'urgent').length;
+  const overdue = appState.tasks.filter(t => isOverdue(t)).length;
   const mine = appState.tasks.filter(t => t.assigneeId === currentUser?.id && t.stage !== 'done' && (isOverdue(t) || t.priority === 'urgent')).length;
 
   document.getElementById('badge-tasks').textContent = total || '';
-  document.getElementById('badge-alert').textContent = urgent || '';
+  document.getElementById('badge-alert').textContent = overdue || '';
   document.getElementById('badge-mine').textContent  = mine || '';
 }
 

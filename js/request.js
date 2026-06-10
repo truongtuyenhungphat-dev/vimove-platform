@@ -392,6 +392,29 @@ function canApproveRequest(req) {
   return nextStep.role === currentUser?.role;
 }
 
+// ============ IN-APP NOTIFICATION CHO NGƯỜI GỬI ============
+// Bug 1 Fix: Tạo notification cho người gửi khi đề xuất được duyệt/từ chối
+function addRequestNotification(req, action, approverName) {
+  if (!appState.notifications) appState.notifications = [];
+  const isApproved = action === 'approved';
+  const notif = {
+    id: generateId('notif'),
+    type: 'request_decision',
+    targetUserId: req.requesterId, // người gửi
+    title: isApproved ? '✅ Đề xuất được duyệt' : '❌ Đề xuất bị từ chối',
+    message: `"${req.title}" đã ${isApproved ? 'được duyệt' : 'bị từ chối'} bởi ${approverName}`,
+    requestId: req.id,
+    createdAt: new Date().toISOString(),
+    read: false,
+  };
+  appState.notifications.unshift(notif);
+  // Update badge nếu là user hiện tại
+  if (req.requesterId === currentUser?.id) {
+    const dot = document.getElementById('notifDot');
+    if (dot) dot.style.display = 'block';
+  }
+}
+
 function approveRequest(reqId) {
   const req = requestState.requests.find(r => r.id === reqId);
   if (!req) return;
@@ -408,6 +431,8 @@ function approveRequest(reqId) {
     req.status = 'approved';
     // ====== ĐỒNG BỘ VỚI CHẤM CÔNG ======
     syncApprovalToAttendance(req, 'approved');
+    // ====== NOTIFY NGƯỜI GỬI ======
+    addRequestNotification(req, 'approved', currentUser?.name || 'Quản lý');
   }
 
   if (window.fbSaveRequest) window.fbSaveRequest(req);
@@ -433,6 +458,8 @@ function rejectRequest(reqId) {
 
   // ====== ĐỒNG BỘ VỚI CHẤM CÔNG: xóa bản ghi nếu có ======
   syncApprovalToAttendance(req, 'rejected');
+  // ====== NOTIFY NGƯỜI GỬI ======
+  addRequestNotification(req, 'rejected', currentUser?.name || 'Quản lý');
 
   if (window.fbSaveRequest) window.fbSaveRequest(req);
   saveRequests();
@@ -500,6 +527,21 @@ async function syncApprovalToAttendance(req, decision) {
             if (aIdx > -1) ATTENDANCE_RECORDS.splice(aIdx, 1);
             if (window.fbDeleteAttendance) await window.fbDeleteAttendance(toRemove.id);
           }
+        }
+      }
+    }
+
+    // Bug 2 Fix: Xóa bản ghi remote nếu bị reject
+    if (req.type === 'remote' && decision === 'rejected') {
+      if (typeof ATTENDANCE_RECORDS !== 'undefined') {
+        const toRemove = ATTENDANCE_RECORDS.find(r =>
+          r.userId === req.requesterId && r.date === dateKey &&
+          (r.isRemote || r.remoteApproved) && r.remoteReqId === req.id
+        );
+        if (toRemove) {
+          const aIdx = ATTENDANCE_RECORDS.findIndex(r => r.id === toRemove.id);
+          if (aIdx > -1) ATTENDANCE_RECORDS.splice(aIdx, 1);
+          if (window.fbDeleteAttendance) await window.fbDeleteAttendance(toRemove.id);
         }
       }
     }

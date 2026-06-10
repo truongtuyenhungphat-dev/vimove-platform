@@ -190,9 +190,21 @@ function renderHotTasks() {
     sourceTasks = sourceTasks.filter(t => t.assigneeId === dashSelectedMember);
   }
 
-  const hot = sourceTasks.filter(t =>
+  const PRIORITY_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 };
+  const hotTasks = sourceTasks.filter(t =>
     (isOverdue(t) || t.priority === 'urgent' || t.priority === 'high') && t.stage !== 'done'
-  ).slice(0, 6);
+  );
+  hotTasks.sort((a, b) => {
+    // Sort theo priority trước
+    const pDiff = (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2);
+    if (pDiff !== 0) return pDiff;
+    // Nếu cùng priority, sort theo deadline gần nhất
+    if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
+    if (a.deadline) return -1;
+    if (b.deadline) return 1;
+    return 0;
+  });
+  const hot = hotTasks.slice(0, 6);
 
   document.getElementById('hotCount').textContent = hot.length;
 
@@ -449,11 +461,13 @@ function checkAndUpdateNotifications() {
   // SLA breach alert: check tasks gần vi phạm SLA
   if (typeof getSLASummary === 'function') {
     const sla = getSLASummary();
-    const badge = document.getElementById('badge-alert');
-    if (badge) {
-      const alertCount = (sla.danger || 0) + (sla.overdue || 0);
-      badge.textContent = alertCount || '';
-      badge.style.background = alertCount > 0 ? '#EF4444' : '';
+    const alertEl = document.getElementById('badge-alert');
+    if (alertEl) {
+      const dangerCount = (sla.danger || 0) + (sla.overdue || 0);
+      // Cộng thêm vào giá trị hiện có thay vì ghi đè (tránh xoá badge từ module khác)
+      const existing = parseInt(alertEl.textContent) || 0;
+      alertEl.textContent = (existing + dangerCount) || '';
+      alertEl.style.background = (existing + dangerCount) > 0 ? '#EF4444' : '';
     }
   }
 }

@@ -336,17 +336,31 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
   renderAttendance();
 }
 
-/** Check-in văn phòng không yêu cầu GPS */
+/** Check-in văn phòng — xác minh vị trí GPS trước khi cho phép check-in */
 async function checkInOffice() {
   const btn = document.getElementById('btnCheckIn');
-  if (btn) { btn.disabled = true; btn.querySelector('small').textContent = 'Đang xử lý...'; }
+  if (btn) { btn.disabled = true; btn.querySelector('small').textContent = 'Đang xác định GPS...'; }
+
+  if (!navigator.geolocation) {
+    showGpsUnavailableDialog();
+    if (btn) { btn.disabled = false; btn.querySelector('small').textContent = 'Bấm để check-in'; }
+    return;
+  }
+
+  showToast('📍 Đang xác định vị trí...', 'info');
 
   try {
-    // Bo qua check GPS, cho phep check-in ngay lap tuc
-    await doCheckIn(false, null, false);
+    const gps = await getCurrentGPS(); // Dùng hàm đã có sẵn trong file
+    const { inRange, distance } = isInOfficeRange(gps.lat, gps.lng);
+
+    if (inRange) {
+      await doCheckIn(false, gps, false);
+    } else {
+      showGpsOutOfRangeDialog(distance, gps);
+    }
   } catch (err) {
-    console.warn('Check-in error:', err);
-    showToast('❌ Có lỗi xảy ra, vui lòng thử lại', 'error');
+    console.warn('[GPS] Geolocation error:', err);
+    showGpsUnavailableDialog();
   } finally {
     if (btn) { btn.disabled = false; btn.querySelector('small').textContent = 'Bấm để check-in'; }
   }

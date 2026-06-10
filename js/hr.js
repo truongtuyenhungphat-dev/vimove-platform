@@ -59,6 +59,64 @@ function calcKpiScore(userId, yearMonth) {
            approvedBy: actuals.approvedBy, approvedAt: actuals.approvedAt, yearMonth: `${year}-${String(month).padStart(2,'0')}` };
 }
 
+/**
+ * Tính thuế TNCN theo biểu lũy tiến 7 bậc (Luật Thuế TNCN VN hiện hành)
+ * Thu nhập tính thuế = Gross - Giảm trừ bản thân (11tr) - BH cá nhân
+ * @param {number} grossIncome - Thu nhập gộp (VND)
+ * @param {number} dependents - Số người phụ thuộc (mặc định 0)
+ * @param {number} socialInsurance - BHXH + BHYT + BHTN cá nhân đóng
+ * @returns {number} Số thuế phải nộp
+ */
+function calcPIT(grossIncome, dependents = 0, socialInsurance = 0) {
+  const PERSONAL_DEDUCTION    = 11_000_000; // 11 triệu/tháng
+  const DEPENDENT_DEDUCTION   = 4_400_000;  // 4.4 triệu/người phụ thuộc/tháng
+
+  // Thu nhập tính thuế
+  const taxableIncome = Math.max(
+    0,
+    grossIncome - PERSONAL_DEDUCTION - (dependents * DEPENDENT_DEDUCTION) - socialInsurance
+  );
+
+  if (taxableIncome <= 0) return 0;
+
+  // Biểu lũy tiến 7 bậc (theo Nghị quyết 954/2020/UBTVQH14)
+  const TAX_BRACKETS = [
+    { max: 5_000_000,   rate: 0.05, prev: 0 },           // Bậc 1: ≤5tr → 5%
+    { max: 10_000_000,  rate: 0.10, prev: 250_000 },      // Bậc 2: 5-10tr → 10%
+    { max: 18_000_000,  rate: 0.15, prev: 750_000 },      // Bậc 3: 10-18tr → 15%
+    { max: 32_000_000,  rate: 0.20, prev: 1_950_000 },    // Bậc 4: 18-32tr → 20%
+    { max: 52_000_000,  rate: 0.25, prev: 4_750_000 },    // Bậc 5: 32-52tr → 25%
+    { max: 80_000_000,  rate: 0.30, prev: 9_750_000 },    // Bậc 6: 52-80tr → 30%
+    { max: Infinity,    rate: 0.35, prev: 18_150_000 },   // Bậc 7: >80tr → 35%
+  ];
+
+  // Tìm bậc thuế
+  const bracket = TAX_BRACKETS.find(b => taxableIncome <= b.max);
+  if (!bracket) return 0;
+
+  // Tính thuế lũy tiến: thuế bậc trước + phần vượt × thuế suất bậc hiện tại
+  const bracketIndex = TAX_BRACKETS.indexOf(bracket);
+  const prevMax = bracketIndex > 0 ? TAX_BRACKETS[bracketIndex - 1].max : 0;
+  const tax = bracket.prev + (taxableIncome - prevMax) * bracket.rate;
+
+  return Math.round(tax);
+}
+
+/**
+ * Tính BHXH, BHYT, BHTN phần nhân viên đóng (theo tỷ lệ hiện hành)
+ * @param {number} baseSalary - Lương cơ bản (tối đa 36tr để tính BH)
+ * @returns {{ bhxh, bhyt, bhtn, total }}
+ */
+function calcSocialInsurance(baseSalary) {
+  // Mức lương tối đa đóng BH = 20 × lương cơ sở (2.34tr) = 46.8tr
+  // Nhưng thực tế thường giới hạn ở mức lương hợp đồng, tối đa 36tr để đơn giản
+  const base = Math.min(baseSalary, 36_000_000);
+  const bhxh = Math.round(base * 0.08);   // 8% BHXH
+  const bhyt = Math.round(base * 0.015);  // 1.5% BHYT
+  const bhtn = Math.round(base * 0.01);   // 1% BHTN
+  return { bhxh, bhyt, bhtn, total: bhxh + bhyt + bhtn };
+}
+
 // Tính phiếu lương đầy đủ
 function calcPayslip(userId, yearMonth) {
   const member = TEAM_MEMBERS.find(m => m.id === userId);
@@ -90,11 +148,24 @@ function calcPayslip(userId, yearMonth) {
   const cvcBonus = cvcOver * sal.cvcBonus;
 
   const gross = basePaid + kpiBonus + excelBonus + cvcBonus + totalAllowance;
-  const tax   = gross > 11000000 ? Math.round((gross - 11000000) * 0.05) : 0; // PIT 5% tạm tính
+
+  // Tính BHXH/BHYT/BHTN phần nhân viên (tính trên lương cứng cơ bản)
+  const si = calcSocialInsurance(sal.base);
+
+  // Tính thuế TNCN lũy tiến 7 bậc đúng luật VN
+  // Phụ cấp ăn trưa được miễn thuế tối đa 730k/tháng theo quy định
+  const lunchExempt = Math.min(allowance.lunch || 0, 730_000);
+  const taxableGross = gross - lunchExempt; // Phụ cấp miễn thuế được trừ ra
+  const dependents = member.dependents || 0; // Số người phụ thuộc (mặc định 0)
+  const tax = calcPIT(taxableGross, dependents, si.total);
+
+  const totalDeduction = tax + si.total;
+  const net = gross - totalDeduction;
 
   return { userId, member, pos, yearMonth: `${y}-${String(m).padStart(2,'0')}`,
            basePaid, kpiBonus, excelBonus, cvcBonus, totalAllowance, allowance,
-           gross, tax, net: gross - tax, kpiPct, tier, kpi, doneTasks: doneTasks.length, cvcOver };
+           gross, si, tax, totalDeduction, net, kpiPct, tier, kpi,
+           doneTasks: doneTasks.length, cvcOver, dependents };
 }
 
 // ============ KPI ENTRY MODAL (Admin only) ============
@@ -259,9 +330,12 @@ function openPayslip(userId, yearMonth) {
           ${ps.allowance.other     ? `<div class="ps-line"><span>Khác</span><span class="ps-amount">+${fmtVND(ps.allowance.other)}</span></div>` : ''}
           ${!ps.allowance.lunch && !ps.allowance.transport && !ps.allowance.phone && !ps.allowance.housing && !ps.allowance.other ? `<div class="ps-line" style="color:var(--c-text-3);font-style:italic"><span>Chưa có phụ cấp</span><span>—</span></div>` : ''}
 
-          ${ps.tax>0 ? `
+          ${(ps.tax > 0 || (ps.si && ps.si.total > 0)) ? `
           <div class="ps-group-title" style="color:#EF4444">💸 Khấu trừ</div>
-          <div class="ps-line"><span>Thuế TNCN tạm tính (5%)</span><span class="ps-amount ps-red">−${fmtVND(ps.tax)}</span></div>
+          ${ps.si && ps.si.bhxh > 0 ? `<div class="ps-line"><span>BHXH (8%)</span><span class="ps-amount ps-red">−${fmtVND(ps.si.bhxh)}</span></div>` : ''}
+          ${ps.si && ps.si.bhyt > 0 ? `<div class="ps-line"><span>BHYT (1.5%)</span><span class="ps-amount ps-red">−${fmtVND(ps.si.bhyt)}</span></div>` : ''}
+          ${ps.si && ps.si.bhtn > 0 ? `<div class="ps-line"><span>BHTN (1%)</span><span class="ps-amount ps-red">−${fmtVND(ps.si.bhtn)}</span></div>` : ''}
+          ${ps.tax > 0 ? `<div class="ps-line"><span>Thuế TNCN (lũy tiến 7 bậc)</span><span class="ps-amount ps-red">−${fmtVND(ps.tax)}</span></div>` : ''}
           ` : ''}
         </div>
 
@@ -346,7 +420,9 @@ function renderPolicyTab(el) {
           <li>Phụ cấp theo từng cá nhân, do Admin cấu hình riêng</li>
           <li>Chấm công không tự động khấu trừ lương — Admin xem xét và điều chỉnh thủ công nếu cần</li>
           <li>Nhân viên chỉ xem được phiếu lương của chính mình</li>
-          <li>Thuế TNCN tạm tính 5% cho thu nhập trên 11 triệu/tháng</li>
+          <li>Thuế TNCN tính theo biểu lũy tiến 7 bậc (5%→35%) theo Luật Thuế TNCN VN</li>
+          <li>BHXH 8% + BHYT 1.5% + BHTN 1% = 10.5% lương cứng (tối đa 36 triệu)</li>
+          <li>Giảm trừ gia cảnh: 11 triệu/tháng bản thân + 4.4 triệu/người phụ thuộc</li>
         </ul>
       </div>
     </div>

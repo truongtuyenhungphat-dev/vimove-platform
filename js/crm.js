@@ -36,7 +36,7 @@ function renderCRM() {
       <span class="crm-sum-val" style="color:${overdueFollowup > 0 ? '#EF4444' : '#94A3B8'}">${overdueFollowup}</span>
       <span class="crm-sum-lbl">Trễ follow-up</span>
     </div>
-    ${wonLeads > 0 ? `
+    ${totalLeads > 0 ? `
     <div class="crm-summary-item">
       <span class="crm-sum-val" style="color:#F59E0B">${Math.round((wonLeads/totalLeads)*100)}%</span>
       <span class="crm-sum-lbl">Tỉ lệ chốt</span>
@@ -262,7 +262,7 @@ function saveNewLead() {
     id:             generateId('l'),
     name,
     phone:          document.getElementById('leadPhone').value.trim(),
-    email:          '',
+    email:          document.getElementById('leadEmail')?.value.trim() || '', // Bug 3 Fix
     channel:        document.getElementById('leadChannel').value,
     product:        document.getElementById('leadProduct').value.trim(),
     note:           document.getElementById('leadNote').value.trim(),
@@ -279,7 +279,10 @@ function saveNewLead() {
   if (window.fbSaveLead) window.fbSaveLead(lead);
   saveData();
 
-  ['leadName','leadPhone','leadProduct','leadNote'].forEach(id => document.getElementById(id).value = '');
+  ['leadName','leadPhone','leadEmail','leadProduct','leadNote'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   closeModal('newLeadModal');
   renderCRM();
   showToast(`✅ Đã thêm khách hàng "${name}"`, 'success');

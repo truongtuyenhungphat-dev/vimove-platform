@@ -27,7 +27,12 @@ function getSLAInfo(task) {
   // Nếu không có, dùng createDate
   const enteredAt = task.stageEnteredAt
     ? new Date(task.stageEnteredAt)
-    : new Date(task.createDate || Date.now());
+    : (() => {
+        // Task cũ không có stageEnteredAt — dùng ngay thời điểm hiện tại
+        // để SLA bắt đầu tính từ bây giờ, tránh tính ngược về quá khứ xa
+        console.warn('[SLA] Task thiếu stageEnteredAt, dùng thời điểm hiện tại:', task.id);
+        return new Date();
+      })();
 
   const nowMs      = Date.now();
   const elapsedMs  = nowMs - enteredAt.getTime();
@@ -38,10 +43,10 @@ function getSLAInfo(task) {
   const remainPct  = 1 - usedPct;                    // phần còn lại
 
   let status;
-  if (remainPct <= 0)          status = 'danger';   // Quá SLA
-  else if (remainPct <= config.warnAt) status = 'danger';   // <25% còn lại
-  else if (remainPct <= 0.5)   status = 'warning';  // 25-50% còn lại
-  else                         status = 'ok';        // >50% còn lại
+  if (remainPct <= 0)                  status = 'danger';   // Đã quá SLA
+  else if (remainPct <= config.warnAt) status = 'warning';  // Sắp hết (< 25%)
+  else if (remainPct <= 0.5)           status = 'warning';  // 25-50% còn lại
+  else                                 status = 'ok';        // > 50% còn lại
 
   return {
     elapsedHours:   Math.round(elapsedH),

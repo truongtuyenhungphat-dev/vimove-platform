@@ -89,7 +89,7 @@ window.fbSeedTasks = async (tasksArray) => {
 };
 
 window.fbSaveTask = async (taskObj) => {
-  return getDB().collection('viwork_tasks').doc(taskObj.id).set(taskObj);
+  return getDB().collection('viwork_tasks').doc(taskObj.id).set(taskObj, { merge: true });
 };
 
 window.fbDeleteTask = async (taskId) => {
@@ -107,7 +107,7 @@ window.fbSeedLeads = async (leadsArray) => {
 };
 
 window.fbSaveLead = async (leadObj) => {
-  return getDB().collection('viwork_leads').doc(leadObj.id).set(leadObj);
+  return getDB().collection('viwork_leads').doc(leadObj.id).set(leadObj, { merge: true });
 };
 
 window.fbDeleteLead = async (leadId) => {
@@ -127,7 +127,7 @@ window.fbSeedUsers = async (usersObj) => {
 };
 
 window.fbSaveUser = async (userObj) => {
-  return getDB().collection('viwork_users').doc(userObj.email.replace(/[@.]/g,'_')).set(userObj);
+  return getDB().collection('viwork_users').doc(userObj.email.replace(/[@.]/g,'_')).set(userObj, { merge: true });
 };
 
 window.fbDeleteUser = async (email) => {
@@ -214,7 +214,7 @@ window.fbSeedRequests = async (reqArray) => {
 };
 
 window.fbSaveRequest = async (reqObj) => {
-  return getDB().collection('viwork_requests').doc(reqObj.id).set(reqObj);
+  return getDB().collection('viwork_requests').doc(reqObj.id).set(reqObj, { merge: true });
 };
 
 window.fbDeleteRequest = async (reqId) => {
@@ -232,7 +232,7 @@ window.fbSeedAssignments = async (asgnArray) => {
 };
 
 window.fbSaveAssignment = async (asgnObj) => {
-  return getDB().collection('viwork_assignments').doc(asgnObj.id).set(asgnObj);
+  return getDB().collection('viwork_assignments').doc(asgnObj.id).set(asgnObj, { merge: true });
 };
 
 window.fbDeleteAssignment = async (asgnId) => {
@@ -361,16 +361,16 @@ window.fbListenLeads = (callback) => {
 window.fbListenUsers = (callback) => {
   return getDB().collection('viwork_users').onSnapshot(
     snapshot => {
-    const obj = {};
-    snapshot.forEach(doc => { 
-      // Dữ liệu trong document chứa email thực
-      const data = doc.data();
-      obj[data.email] = data; 
+      const obj = {};
+      snapshot.forEach(doc => {
+        // Dữ liệu trong document chứa email thực
+        const data = doc.data();
+        if (data && data.email) obj[data.email] = data;
+      });
+      callback(obj);
     },
-    err => console.warn('[FB] onSnapshot error:', err)
+    err => console.warn('[FB] fbListenUsers onSnapshot error:', err)
   );
-    callback(obj);
-  });
 };
 
 window.fbListenRequests = (callback) => {
@@ -464,6 +464,43 @@ window.fbListenTraining = (userId, callback) => {
       callback(enrollments);
     });
 };
+// ============ TRAINING COURSES ============
+window.fbSaveCourse = async (course) => {
+  const db = getDB(); if (!db) return;
+  await db.collection('viwork_courses').doc(course.id).set(course, { merge: true });
+};
+
+window.fbDeleteCourse = async (courseId) => {
+  const db = getDB(); if (!db) return;
+  await db.collection('viwork_courses').doc(courseId).delete();
+};
+
+window.fbLoadCourses = async () => {
+  const db = getDB(); if (!db) return null;
+  try {
+    const snap = await db.collection('viwork_courses').get();
+    if (snap.empty) return null;
+    const courses = [];
+    snap.forEach(doc => courses.push(doc.data()));
+    return courses;
+  } catch(e) {
+    console.warn('[FB] fbLoadCourses error:', e);
+    return null;
+  }
+};
+
+window.fbListenCourses = (callback) => {
+  const db = getDB(); if (!db) return;
+  return db.collection('viwork_courses').onSnapshot(
+    snap => {
+      const courses = [];
+      snap.forEach(doc => courses.push(doc.data()));
+      callback(courses);
+    },
+    err => console.warn('[FB] fbListenCourses error:', err)
+  );
+};
+
 // ============ SYNC LOCAL TO FIREBASE ============
 window.syncLocalToFirebase = async () => {
   if (typeof showToast === 'function') showToast('? �ang d?ng b? d? li?u l�n Cloud...', 'info');

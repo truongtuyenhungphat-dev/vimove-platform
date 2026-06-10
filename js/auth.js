@@ -25,7 +25,7 @@ function handleLogin() {
   setTimeout(() => {
     const user = DEMO_USERS[email.toLowerCase()];
     if (!user || user.password !== pass) {
-      err.textContent = '❌ Email hoặc mật khẩu không đúng. Thử: ngan@vimove.net / ngan123';
+      err.textContent = '❌ Email hoặc mật khẩu không đúng. Vui lòng thử lại.';
       btn.innerHTML = '<span>Đăng nhập</span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12H19M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       btn.disabled = false;
       return;
