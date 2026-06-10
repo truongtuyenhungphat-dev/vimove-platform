@@ -54,6 +54,14 @@ function initApp() {
         }
       }
     });
+
+    // Popup cảnh báo công việc khi đăng nhập
+    // Delay 1.2s để Firebase realtime data kịp sync trước khi hiển thị
+    if (typeof showLoginAlert === 'function' && typeof shouldShowLoginAlert === 'function') {
+      if (shouldShowLoginAlert()) {
+        setTimeout(showLoginAlert, 1200);
+      }
+    }
   });
 }
 
