@@ -575,10 +575,18 @@ function initData() {
     // 6. Lắng nghe Dữ liệu Giao việc (Assignments)
     window.fbListenAssignments(asgns => {
       appState.assignments = asgns;
-      if (typeof renderAssignments === 'function' && document.getElementById('page-assignments')?.classList.contains('active')) {
-        renderAssignments();
-      }
+      // Luôn cập nhật badge
       if (typeof updateAsgnBadge === 'function') updateAsgnBadge();
+      // Render nếu đang ở trang assignments
+      if (typeof renderAssignments === 'function') {
+        const pgAsgn = document.getElementById('page-assignments');
+        if (pgAsgn && pgAsgn.classList.contains('active')) renderAssignments();
+      }
+      // Cập nhật việc của tôi ở trang chủ
+      if (typeof renderMyTasks === 'function') {
+        const pgHome = document.getElementById('page-home');
+        if (pgHome && pgHome.classList.contains('active')) renderMyTasks();
+      }
     });
   } else {
     // Dự phòng khi mất kết nối Firebase, sài Data tĩnh
