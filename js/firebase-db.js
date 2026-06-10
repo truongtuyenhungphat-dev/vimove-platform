@@ -25,24 +25,12 @@ window.fbPurgeDeletedAccounts = async () => {
 
 // ============ VIWORK_TASKS ============
 window.fbCheckAndSeed = async () => {
-  // Xoa cac tai khoan bi purge truoc tien
+  // Xóa tài khoản bị purge trước tiên
   await window.fbPurgeDeletedAccounts();
-  // First, sync any remaining .vn emails to .net across devices.
   await window.fbSyncEmailDomains?.();
-  const db = getDB();
-  const snap = await db.collection('viwork_users').limit(1).get();
-  if (snap.empty) {
-    console.log('[⚡ VIWORK] Khởi tạo hạt giống (Seed Data) lên Cloud...');
-    await window.fbSeedUsers(DEMO_USERS);
-    await window.fbSeedTasks(INITIAL_TASKS);
-    await window.fbSeedLeads(INITIAL_LEADS);
-    if(typeof INITIAL_REQUESTS !== 'undefined') await window.fbSeedRequests(INITIAL_REQUESTS);
-    if(typeof INITIAL_ASSIGNMENTS !== 'undefined') await window.fbSeedAssignments(INITIAL_ASSIGNMENTS);
-    console.log('[⚡ VIWORK] Đã đẩy Data gốc lên Cloud thành công!');
-  } else {
-    // Collection có data rồi — chỉ bổ sung những user còn thiếu
-    await window.fbEnsureAllUsers();
-  }
+  // Chỉ đảm bảo tất cả users có trên Firebase, KHÔNG seed demo data
+  await window.fbEnsureAllUsers();
+  console.log('[... VIWORK] App khởi tạo với data thực tế — không có demo data');
 };
 
 /**

@@ -13,7 +13,7 @@ const APP_CONFIG = {
 };
 
 // Tăng số này mỗi khi muốn xóa data cũ trong browser
-const DATA_VERSION = 'viwork_v2.5';
+const DATA_VERSION = 'viwork_v3.0_clean';
 
 // ============ STAGES (Giai đoạn luồng CVC) ============
 const STAGES = [
@@ -86,25 +86,24 @@ const DEMO_USERS = {
    ======================================================== */
 const TEAM_MEMBERS = [
   // BAN LÃNH ĐẠO
-  { id: 'u002', name: 'Nguyễn Thị Thanh Ngân',  role: 'admin',   avatar: 'NTN',  department: 'Quản trị & Phê duyệt',      kpi: 100, revenue: 0, tasks: 0 },
-  { id: 'u001', name: 'Trương Ngọc Tuyền',      role: 'admin',   avatar: 'TNT',  department: 'Digital & Hỗ trợ kỹ thuật', kpi: 95,  revenue: 0, tasks: 0 },
-  { id: 'u013', name: 'Trịnh Linh Chi',         role: 'admin',   avatar: 'TL',   department: 'HR',                        kpi: 0,   revenue: 0, tasks: 0 },
+  { id: 'u002', name: 'Nguyễn Thị Thanh Ngân',  role: 'admin',   avatar: 'NTN',  department: 'Quản trị & Phê duyệt',      kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u001', name: 'Trương Ngọc Tuyền',      role: 'admin',   avatar: 'TNT',  department: 'Digital & Hỗ trợ kỹ thuật', kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u013', name: 'Trịnh Linh Chi',         role: 'admin',   avatar: 'TL',   department: 'HR',                        kpi: 0, revenue: 0, tasks: 0 },
   // QUẢN LÝ
-  { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', avatar: 'NQT',  department: 'HR & MKT & Sale',           kpi: 85,  revenue: 0, tasks: 0 },
-  { id: 'u005', name: 'Hoàng Quỳnh Phương',      role: 'manager', avatar: 'HQP',  department: 'Content Lead',              kpi: 88,  revenue: 0, tasks: 0 },
-  { id: 'u006', name: 'Trương Xuân Dũng',        role: 'manager', avatar: 'TXD',  department: 'Lead Sản phẩm',             kpi: 82,  revenue: 0, tasks: 0 },
-  { id: 'u007', name: 'Vũ Phương Hạnh',          role: 'manager', avatar: 'VPH',  department: 'Lead Sản phẩm',             kpi: 79,  revenue: 0, tasks: 0 },
-  { id: 'u008', name: 'Nguyễn Văn Lợi',          role: 'manager', avatar: 'NV',   department: 'Kênh cá nhân',              kpi: 72,  revenue: 0, tasks: 0 },
+  { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', avatar: 'NQT',  department: 'HR & MKT & Sale',           kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u005', name: 'Hoàng Quỳnh Phương',      role: 'manager', avatar: 'HQP',  department: 'Content Lead',              kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u006', name: 'Trương Xuân Dũng',        role: 'manager', avatar: 'TXD',  department: 'Lead Sản phẩm',             kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u007', name: 'Vũ Phương Hạnh',          role: 'manager', avatar: 'VPH',  department: 'Lead Sản phẩm',             kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u008', name: 'Nguyễn Văn Lợi',          role: 'manager', avatar: 'NV',   department: 'Kênh cá nhân',              kpi: 0, revenue: 0, tasks: 0 },
   // NHÂN VIÊN
-
-  { id: 'u010', name: 'Lê Thị Anh Thái',         role: 'staff',   avatar: 'LTAT', department: 'Content',                   kpi: 75,  revenue: 0, tasks: 0 },
-  { id: 'u011', name: 'Phạm Thanh Mai',          role: 'staff',   avatar: 'PTM',  department: 'Thiết kế',                  kpi: 85,  revenue: 0, tasks: 0 },
-  { id: 'u012', name: 'Khuất Thị Dung',          role: 'staff',   avatar: 'KT',   department: 'Design',                    kpi: 83,  revenue: 0, tasks: 0 },
-  { id: 'u014', name: 'Phạm Mỹ Duyên',           role: 'staff',   avatar: 'PM',   department: 'Media',                     kpi: 0,   revenue: 0, tasks: 0 },
-  { id: 'u009', name: 'Lê Ngân',                 role: 'staff',   avatar: 'LN',   department: 'Content Marketing',         kpi: 80,  revenue: 0, tasks: 0 },
-  { id: 'u015', name: 'Bùi Thị Ngọc Sang',       role: 'staff',   avatar: 'BT',   department: 'Content Marketing',         kpi: 0,   revenue: 0, tasks: 0 },
-  { id: 'u016', name: 'Lương Văn Phong',         role: 'staff',   avatar: 'LV',   department: 'Media',                     kpi: 0,   revenue: 0, tasks: 0 },
-  { id: 'u017', name: 'Lý Việt Bắc',             role: 'staff',   avatar: 'LV',   department: 'Content Marketing',         kpi: 0,   revenue: 0, tasks: 0 },
+  { id: 'u010', name: 'Lê Thị Anh Thái',         role: 'staff',   avatar: 'LTAT', department: 'Content',                   kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u011', name: 'Phạm Thanh Mai',          role: 'staff',   avatar: 'PTM',  department: 'Thiết kế',                  kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u012', name: 'Khuất Thị Dung',          role: 'staff',   avatar: 'KT',   department: 'Design',                    kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u014', name: 'Phạm Mỹ Duyên',           role: 'staff',   avatar: 'PM',   department: 'Media',                     kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u009', name: 'Lê Ngân',                 role: 'staff',   avatar: 'LN',   department: 'Content Marketing',         kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u015', name: 'Bùi Thị Ngọc Sang',       role: 'staff',   avatar: 'BT',   department: 'Content Marketing',         kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u016', name: 'Lương Văn Phong',         role: 'staff',   avatar: 'LV',   department: 'Media',                     kpi: 0, revenue: 0, tasks: 0 },
+  { id: 'u017', name: 'Lý Việt Bắc',             role: 'staff',   avatar: 'LV',   department: 'Content Marketing',         kpi: 0, revenue: 0, tasks: 0 },
 ];
 
 /* ========================================================
@@ -345,366 +344,40 @@ let SALARY_POLICY = {
    USER ALLOWANCES — Phụ cấp từng người (Admin nhập riêng)
    ======================================================== */
 let USER_ALLOWANCES = {
-  'u001': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0,       other: 0,       note: 'Phụ cấp kỹ thuật' },
-  'u002': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0,       other: 0,       note: 'Phụ cấp quản trị' },
-  'u003': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
-  'u004': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
-  'u005': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: 'Phụ cấp lead content' },
-  'u006': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
-  'u007': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0,       other: 0,       note: '' },
-  'u008': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
-  'u009': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
-  'u010': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
-  'u011': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
-  'u012': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0,       other: 0,       note: '' },
+  'u001': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0, other: 0, note: 'Phụ cấp kỹ thuật' },
+  'u002': { lunch: 1000000, transport: 500000, phone: 500000, housing: 0, other: 0, note: 'Phụ cấp quản trị' },
+  'u003': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0, other: 0, note: '' },
+  'u004': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0, other: 0, note: '' },
+  'u005': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0, other: 0, note: 'Phụ cấp lead content' },
+  'u006': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0, other: 0, note: '' },
+  'u007': { lunch: 800000,  transport: 400000, phone: 300000, housing: 0, other: 0, note: '' },
+  'u008': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u009': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u010': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u011': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u012': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u013': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u014': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u015': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u016': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
+  'u017': { lunch: 700000,  transport: 300000, phone: 200000, housing: 0, other: 0, note: '' },
 };
 
 /* ========================================================
    KPI_ACTUALS — Số liệu KPI thực tế từng tháng (Admin nhập)
    key: 'userId_YYYY-MM'
    ======================================================== */
-const KPI_ACTUALS = {
-  // Ví dụ cấu trúc — Admin nhập qua form trong app
-  // 'u005_2026-04': { posts: 18, videos: 7, tasks_done: 88, approved: true, approvedBy: 'u002', approvedAt: '2026-05-05' }
-};
+const KPI_ACTUALS = {};
 
-/* ============ INITIAL TASKS — Từ TNA Vimove 2026 (GĐ 1: Setup 01/04 - 30/06) ============ */
-const INITIAL_TASKS = [
+/* ============ INITIAL DATA — Đã xóa toàn bộ demo data ============
+   App lấy toàn bộ tasks, leads, assignments từ Firebase Firestore.
+   Không có seed data — mọi dữ liệu là thực tế do team tạo.
+*/
+const INITIAL_TASKS       = [];
+const INITIAL_LEADS       = [];
+const INITIAL_ASSIGNMENTS = [];
 
-  // ===== VP / HẠ TẦNG =====
-  {
-    id: 't001',
-    title: 'Setup cơ sở vật chất & trang thiết bị văn phòng',
-    desc: 'Hoàn thiện cơ sở, loa, màn hình, phòng live, máy tính, camera. Tạo môi trường làm việc chuẩn cho team.',
-    category: 'ops',
-    stage: 'inprogress',
-    priority: 'urgent',
-    assigneeId: 'u002',
-    deadline: getFutureDate(7),
-    createDate: getPastDate(20),
-    stageEnteredAt: getPastDate(15) + 'T08:00:00.000Z',
-    value: 0,
-    channels: [],
-    checklist: [
-      { text: 'Hoàn thiện phòng live stream', done: false, addedBy: 'u002' },
-      { text: 'Lắp đặt màn hình & camera', done: true, addedBy: 'u002', doneBy: 'u002', doneAt: getPastDate(5) },
-      { text: 'Test âm thanh, ánh sáng phòng quay', done: false, addedBy: 'u002' },
-      { text: 'Mua sắm thiết bị còn thiếu', done: false, addedBy: 'u002' },
-    ],
-    subtasks: [],
-    comments: [{ author: 'u002', text: 'Phòng live đang hoàn thiện, dự kiến xong trong tuần này.', date: getPastDate(2) }]
-  },
-
-  // ===== BRAND =====
-  {
-    id: 't002',
-    title: 'Xây dựng bộ Brand Identity Vimove',
-    desc: 'Hoàn thiện bộ nhận diện thương hiệu: logo, mascot, packaging, brand guideline, tone of voice. Deadline 15/05.',
-    category: 'marketing',
-    stage: 'inprogress',
-    priority: 'urgent',
-    assigneeId: 'u011',
-    deadline: '2026-05-15',
-    createDate: getPastDate(18),
-    stageEnteredAt: getPastDate(10) + 'T08:00:00.000Z',
-    value: 0,
-    channels: [],
-    checklist: [
-      { text: 'Hoàn thiện logo chính thức', done: true, addedBy: 'u011', doneBy: 'u011', doneAt: getPastDate(8) },
-      { text: 'Thiết kế mascot Travelking', done: false, addedBy: 'u011' },
-      { text: 'Packaging và nhãn hiệu sản phẩm', done: false, addedBy: 'u011' },
-      { text: 'Brand guideline đầy đủ (màu sắc, font, ngôn ngữ)', done: false, addedBy: 'u011' },
-      { text: 'Mẫu bao bì & quà tặng', done: false, addedBy: 'u012' },
-    ],
-    subtasks: [
-      { id: 'sub001', name: 'Thiết kế bộ charm giới thiệu SP', assigneeId: 'u012', stage: 'inprogress', createdAt: getPastDate(5) },
-    ],
-    comments: [{ author: 'u011', text: 'Logo đã được duyệt, đang vào giai đoạn mascot và packaging.', date: getPastDate(3) }]
-  },
-
-  // ===== SẢN PHẨM =====
-  {
-    id: 't003',
-    title: 'Phát triển bộ sản phẩm Vimove (Basic + Signature + Charm)',
-    desc: 'Xây dựng bộ sản phẩm phễu: vali Basic, Signature Line, bộ charm mascot, bộ phụ kiện, bộ quà tặng. Deadline 08/05.',
-    category: 'ops',
-    stage: 'inprogress',
-    priority: 'urgent',
-    assigneeId: 'u006',
-    deadline: '2026-05-08',
-    createDate: getPastDate(15),
-    stageEnteredAt: getPastDate(12) + 'T09:00:00.000Z',
-    value: 0,
-    channels: [],
-    checklist: [
-      { text: 'Chốt bộ sản phẩm phễu, sp chủ lực', done: true, addedBy: 'u006', doneBy: 'u006', doneAt: getPastDate(10) },
-      { text: 'Phát triển bộ charm: mascot, sticker', done: false, addedBy: 'u006' },
-      { text: 'Bộ quà tặng kèm sản phẩm', done: false, addedBy: 'u007' },
-      { text: 'Packaging đồng bộ toàn bộ dòng', done: false, addedBy: 'u006' },
-      { text: 'Mẫu sản phẩm hoàn chỉnh để chụp ảnh', done: false, addedBy: 'u007' },
-    ],
-    subtasks: [
-      { id: 'sub002', name: 'Thiết kế bộ phụ kiện hành lý', assigneeId: 'u007', stage: 'inprogress', createdAt: getPastDate(8) },
-    ],
-    comments: [{ author: 'u006', text: 'Sản phẩm chủ lực đã chốt, đang làm mẫu bộ charm và quà tặng.', date: getPastDate(4) }]
-  },
-
-  // ===== DIGITAL / WEBSITE =====
-  {
-    id: 't004',
-    title: 'Setup Website Vimove + tích hợp thanh toán & vận chuyển',
-    desc: 'Thiết kế & phát triển website bán hàng Vimove: landing page, tích hợp 4 cổng thanh toán, kết nối API vận chuyển GHN/J&T, SEO. Deadline 15/06.',
-    category: 'ops',
-    stage: 'inprogress',
-    priority: 'high',
-    assigneeId: 'u001',
-    deadline: '2026-06-15',
-    createDate: getPastDate(12),
-    stageEnteredAt: getPastDate(8) + 'T08:00:00.000Z',
-    value: 0,
-    channels: [],
-    checklist: [
-      { text: 'Xây dựng cấu trúc website', done: true, addedBy: 'u001', doneBy: 'u001', doneAt: getPastDate(7) },
-      { text: 'Thiết kế UI/UX landing page', done: false, addedBy: 'u001' },
-      { text: 'Tích hợp Zalo chat + Meta Pixel + TikTok Pixel', done: false, addedBy: 'u001' },
-      { text: 'Cài 4 cổng thanh toán: ZaloPay, VNPay, MoMo, COD', done: false, addedBy: 'u001' },
-      { text: 'Kết nối API vận chuyển GHN / J&T', done: false, addedBy: 'u001' },
-      { text: 'SEO technical + on-page + submit sitemap', done: false, addedBy: 'u001' },
-      { text: 'Test toàn diện 20 điểm → Launch chính thức', done: false, addedBy: 'u001' },
-    ],
-    subtasks: [
-      { id: 'sub003', name: 'Setup TikTok Pixel & Meta Pixel', assigneeId: 'u004', stage: 'idea', createdAt: getPastDate(5) },
-    ],
-    comments: [{ author: 'u001', text: 'Cấu trúc website đã xong, đang vào giai đoạn UI và tích hợp payment.', date: getPastDate(2) }]
-  },
-
-  // ===== NỀN TẢNG KÊNH =====
-  {
-    id: 't005',
-    title: 'Setup TikTok Shop + @travelking.official',
-    desc: 'Mở TikTok Shop, kết nối kho, upload sản phẩm. Tối ưu @travelking.official: bio, avatar, link, ghim video. Test live đầu tiên. Deadline 31/05.',
-    category: 'ops',
-    stage: 'inprogress',
-    priority: 'urgent',
-    assigneeId: 'u001',
-    deadline: '2026-05-31',
-    createDate: getPastDate(10),
-    stageEnteredAt: getPastDate(7) + 'T09:00:00.000Z',
-    value: 0,
-    channels: ['tiktok'],
-    checklist: [
-      { text: 'Đăng ký TikTok Shop Business', done: true, addedBy: 'u001', doneBy: 'u001', doneAt: getPastDate(6) },
-      { text: 'Upload sản phẩm đầu tiên lên Shop', done: false, addedBy: 'u001' },
-      { text: 'Kết nối kho hàng tự động', done: false, addedBy: 'u001' },
-      { text: 'Tối ưu @travelking.official (bio, avatar, link)', done: false, addedBy: 'u005' },
-      { text: 'Test phiên Live đầu tiên', done: false, addedBy: 'u004' },
-    ],
-    subtasks: [],
-    comments: [{ author: 'u001', text: 'TikTok Shop đã được duyệt, đang upload sản phẩm.', date: getPastDate(3) }]
-  },
-  {
-    id: 't006',
-    title: 'Setup Facebook Fanpage + Instagram Vimove',
-    desc: 'Tạo và tối ưu Fanpage Facebook: cover, CTA, thông tin. Setup Instagram, sync FB, tối ưu bio + link in bio. Deadline 31/05.',
-    category: 'marketing',
-    stage: 'inprogress',
-    priority: 'high',
-    assigneeId: 'u005',
-    deadline: '2026-05-31',
-    createDate: getPastDate(8),
-    stageEnteredAt: getPastDate(5) + 'T08:00:00.000Z',
-    value: 0,
-    channels: ['facebook', 'instagram'],
-    checklist: [
-      { text: 'Tạo Fanpage và hoàn thiện thông tin', done: true, addedBy: 'u005', doneBy: 'u005', doneAt: getPastDate(4) },
-      { text: 'Upload cover, avatar đúng brand', done: false, addedBy: 'u005' },
-      { text: 'Setup Instagram & sync với FB', done: false, addedBy: 'u005' },
-      { text: 'Lên lịch content tuần đầu', done: false, addedBy: 'u005' },
-    ],
-    subtasks: [],
-    comments: []
-  },
-  {
-    id: 't007',
-    title: 'Setup Shopee Mall Vimove',
-    desc: 'Mở gian hàng Shopee Mall, tối ưu sản phẩm, setup Shopee Ads ngân sách 100M/tháng. Deadline 31/05.',
-    category: 'ops',
-    stage: 'idea',
-    priority: 'high',
-    assigneeId: 'u001',
-    deadline: '2026-05-31',
-    createDate: getPastDate(5),
-    stageEnteredAt: getPastDate(5) + 'T09:00:00.000Z',
-    value: 0,
-    channels: ['shopee'],
-    checklist: [
-      { text: 'Đăng ký Shopee Mall', done: false, addedBy: 'u001' },
-      { text: 'Upload sản phẩm và mô tả chuẩn SEO Shopee', done: false, addedBy: 'u001' },
-      { text: 'Setup Shopee Ads 100M/tháng', done: false, addedBy: 'u004' },
-    ],
-    subtasks: [],
-    comments: []
-  },
-
-  // ===== CONTENT =====
-  {
-    id: 't008',
-    title: 'Xây dựng Content Strategy tổng thể Vimove',
-    desc: 'Định hướng nội dung 3 tháng: pillar content, tone of voice, content mix (edu/entertain/convert), tần suất đăng mỗi kênh. Phụ trách: Phương.',
-    category: 'marketing',
-    stage: 'inprogress',
-    priority: 'urgent',
-    assigneeId: 'u005',
-    deadline: getFutureDate(5),
-    createDate: getPastDate(7),
-    stageEnteredAt: getPastDate(5) + 'T08:00:00.000Z',
-    value: 0,
-    channels: ['tiktok', 'facebook', 'instagram'],
-    checklist: [
-      { text: 'Xây dựng Content Strategy tổng thể', done: true, addedBy: 'u005', doneBy: 'u005', doneAt: getPastDate(3) },
-      { text: 'Lên Content Calendar T5-T6', done: false, addedBy: 'u005' },
-      { text: 'Xác định Content Pillar (4-5 trụ cột)', done: true, addedBy: 'u005', doneBy: 'u005', doneAt: getPastDate(2) },
-      { text: 'Phối hợp hoàn thiện Brand Guideline', done: false, addedBy: 'u005' },
-      { text: 'Brief & giám sát chụp ảnh sản phẩm', done: false, addedBy: 'u005' },
-    ],
-    subtasks: [
-      { id: 'sub004', name: 'Viết bản mô tả Tone of Voice', assigneeId: 'u005', stage: 'done', createdAt: getPastDate(4) },
-    ],
-    comments: [{ author: 'u005', text: 'Content Strategy đã xây dựng xong, đang bước vào lập Content Calendar.', date: getPastDate(1) }]
-  },
-  {
-    id: 't009',
-    title: 'Sản xuất video khởi đầu kênh @travelking.official',
-    desc: 'Quay Brand Story Video (60-90s TikTok), Factory Tour. Setup 3 kênh AI dùng VEO 3. Tạo bài hát thương hiệu Suno. 5-7 bài Soft Launch teaser.',
-    category: 'marketing',
-    stage: 'idea',
-    priority: 'high',
-    assigneeId: 'u005',
-    deadline: getFutureDate(14),
-    createDate: getPastDate(4),
-    stageEnteredAt: getPastDate(4) + 'T09:00:00.000Z',
-    value: 0,
-    channels: ['tiktok', 'facebook'],
-    checklist: [
-      { text: 'Lên script Brand Story Video', done: false, addedBy: 'u005' },
-      { text: 'Quay Factory Tour tại nhà máy', done: false, addedBy: 'u005' },
-      { text: '10 video đầu tiên kênh Anh Chú Vali', done: false, addedBy: 'u005' },
-      { text: 'Setup 3 kênh AI (dùng VEO 3)', done: false, addedBy: 'u005' },
-      { text: 'Tạo bài hát thương hiệu (dùng Suno)', done: false, addedBy: 'u005' },
-      { text: '5-7 bài content Soft Launch', done: false, addedBy: 'u005' },
-    ],
-    subtasks: [
-      { id: 'sub005', name: 'Quay & dựng 10 video Anh Chú Vali', assigneeId: 'u008', stage: 'idea', createdAt: getPastDate(2) },
-    ],
-    comments: []
-  },
-
-  // ===== KÊNH CÁ NHÂN =====
-  {
-    id: 't010',
-    title: 'Xây kênh cá nhân @anhchuvali (Nguyễn Văn Lợi)',
-    desc: "Xây dựng persona 'Anh Chú Vali' - chuyên gia vali/du lịch. Kế hoạch 2 ngày quay cho 1 tuần, mỗi ngày 2 video đăng kênh.",
-    category: 'marketing',
-    stage: 'idea',
-    priority: 'high',
-    assigneeId: 'u008',
-    deadline: getFutureDate(21),
-    createDate: getPastDate(3),
-    stageEnteredAt: getPastDate(3) + 'T09:00:00.000Z',
-    value: 0,
-    channels: ['tiktok'],
-    checklist: [
-      { text: 'Tạo kênh & setup thông tin', done: false, addedBy: 'u008' },
-      { text: 'Lên kịch bản 10 video đầu tiên (theo style Taki)', done: false, addedBy: 'u008' },
-      { text: 'Quay & dựng video đầu tiên', done: false, addedBy: 'u008' },
-      { text: 'Nghiên cứu bộ hashtag cho kênh', done: false, addedBy: 'u008' },
-      { text: 'Set lịch đăng mấy ngày/tuần', done: false, addedBy: 'u008' },
-    ],
-    subtasks: [],
-    comments: []
-  },
-
-  // ===== HR / TUYỂN DỤNG =====
-  {
-    id: 't011',
-    title: 'Tuyển dụng & đào tạo team mới (11 người)',
-    desc: 'Tuyển team mới: 1 CTV nhân sự, 1 content, 2 TTS content xây kênh, 2 media, 1 digital, 4 nhân viên livestream. Lộ trình đào tạo AI, sản phẩm, Ads.',
-    category: 'hr',
-    stage: 'inprogress',
-    priority: 'urgent',
-    assigneeId: 'u003',
-    deadline: getFutureDate(14),
-    createDate: getPastDate(14),
-    stageEnteredAt: getPastDate(10) + 'T09:00:00.000Z',
-    value: 0,
-    channels: ['facebook'],
-    checklist: [
-      { text: 'Đăng tin tuyển dụng trên FB Groups', done: true, addedBy: 'u003', doneBy: 'u003', doneAt: getPastDate(10) },
-      { text: 'Phỏng vấn & chọn nhân viên livestream (4)', done: false, addedBy: 'u003' },
-      { text: 'Tuyển 2 TTS content xây kênh', done: false, addedBy: 'u003' },
-      { text: 'Lên lộ trình đào tạo AI & sản phẩm', done: false, addedBy: 'u003' },
-      { text: 'Onboard & phân công team', done: false, addedBy: 'u003' },
-    ],
-    subtasks: [
-      { id: 'sub006', name: 'Soạn tài liệu training nội bộ', assigneeId: 'u003', stage: 'inprogress', createdAt: getPastDate(7) },
-    ],
-    comments: [{ author: 'u003', text: 'Đã đăng tin tuyển dụng, đang phỏng vấn. Kế hoạch có đủ team trước 15/5.', date: getPastDate(3) }]
-  },
-
-  // ===== EVENTS / LAUNCH =====
-  {
-    id: 't012',
-    title: 'Soft Launch + Unboxing Day: 100 PR Kit cho KOL/KOC',
-    desc: "T5: Gửi 100 PR kit KOL/KOC. Campaign 'Người đầu tiên' - 1.000 KH đầu tiên: giá + quà đặc biệt. KPI: 1.5 tỷ doanh số, 1.500+ đơn, TikTok 15K followers, FB 10K likes.",
-    category: 'marketing',
-    stage: 'idea',
-    priority: 'high',
-    assigneeId: 'u002',
-    deadline: '2026-05-31',
-    createDate: getPastDate(6),
-    stageEnteredAt: getPastDate(6) + 'T08:00:00.000Z',
-    value: 1500,
-    channels: ['tiktok', 'facebook', 'instagram'],
-    checklist: [
-      { text: 'Lập danh sách 50 KOL/KOC phù hợp', done: false, addedBy: 'u003' },
-      { text: 'Soạn brief + bộ PR kit gửi KOL', done: false, addedBy: 'u005' },
-      { text: 'Chuẩn bị gift box & packaging đặc biệt', done: false, addedBy: 'u006' },
-      { text: "Thiết lập campaign 'Người đầu tiên'", done: false, addedBy: 'u003' },
-      { text: 'Setup đơn hàng & voucher ưu đãi', done: false, addedBy: 'u001' },
-    ],
-    subtasks: [
-      { id: 'sub007', name: 'Đơn hàng KOL gift box (50 hộp)', assigneeId: 'u007', stage: 'idea', createdAt: getPastDate(3) },
-    ],
-    comments: []
-  },
-
-  // ===== VẬN HÀNH =====
-  {
-    id: 't013',
-    title: 'Setup quy trình vận hành đơn hàng hàng ngày',
-    desc: 'SOP xử lý đơn: tiếp nhận + xác nhận từ Pancake, đặt đơn Bravo, phối hợp kho + vận chuyển GHN/J&T, xử lý hoàn, chăm sóc KH và báo cáo daily.',
-    category: 'ops',
-    stage: 'idea',
-    priority: 'high',
-    assigneeId: 'u007',
-    deadline: '2026-06-15',
-    createDate: getPastDate(5),
-    stageEnteredAt: getPastDate(5) + 'T08:00:00.000Z',
-    value: 0,
-    channels: [],
-    checklist: [
-      { text: 'Xây SOP quy trình xử lý đơn hàng', done: false, addedBy: 'u007' },
-      { text: 'Setup Pancake để tập trung quản lý đơn', done: false, addedBy: 'u001' },
-      { text: 'Phối hợp kho + vận chuyển GHN/J&T', done: false, addedBy: 'u007' },
-      { text: 'Quy trình xử lý hàng hoàn', done: false, addedBy: 'u007' },
-      { text: 'Báo cáo daily trên Bravo', done: false, addedBy: 'u007' },
-    ],
-    subtasks: [],
-    comments: []
-  },
-];
-
-// ============ CRM LEADS ============
+// ============ CRM STAGES ============
 const CRM_STAGES = [
   { id: 'new',       name: 'Khách mới',       color: '#94A3B8' },
   { id: 'contacted', name: 'Đã tiếp cận',     color: '#3B82F6' },
@@ -713,150 +386,25 @@ const CRM_STAGES = [
   { id: 'won',       name: 'Đã chốt ✅',      color: '#10B981' },
 ];
 
-const INITIAL_LEADS = [
-  { id: 'l001', name: 'Chị Hoa Nguyễn', phone: '0901234567', email: 'hoa@gmail.com', channel: 'facebook', product: 'Gói Premium', stage: 'nurturing', note: 'Quan tâm sp, hỏi thêm về chính sách', date: getPastDate(3), followUpDate: getFutureDate(1), dealValue: 15, assigneeId: 'u002', contactHistory: [{ note: 'Đã gọi điện lần 1, hẹn gọi lại', date: getPastDate(2), by: 'u002' }], tags: ['hot'] },
-  { id: 'l002', name: 'Anh Tuấn Phạm', phone: '0912345678', email: '', channel: 'zalo', product: 'Gói VIP', stage: 'closing', note: 'Sắp quyết định mua, cần thêm ưu đãi', date: getPastDate(1), followUpDate: getFutureDate(0), dealValue: 25, assigneeId: 'u003', contactHistory: [{ note: 'Gửi báo giá chi tiết', date: getPastDate(1), by: 'u003' }], tags: ['vip', 'hot'] },
-  { id: 'l003', name: 'Em Lan Trần', phone: '0923456789', email: '', channel: 'tiktok', product: 'Gói Basic', stage: 'new', note: 'Comment trên TikTok, chưa nhắn tin', date: getPastDate(0), followUpDate: getFutureDate(2), dealValue: 5, assigneeId: 'u003', contactHistory: [], tags: [] },
-  { id: 'l004', name: 'Chị Mai Lê', phone: '0934567890', email: 'mai@company.vn', channel: 'referral', product: 'Gói Premium', stage: 'won', note: 'Đã chốt 2 sp, KH thân thiết', date: getPastDate(5), followUpDate: null, dealValue: 30, assigneeId: 'u002', contactHistory: [{ note: 'Hoàn tất hợp đồng, chuyển khoản đủ', date: getPastDate(3), by: 'u002' }], tags: ['vip'] },
-  { id: 'l005', name: 'Anh Hùng Võ', phone: '0945678901', email: '', channel: 'facebook', product: 'Gói VIP', stage: 'contacted', note: 'Đã gửi brochure, chờ phản hồi', date: getPastDate(2), followUpDate: getFutureDate(1), dealValue: 20, assigneeId: 'u002', contactHistory: [], tags: [] },
-  { id: 'l006', name: 'Chị Nga Bùi', phone: '0956789012', email: '', channel: 'instagram', product: 'Gói Basic', stage: 'nurturing', note: 'Follow IG, like nhiều bài', date: getPastDate(4), followUpDate: getPastDate(1), dealValue: 8, assigneeId: 'u003', contactHistory: [], tags: ['cold'] },
-];
-
-// ============ INITIAL ASSIGNMENTS (Giao việc demo) ============
-const INITIAL_ASSIGNMENTS = [
-  {
-    id: 'asgn001',
-    title: 'Thiết kế banner TikTok tuần 18 (Vali Basic)',
-    desc: 'Tạo 3 banner ảnh 1080x1920 cho TikTok ra mắt vali Basic. Style trẻ trung, màu xanh Vimove, font Manrope.',
-    assignedTo: 'u011',   // Phạm Thanh Mai
-    assignedBy: 'u002',   // Ngân
-    priority: 'urgent',
-    category: 'marketing',
-    deadline: getFutureDate(2),
-    dueTime: '17:00',
-    status: 'accepted',
-    note: '',
-    createdAt: getPastDate(1) + 'T08:00:00.000Z',
-    updatedAt: getPastDate(0) + 'T09:00:00.000Z',
-    completedAt: null,
-    comments: [
-      { author: 'u002', text: 'Việc được giao mới.', date: getPastDate(1) },
-      { author: 'u011', text: 'Đã nhận việc, đang lên concept.', date: getPastDate(0) },
-    ],
-  },
-  {
-    id: 'asgn002',
-    title: 'Lên lịch Content Calendar tháng 5 — TikTok + Facebook',
-    desc: 'Lập Content Calendar cho T5/2026: 30 bài TikTok + 20 bài Facebook. Mỗi bài cần có chủ đề, format, CTA rõ ràng.',
-    assignedTo: 'u009',   // Lê Thị Ngân
-    assignedBy: 'u005',   // Phương
-    priority: 'high',
-    category: 'marketing',
-    deadline: getFutureDate(4),
-    dueTime: '18:00',
-    status: 'in_progress',
-    note: '',
-    createdAt: getPastDate(3) + 'T09:00:00.000Z',
-    updatedAt: getPastDate(1) + 'T10:00:00.000Z',
-    completedAt: null,
-    comments: [
-      { author: 'u005', text: 'Việc được giao mới.', date: getPastDate(3) },
-      { author: 'u009', text: 'Đã bắt đầu lên lịch, khoảng 40% xong.', date: getPastDate(1) },
-    ],
-  },
-  {
-    id: 'asgn003',
-    title: 'Chụp ảnh sản phẩm vali Basic (bộ ảnh background trắng)',
-    desc: 'Chụp full bộ ảnh vali Basic cho website + Shopee: 10 góc khác nhau, background trắng, ảnh chi tiết khóa/bánh xe.',
-    assignedTo: 'u012',   // Khuất Thị Dung
-    assignedBy: 'u002',   // Ngân
-    priority: 'high',
-    category: 'ops',
-    deadline: getFutureDate(5),
-    dueTime: '12:00',
-    status: 'pending',
-    note: '',
-    createdAt: getPastDate(0) + 'T14:00:00.000Z',
-    updatedAt: getPastDate(0) + 'T14:00:00.000Z',
-    completedAt: null,
-    comments: [
-      { author: 'u002', text: 'Việc được giao mới.', date: getPastDate(0) },
-    ],
-  },
-  {
-    id: 'asgn004',
-    title: 'Đăng tin tuyển dụng lên Facebook Groups + JobStreet',
-    desc: 'Viết và đăng tin tuyển 2 nhân viên Live TikTok trên các nhóm FB tuyển dụng TPHCM và JobStreet.',
-    assignedTo: 'u003',   // Trang
-    assignedBy: 'u002',   // Ngân
-    priority: 'medium',
-    category: 'hr',
-    deadline: getFutureDate(1),
-    dueTime: '09:00',
-    status: 'done',
-    note: 'Đã đăng 5 nhóm Facebook + JobStreet, nhận được 12 CV.',
-    createdAt: getPastDate(5) + 'T08:00:00.000Z',
-    updatedAt: getPastDate(2) + 'T11:00:00.000Z',
-    completedAt: getPastDate(2) + 'T11:00:00.000Z',
-    comments: [
-      { author: 'u002', text: 'Việc được giao mới.', date: getPastDate(5) },
-      { author: 'u003', text: 'Đã đăng đầy đủ. Nhận 12 CV, đang sắp xếp phỏng vấn.', date: getPastDate(2) },
-    ],
-  },
-  {
-    id: 'asgn005',
-    title: 'Viết 5 video script style Taki cho @anhchuvali',
-    desc: 'Viết kịch bản 5 video TikTok theo phong cách Taki (kể chuyện, hài hước, có hook đầu mạnh) cho kênh @anhchuvali.',
-    assignedTo: 'u010',   // Lê Thị Anh Thái
-    assignedBy: 'u005',   // Phương
-    priority: 'medium',
-    category: 'marketing',
-    deadline: getFutureDate(3),
-    dueTime: '17:00',
-    status: 'accepted',
-    note: '',
-    createdAt: getPastDate(2) + 'T10:00:00.000Z',
-    updatedAt: getPastDate(1) + 'T15:00:00.000Z',
-    completedAt: null,
-    comments: [
-      { author: 'u005', text: 'Việc được giao mới.', date: getPastDate(2) },
-      { author: 'u010', text: 'Đã nhận, đang nghiên cứu kênh Taki để lấy cảm hứng.', date: getPastDate(1) },
-    ],
-  },
-  {
-    id: 'asgn006',
-    title: 'Setup Meta Pixel + TikTok Pixel lên website',
-    desc: 'Cài đặt và xác minh Meta Pixel, TikTok Pixel trên website Vimove. Test event: PageView, AddToCart, Purchase.',
-    assignedTo: 'u004',   // Dương Minh Đức
-    assignedBy: 'u001',   // Tuyền
-    priority: 'urgent',
-    category: 'ops',
-    deadline: getFutureDate(2),
-    dueTime: '12:00',
-    status: 'in_progress',
-    note: '',
-    createdAt: getPastDate(2) + 'T08:00:00.000Z',
-    updatedAt: getPastDate(0) + 'T08:00:00.000Z',
-    completedAt: null,
-    comments: [
-      { author: 'u001', text: 'Việc được giao mới.', date: getPastDate(2) },
-      { author: 'u004', text: 'Đã cài Meta Pixel xong, đang test TikTok Pixel.', date: getPastDate(0) },
-    ],
-  },
-];
-
 // ============ REVENUE DATA (Monthly) ============
+// Dữ liệu doanh thu được tính động từ tasks thực tế (stage=done, value>0)
+// Không dùng số cứng nữa
 const MONTHLY_REVENUE = [
-  { month: 'T1', target: 8.8, actual: 7.2  },
-  { month: 'T2', target: 8.8, actual: 9.1  },
-  { month: 'T3', target: 8.8, actual: 8.5  },
-  { month: 'T4', target: 8.8, actual: 10.2 },
-  { month: 'T5', target: 8.8, actual: null  },
-  { month: 'T6', target: 8.8, actual: null  },
+  { month: 'T1', target: 8.8, actual: null },
+  { month: 'T2', target: 8.8, actual: null },
+  { month: 'T3', target: 8.8, actual: null },
+  { month: 'T4', target: 8.8, actual: null },
+  { month: 'T5', target: 8.8, actual: null },
+  { month: 'T6', target: 8.8, actual: null },
+  { month: 'T7', target: 8.8, actual: null },
+  { month: 'T8', target: 8.8, actual: null },
+  { month: 'T9', target: 8.8, actual: null },
+  { month: 'T10', target: 8.8, actual: null },
+  { month: 'T11', target: 8.8, actual: null },
+  { month: 'T12', target: 8.8, actual: null },
 ];
 
-// Chỉ tính các tháng đã có doanh thu thực tế (T1 - T4)
-const TOTAL_ACTUAL_REVENUE_STATIC = MONTHLY_REVENUE.filter(m => m.actual !== null).reduce((s,m) => s + m.actual, 0);
+const TOTAL_ACTUAL_REVENUE_STATIC = 0;
 
 // ============ DYNAMIC REVENUE (tính từ tasks thực tế) ============
 
@@ -866,7 +414,7 @@ const TOTAL_ACTUAL_REVENUE_STATIC = MONTHLY_REVENUE.filter(m => m.actual !== nul
  */
 function getDynamicRevenue() {
   const monthlyMap = {};
-  appState.tasks
+  (appState.tasks || [])
     .filter(t => t.stage === 'done' && t.value > 0)
     .forEach(t => {
       const doneDate = new Date(t.stageEnteredAt || t.deadline || t.createDate || Date.now());
@@ -878,33 +426,47 @@ function getDynamicRevenue() {
     ...m,
     actual: monthlyMap[m.month] !== undefined
       ? parseFloat(monthlyMap[m.month].toFixed(2))
-      : m.actual
+      : null  // null = chưa có data, không dùng số giả
   }));
 }
 
 /**
- * Tổng doanh thu thực tế (ưu tiên từ tasks, fallback sang static data)
+ * Tổng doanh thu thực tế — chỉ từ tasks, không fallback về số cứng nữa
  */
 function getTotalActualRevenue() {
-  const fromTasks = appState.tasks
+  return (appState.tasks || [])
     .filter(t => t.stage === 'done' && t.value > 0)
     .reduce((sum, t) => sum + t.value / 1000, 0);
-  // Nếu chưa có tasks nào done có value, fallback sang static
-  return fromTasks > 0 ? fromTasks : TOTAL_ACTUAL_REVENUE_STATIC;
 }
 
-// Backward compat: giữ tên TOTAL_ACTUAL_REVENUE cho dashboard cũ
-let TOTAL_ACTUAL_REVENUE = TOTAL_ACTUAL_REVENUE_STATIC;
+let TOTAL_ACTUAL_REVENUE = 0; // Backward compat — luôn = 0 cho đến khi có tasks done có value
 
 // ============ CHANNEL PERFORMANCE ============
-const CHANNEL_PERFORMANCE = {
-  facebook:  { leads: 145, orders: 38, revenue: 18.5 },
-  zalo:      { leads: 89,  orders: 25, revenue: 12.3 },
-  tiktok:    { leads: 67,  orders: 19, revenue: 9.8  },
-  instagram: { leads: 31,  orders: 8,  revenue: 4.2  },
-  shopee:    { leads: 22,  orders: 11, revenue: 5.4  },
-  referral:  { leads: 18,  orders: 14, revenue: 7.1  },
-};
+// Tính động từ CRM leads thực tế, không dùng số cứng
+function getChannelPerformance() {
+  const perf = {};
+  Object.keys(CHANNELS).forEach(ch => {
+    perf[ch] = { leads: 0, orders: 0, revenue: 0 };
+  });
+  (appState.leads || []).forEach(lead => {
+    const ch = lead.channel;
+    if (!ch || !perf[ch]) return;
+    perf[ch].leads++;
+    if (lead.stage === 'won') {
+      perf[ch].orders++;
+      perf[ch].revenue += (lead.dealValue || 0) / 1000; // triệu → tỷ
+    }
+  });
+  return perf;
+}
+
+// Backward compat — tự động tính khi được truy cập
+const CHANNEL_PERFORMANCE = new Proxy({}, {
+  get(_, prop) {
+    return getChannelPerformance()[prop] || { leads: 0, orders: 0, revenue: 0 };
+  }
+});
+
 
 // ============ STATE ============
 let appState = {
@@ -1030,6 +592,50 @@ function initData() {
 function resetAllData() {
   if (!confirm('Vùng nguy hiểm: Tính năng Xóa Cloud chưa được mở.')) return;
 }
+
+/**
+ * Xóa TOÀN BỘ tasks, leads, assignments demo trên Firebase
+ * Chỉ Admin mới có quyền gọi hàm này
+ */
+async function purgeAllFirebaseData() {
+  if (currentUser?.role !== 'admin') {
+    showToast('⛔ Chỉ Admin mới có quyền xóa dữ liệu!', 'error');
+    return;
+  }
+  if (!confirm('⚠️ CẢNH BÁO: Hành động này sẽ XÓA VĨNH VIỄN toàn bộ CVC, Leads và Giao việc khỏi Firebase.
+
+Chỉ thực hiện khi muốn bắt đầu lại với data thật.
+
+Bạn chắc chắn muốn tiếp tục?')) return;
+  if (!confirm('⚠️ LẦN CUỐI XÁC NHẬN: Dữ liệu sẽ KHÔNG thể khôi phục. Tiếp tục?')) return;
+
+  const db = window.firebaseDB;
+  if (!db) { showToast('⚠️ Không kết nối Firebase!', 'error'); return; }
+
+  showToast('🗑️ Đang xóa dữ liệu cũ khỏi Cloud...', 'info');
+
+  try {
+    const collections = ['viwork_tasks', 'viwork_leads', 'viwork_assignments', 'viwork_requests'];
+    let totalDeleted = 0;
+
+    for (const col of collections) {
+      const snap = await db.collection(col).get();
+      if (snap.empty) continue;
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      totalDeleted += snap.size;
+      console.log('[PURGE] Deleted', snap.size, 'docs from', col);
+    }
+
+    showToast('✅ Đã xóa ' + totalDeleted + ' bản ghi cũ! App sẽ bắt đầu với data thật.', 'success');
+    setTimeout(() => window.location.reload(), 2500);
+  } catch(e) {
+    console.error('[PURGE] Error:', e);
+    showToast('⚠️ Lỗi khi xóa: ' + e.message, 'error');
+  }
+}
+
 
 async function cleanupZombieUsers() {
   if (!confirm('⚠️ Hành động này sẽ QUÉT Firebase và XÓA VĨNH VIỄN các tài khoản rác (không nằm trong danh sách chuẩn 16 người).\nBạn có chắc chắn muốn dọn dẹp?')) return;
