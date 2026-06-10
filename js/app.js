@@ -55,6 +55,11 @@ function initApp() {
       }
     });
 
+    // KPI Engine: Tính KPI động ngay sau khi data load xong
+    if (typeof refreshAllMemberKpi === 'function') {
+      refreshAllMemberKpi();
+    }
+
     // Popup cảnh báo công việc khi đăng nhập
     // Delay 1.2s để Firebase realtime data kịp sync trước khi hiển thị
     if (typeof showLoginAlert === 'function' && typeof shouldShowLoginAlert === 'function') {
@@ -64,6 +69,7 @@ function initApp() {
     }
   });
 }
+
 
 // ============ MODULE NAVIGATION ============
 function showModule(module) {
@@ -107,8 +113,16 @@ function showModule(module) {
     case 'workflow':    renderWorkflow();    break;
     case 'mytasks':     renderMyTasks();     break;
     case 'crm':         renderCRM();         break;
-    case 'performance': renderPerformance(); break;
-    case 'team':        renderTeamPage();    break;
+    case 'performance':
+      // Cập nhật KPI live trước khi render
+      if (typeof refreshAllMemberKpi === 'function') refreshAllMemberKpi();
+      renderPerformance();
+      break;
+    case 'team':
+      // Cập nhật KPI live trước khi render leaderboard/income
+      if (typeof refreshAllMemberKpi === 'function') refreshAllMemberKpi();
+      renderTeamPage();
+      break;
     case 'requests':    renderRequests();    break;
     case 'assignments': renderAssignments(); break;
     case 'attendance':  renderAttendance();  break;
@@ -764,6 +778,9 @@ function startUserListener() {
     // Debounce UI refresh: chi render sau khi events on dinh 1.5s
     clearTimeout(_userListenerTimer);
     _userListenerTimer = setTimeout(() => {
+      // Cập nhật KPI động sau khi user data thay đổi
+      if (typeof refreshAllMemberKpi === 'function') refreshAllMemberKpi();
+
       const teamContainer = document.getElementById('teamPageContainer');
       if (teamContainer && typeof renderTeamPage === 'function') {
         renderTeamPage();

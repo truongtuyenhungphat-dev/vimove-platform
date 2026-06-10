@@ -123,7 +123,14 @@ function renderOrgChartTab(el) {
 
   const renderNode = (pos, showChildren = false) => {
     const members  = pos.members?.map(id => TEAM_MEMBERS.find(m => m.id === id)).filter(Boolean) || [];
-    const avgKpi   = members.length ? Math.round(members.reduce((s, m) => s + m.kpi, 0) / members.length) : 0;
+    // Tính KPI trung bình từ data thực tế
+    const ym = getCurrentYearMonth ? getCurrentYearMonth() : `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const memberKpis = members.map(m => {
+      if (typeof calcLiveKpiPct === 'function') return calcLiveKpiPct(m.id, ym);
+      if (typeof calcKpiScore === 'function') return calcKpiScore(m.id, ym)?.kpiTotal ?? m.kpi ?? 0;
+      return m.kpi ?? 0;
+    });
+    const avgKpi   = memberKpis.length ? Math.round(memberKpis.reduce((s, k) => s + k, 0) / memberKpis.length) : 0;
     const kpiColor = avgKpi >= 90 ? '#10B981' : avgKpi >= 70 ? '#F59E0B' : '#EF4444';
 
     return `
@@ -186,7 +193,10 @@ function showPositionPopup(posId) {
     <p class="org-popup-desc">${pos.description}</p>
     <div class="org-popup-members">
       ${members.map(m => {
-        const kpiColor = m.kpi >= 90 ? '#10B981' : m.kpi >= 70 ? '#F59E0B' : '#EF4444';
+        const ym = getCurrentYearMonth ? getCurrentYearMonth() : `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+        const liveKpi = typeof calcLiveKpiPct === 'function' ? calcLiveKpiPct(m.id, ym)
+          : (typeof calcKpiScore === 'function' ? (calcKpiScore(m.id, ym)?.kpiTotal ?? m.kpi) : m.kpi);
+        const kpiColor = liveKpi >= 90 ? '#10B981' : liveKpi >= 70 ? '#F59E0B' : '#EF4444';
         const canSeeIncome = currentUser?.role === 'admin' || currentUser?.role === 'manager' || m.id === currentUser?.id;
         const inc = canSeeIncome ? calcIncome(m.id) : null;
         return `
@@ -197,7 +207,7 @@ function showPositionPopup(posId) {
               <div style="font-size:11px;color:var(--c-text-3)">${escHtml(m.department||'')}</div>
             </div>
             <div style="text-align:right">
-              <div style="font-size:13px;font-weight:700;color:${kpiColor}">${m.kpi}% KPI</div>
+              <div style="font-size:13px;font-weight:700;color:${kpiColor}">${liveKpi}% KPI</div>
               ${inc ? `<div style="font-size:11px;color:#10B981">~${fmtVND(inc.total_income)}</div>` : ''}
             </div>
           </div>
@@ -274,7 +284,11 @@ function renderPositionDetail(pos) {
   const parent  = pos.reportsTo ? POSITIONS.find(p => p.id === pos.reportsTo) : null;
 
   const memberRows = members.map(m => {
-    const kpiColor = m.kpi >= 90 ? '#10B981' : m.kpi >= 70 ? '#F59E0B' : '#EF4444';
+    const ym = getCurrentYearMonth ? getCurrentYearMonth() : `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const liveKpi = typeof calcLiveKpiPct === 'function' ? calcLiveKpiPct(m.id, ym)
+      : (typeof calcKpiScore === 'function' ? (calcKpiScore(m.id, ym)?.kpiTotal ?? m.kpi) : m.kpi);
+    const kpiColor = liveKpi >= 90 ? '#10B981' : liveKpi >= 70 ? '#F59E0B' : '#EF4444';
+    const tasksDone = typeof getTasksDoneInMonth === 'function' ? getTasksDoneInMonth(m.id, ym).length : 0;
     const canSeeIncome = currentUser?.role === 'admin' || currentUser?.role === 'manager' || m.id === currentUser?.id;
     const inc = canSeeIncome ? calcIncome(m.id) : null;
     return `
@@ -282,14 +296,14 @@ function renderPositionDetail(pos) {
         <div class="pos-member-ava">${m.avatar}</div>
         <div style="flex:1">
           <div style="font-weight:600;font-size:13px">${escHtml(m.name)}</div>
-          <div style="font-size:11px;color:var(--c-text-3)">${escHtml(m.department||'')}</div>
+          <div style="font-size:11px;color:var(--c-text-3)">${escHtml(m.department||'')} · ${tasksDone} CVC xong tháng này</div>
         </div>
         <div style="display:flex;gap:12px;align-items:center">
           <div>
             <div class="kpi-bar-wrap" style="width:80px;margin-bottom:2px">
-              <div class="kpi-bar" style="width:${m.kpi}%;background:${kpiColor}"></div>
+              <div class="kpi-bar" style="width:${Math.min(liveKpi,100)}%;background:${kpiColor}"></div>
             </div>
-            <div style="font-size:10px;color:${kpiColor};font-weight:600">${m.kpi}% KPI</div>
+            <div style="font-size:10px;color:${kpiColor};font-weight:600">${liveKpi}% KPI</div>
           </div>
           ${inc ? `<div style="font-size:12px;font-weight:700;color:#10B981">~${fmtVND(inc.total_income)}/tháng</div>` : ''}
         </div>

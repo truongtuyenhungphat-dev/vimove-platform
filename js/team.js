@@ -8,22 +8,61 @@ function renderTeam() {
   if (!board) return;
 
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'manager';
-  const sorted = [...TEAM_MEMBERS].sort((a,b) => b.revenue - a.revenue);
+  const now       = new Date();
+  const ym        = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const ymLabel   = `T${now.getMonth()+1}/${now.getFullYear()}`;
   const rankEmoji = ['🥇','🥈','🥉'];
 
-  board.innerHTML = sorted.map((m, i) => {
-    const medal    = rankEmoji[i] || `#${i+1}`;
-    const kpiColor = m.kpi >= 90 ? '#10B981' : m.kpi >= 70 ? '#F59E0B' : '#EF4444';
-    const isMe     = m.id === currentUser?.id;
+  // Tính KPI live cho từng member, cache để tránh tính lại nhiều lần
+  const memberWithLiveKpi = TEAM_MEMBERS.map(m => {
+    // Ưu tiên: KPI Engine (live) → calcKpiScore → member.kpi cứng
+    let liveKpi = 0;
+    if (typeof calcLiveKpiPct === 'function') {
+      liveKpi = calcLiveKpiPct(m.id, ym);
+    } else if (typeof calcKpiScore === 'function') {
+      const score = calcKpiScore(m.id, ym);
+      liveKpi = score?.kpiTotal ?? m.kpi ?? 0;
+    } else {
+      liveKpi = m.kpi ?? 0;
+    }
 
-    // Nút chỉnh sửa: Admin thấy tất cả, Manager thấy staff của mình
+    // Số CVC hoàn thành thực tế tháng này
+    const tasksDone = typeof getTasksDoneInMonth === 'function'
+      ? getTasksDoneInMonth(m.id, ym).length
+      : (m.tasks || 0);
+
+    // Revenue tháng này từ tasks có value
+    const revenue = typeof getRevenueInMonth === 'function'
+      ? getRevenueInMonth(m.id, ym)
+      : 0;
+
+    return { ...m, liveKpi, tasksDone, revenue };
+  });
+
+  // Sort theo KPI live (cao nhất lên đầu)
+  const sorted = [...memberWithLiveKpi].sort((a, b) => b.liveKpi - a.liveKpi);
+
+  board.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:0 4px">
+      <div style="font-size:13px;font-weight:700;color:var(--c-text-2)">
+        🏆 Leaderboard KPI — <span style="color:var(--c-primary)">${ymLabel}</span>
+      </div>
+      <div style="font-size:11px;color:var(--c-text-3)">⚡ Tính theo data thực tế</div>
+    </div>
+  ` + sorted.map((m, i) => {
+    const medal    = rankEmoji[i] || `#${i+1}`;
+    const kpiColor = m.liveKpi >= 90 ? '#10B981' : m.liveKpi >= 70 ? '#F59E0B' : '#EF4444';
+    const isMe     = m.id === currentUser?.id;
+    const tier     = typeof getKpiTier === 'function' ? getKpiTier(m.liveKpi) : null;
+
+    // Nút chỉnh sửa
     const canEditMember = canManage && !( m.role === 'admin' && currentUser?.role !== 'admin' );
     const editBtn = canEditMember ? `
       <button class="member-edit-btn" onclick="openEditMemberModal('${m.id}')" title="Chỉnh sửa thành viên">
         ✏️
       </button>` : '';
 
-    // Nút xóa: Admin xóa tất cả, Manager xóa staff
+    // Nút xóa
     const myRole = currentUser?.role;
     const canDelete = m.id !== currentUser?.id && (
       myRole === 'admin' ||
@@ -33,6 +72,11 @@ function renderTeam() {
       <button class="member-delete-btn" onclick="confirmDeleteMember('${m.id}')" title="Xóa thành viên">
         🗑️
       </button>` : '';
+
+    // Hiển thị revenue
+    const revenueDisplay = m.revenue > 0
+      ? (m.revenue >= 1000000 ? (m.revenue/1000000).toFixed(1)+'M' : m.revenue.toLocaleString('vi-VN')+'₫')
+      : '—';
 
     return `
       <div class="member-card${isMe ? ' member-card-me' : ''}">
@@ -45,30 +89,32 @@ function renderTeam() {
         <div class="member-badge-role">${getRoleLabel(m.role)}</div>
         <div class="member-stats">
           <div class="m-stat">
-            <div class="m-stat-val" style="color:#10B981">${m.revenue}B</div>
+            <div class="m-stat-val" style="color:#10B981">${revenueDisplay}</div>
             <div class="m-stat-lbl">Doanh thu</div>
           </div>
           <div class="m-stat">
-            <div class="m-stat-val" style="color:${kpiColor}">${m.kpi}%</div>
-            <div class="m-stat-lbl">KPI</div>
+            <div class="m-stat-val" style="color:${kpiColor}">${m.liveKpi}%</div>
+            <div class="m-stat-lbl">KPI ${ymLabel}</div>
           </div>
           <div class="m-stat">
-            <div class="m-stat-val">${m.tasks}</div>
-            <div class="m-stat-lbl">CVC</div>
+            <div class="m-stat-val">${m.tasksDone}</div>
+            <div class="m-stat-lbl">CVC xong</div>
           </div>
         </div>
         <div style="margin-top:12px;">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--c-text-3);margin-bottom:4px">
-            <span>KPI tháng này</span><span style="color:${kpiColor}">${m.kpi}%</span>
+            <span>KPI ${ymLabel} ${tier ? tier.emoji : ''} ${tier ? tier.label : ''}</span>
+            <span style="color:${kpiColor};font-weight:700">${m.liveKpi}%</span>
           </div>
           <div class="kpi-bar-wrap">
-            <div class="kpi-bar" style="width:${m.kpi}%;background:${kpiColor}"></div>
+            <div class="kpi-bar" style="width:${Math.min(m.liveKpi, 100)}%;background:${kpiColor}"></div>
           </div>
         </div>
       </div>
     `;
   }).join('');
 }
+
 
 // ============ OPEN EDIT MODAL ============
 function openEditMemberModal(memberId) {

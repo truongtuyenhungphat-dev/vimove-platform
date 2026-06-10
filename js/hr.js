@@ -32,16 +32,34 @@ function calcKpiScore(userId, yearMonth) {
     const d = new Date(t.stageEnteredAt);
     return d.getFullYear() === year && d.getMonth() + 1 === month;
   });
-  const tasksDonePct = pos.kpiTargets.find(k => k.metric === 'tasks_done')
-    ? Math.min(Math.round((tasks.length / 10) * 100), 130)
-    : null;
+
+  // Tính assignments done tháng này
+  const assignsDone = (appState?.assignments || []).filter(a => {
+    if (a.assignedTo !== userId || a.status !== 'done') return false;
+    const d = a.completedAt ? new Date(a.completedAt) : (a.updatedAt ? new Date(a.updatedAt) : null);
+    if (!d) return false;
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  });
 
   let totalWeight = 0, totalScore = 0;
   const breakdown = pos.kpiTargets.map(k => {
     let actual, pct;
     if (k.metric === 'tasks_done') {
+      // Dùng k.target từ kpiTargets, fallback 10 nếu không có
+      const target = k.target && k.target > 0 ? k.target : 10;
       actual = tasks.length;
-      pct    = Math.min(Math.round((actual / 10) * 100), 130);
+      pct    = Math.min(Math.round((actual / target) * 100), 130);
+    } else if (k.metric === 'assignments_done') {
+      const target = k.target && k.target > 0 ? k.target : 5;
+      actual = assignsDone.length;
+      pct    = Math.min(Math.round((actual / target) * 100), 130);
+    } else if (k.metric === 'revenue' || k.metric === 'revenue_personal') {
+      // Thử tính từ tasks có value trước, rồi fallback actuals Admin nhập
+      const taskRevenue = tasks.reduce((sum, t) => sum + (t.value || 0), 0);
+      actual = taskRevenue > 0 ? taskRevenue : (actuals[k.metric] ?? null);
+      pct    = actual !== null && actual > 0
+        ? Math.min(Math.round((actual / k.target) * 100), 130)
+        : 0;
     } else {
       actual = actuals[k.metric] ?? null;
       pct    = actual !== null ? Math.min(Math.round((actual / k.target) * 100), 130) : 0;
