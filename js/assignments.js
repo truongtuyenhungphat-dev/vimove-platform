@@ -33,6 +33,12 @@ function renderAssignments() {
   const page = document.getElementById('page-assignments');
   if (!page) return;
 
+  // Đợi currentUser sẵn sàng
+  if (!currentUser) {
+    setTimeout(renderAssignments, 500);
+    return;
+  }
+
   const all = appState.assignments || [];
   const uid = currentUser?.id;
   const role = currentUser?.role;
@@ -135,14 +141,27 @@ function renderAssignments() {
       </div>
     </div>
 
+    <!-- INFO BANNER for Staff -->
+    ${role === 'staff' ? `<div class="asgn-info-banner" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:var(--c-text-2);display:flex;gap:10px;align-items:center">
+      📌 <span><strong>Tab "📤 Đã giao"</strong>: việc bạn giao cho người khác. &nbsp;|&nbsp; <strong>Tab "📥 Nhận được"</strong>: việc quản lý giao cho bạn.</span>
+    </div>` : ''}
+
     <!-- ASSIGNMENTS LIST -->
     <div class="asgn-list" id="asgnList">
       ${filtered.length === 0
-        ? `<div class="asgn-empty">
-            <div class="empty-icon">📭</div>
-            <p>Không có giao việc nào.</p>
-            ${canCreate ? `<button class="btn-primary" onclick="openNewAssignmentModal()">Giao việc đầu tiên →</button>` : ''}
-          </div>`
+        ? (() => {
+            const emptyMsg = {
+              all:      '📬 Chưa có giao việc nào. Hãy tạo việc mới hoặc được giao việc từ quản lý.',
+              sent:     '📤 Bạn chưa giao việc nào.',
+              received: '📥 Bạn chưa nhận được việc nào từ quản lý.',
+              pending:  '⏳ Không có việc chờ xác nhận.',
+            };
+            return `<div class="asgn-empty">
+              <div class="empty-icon">📭</div>
+              <p>${emptyMsg[tab] || 'Không có giao việc nào.'}</p>
+              ${canCreate && tab !== 'received' ? `<button class="btn-primary" onclick="openNewAssignmentModal()">Giao việc đầu tiên →</button>` : ''}
+            </div>`;
+          })()
         : filtered
             .sort((a,b) => sortAsgnScore(b) - sortAsgnScore(a))
             .map(a => renderAsgnCard(a, uid))

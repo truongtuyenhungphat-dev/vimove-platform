@@ -553,12 +553,9 @@
           </div>
           <div class="settings-card" id="dangerZoneCard" style="border-color:rgba(239,68,68,0.3);display:none">
             <h3 style="color:#DC2626">⚠️ Vùng nguy hiểm</h3>
-            <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Reset toàn bộ dữ liệu về trạng thái demo ban đầu. Chỉ dành cho Admin kỹ thuật.</p>
-            <button class="btn-danger" onclick="resetAllData()" style="width:100%;justify-content:center;margin-bottom:8px">
-              🗑️ Reset toàn bộ dữ liệu
-            </button>
-            <button class="btn-danger" onclick="purgeAllFirebaseData()" style="width:100%;justify-content:center;margin-bottom:8px;background:#DC2626;border-color:#DC2626">
-              🗑️ XÓA DATA DEMO TRÊN CLOUD
+            <p style="font-size:13px;color:var(--c-text-2);margin-bottom:12px">Xóa toàn bộ CVC, Leads, Giao việc demo trên Firebase. Chỉ dùng 1 lần khi bắt đầu với data thật.</p>
+            <button class="btn-danger" onclick="purgeAllFirebaseData()" style="width:100%;justify-content:center;margin-bottom:8px;background:#DC2626;border-color:#DC2626;color:#fff;font-weight:700">
+              🗑️ Xóa Data Demo trên Cloud (1 lần dùng một lần)
             </button>
             <button class="btn-outline" onclick="cleanupZombieUsers()" style="width:100%;justify-content:center;color:#DC2626;border-color:#DC2626">
               🧹 Dọn dẹp Tài khoản rác (Firebase)
