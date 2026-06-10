@@ -84,6 +84,7 @@ function renderTaskCard(task) {
         </div>
         ${task.deadline ? `<div class="tc-deadline ${dlClass}">📅 ${formatDateRelative(task.deadline)}</div>` : ''}
         <div class="tc-channels">${channels}</div>
+        ${currentUser?.role === 'admin' ? `<button class="tc-delete-btn" onclick="event.stopPropagation();deleteTask('${task.id}')" title="Xóa CVC này">🗑️</button>` : ''}
       </div>
     </div>
   `;
@@ -709,6 +710,30 @@ function renderMyTasks() {
 }
 
 // ============ BADGES ============
+// ============ XÓA CVC THỦ CÔNG (Admin) ============
+function deleteTask(taskId) {
+  const task = appState.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  if (currentUser?.role !== 'admin') {
+    showToast('⛔ Chỉ Admin mới có quyền xóa CVC!', 'error');
+    return;
+  }
+  hrConfirm(
+    `Xóa CVC: "${task.title}"?`,
+    'Hành động này sẽ xóa vĩnh viễn công việc này khỏi hệ thống.',
+    async () => {
+      appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+      if (window.fbDeleteTask) {
+        await window.fbDeleteTask(taskId);
+      }
+      renderWorkflow();
+      renderDashboard();
+      updateBadges();
+      showToast('🗑️ Đã xóa CVC thành công!', 'success');
+    }
+  );
+}
+
 function updateBadges() {
   const total = appState.tasks.filter(t => t.stage !== 'done').length;
   const overdue = appState.tasks.filter(t => isOverdue(t)).length;
