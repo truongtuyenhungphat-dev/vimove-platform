@@ -80,7 +80,7 @@ function renderAssignments() {
     sent:       all.filter(a => a.assignedBy === uid && a.status !== 'done').length,
   };
 
-  const canCreate = role === 'admin' || role === 'manager';
+  const canCreate = true; // Mọi người đều có thể tạo/giao việc
 
   page.innerHTML = `
     <!-- HEADER -->
@@ -296,7 +296,7 @@ function openAsgnDetail(id) {
   const cat       = CATEGORIES[asgn.category] || {};
   const uid       = currentUser?.id;
   const isMyTask  = asgn.assignedTo === uid;
-  const isOwner   = asgn.assignedBy === uid || currentUser?.role === 'admin';
+  const isOwner   = asgn.assignedBy === uid || asgn.assignedTo === uid || currentUser?.role === 'admin';
   const isOverdueAsgn = asgn.deadline && new Date(asgn.deadline) < new Date() && asgn.status !== 'done';
 
   // Action buttons
