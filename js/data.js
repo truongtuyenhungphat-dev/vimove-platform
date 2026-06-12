@@ -610,11 +610,11 @@ async function purgeAllFirebaseData() {
     showToast('⛔ Chỉ Admin mới có quyền xóa dữ liệu!', 'error');
     return;
   }
-  if (!confirm('⚠️ CẢNH BÁO: Hành động này sẽ XÓA VĨNH VIỄN toàn bộ CVC, Leads và Giao việc khỏi Firebase.
+  if (!confirm(`⚠️ CẢNH BÁO: Hành động này sẽ XÓA VĨNH VIỄN toàn bộ CVC, Leads và Giao việc khỏi Firebase.
 
 Chỉ thực hiện khi muốn bắt đầu lại với data thật.
 
-Bạn chắc chắn muốn tiếp tục?')) return;
+Bạn chắc chắn muốn tiếp tục?`)) return;
   if (!confirm('⚠️ LẦN CUỐI XÁC NHẬN: Dữ liệu sẽ KHÔNG thể khôi phục. Tiếp tục?')) return;
 
   const db = window.firebaseDB;
