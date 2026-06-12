@@ -387,7 +387,7 @@ function showGpsOutOfRangeDialog(distance, gps) {
         </div>
         <div style="display:flex;gap:10px;justify-content:center">
           <button class="btn btn-cancel" onclick="document.getElementById('gpsDialog').remove()">Hủy</button>
-          <button class="btn btn-save" onclick="document.getElementById('gpsDialog').remove(); doCheckIn(false, ${JSON.stringify(gps)}, false)">✔️ Xác nhận check-in</button>
+          <button class="btn btn-save" onclick='document.getElementById("gpsDialog").remove(); doCheckIn(false, ${JSON.stringify(gps)}, false)'>✔️ Xác nhận check-in</button>
         </div>
       </div>
     </div>`;
