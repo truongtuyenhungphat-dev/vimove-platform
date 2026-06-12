@@ -555,12 +555,14 @@ function editTask(taskId) {
 }
 
 function saveEditTask(taskId) {
-  if (!canEdit()) { showToast('⚠️ Bạn không có quyền chỉnh sửa!', 'error'); return; }
-  const title = document.getElementById('taskTitle').value.trim();
-  if (!title) { showToast('⚠️ Vui lòng nhập tên CVC!', 'error'); return; }
-
   const task = appState.tasks.find(t => t.id === taskId);
   if (!task) return;
+
+  const isAssignee = task.assigneeId === currentUser?.id;
+  if (!canEdit() && !isAssignee) { showToast('⚠️ Bạn không có quyền chỉnh sửa!', 'error'); return; }
+
+  const title = document.getElementById('taskTitle').value.trim();
+  if (!title) { showToast('⚠️ Vui lòng nhập tên CVC!', 'error'); return; }
 
   task.title      = title;
   task.desc       = document.getElementById('taskDesc').value.trim();
@@ -696,7 +698,7 @@ function renderMyTasks() {
     html += '<div class="col-empty" style="padding:12px 16px">Không có việc được giao</div>';
   }
 
-  if (sentActive.length > 0 && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+  if (sentActive.length > 0) {
     html += '<div class="mytasks-asgn-header" style="margin-top:16px">📤 Việc tôi đã giao</div>';
     html += sentActive.map(a => renderAsgnMiniCard(a, false)).join('');
   }
