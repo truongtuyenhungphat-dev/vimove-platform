@@ -250,6 +250,11 @@ function renderTimeline(tasks) {
 // ============ FILTER / VIEW ============
 function getFilteredTasks() {
   let tasks = [...appState.tasks];
+  
+  // Filter by global company
+  if (appState.currentCompany && appState.currentCompany !== 'all') {
+    tasks = tasks.filter(t => t.company === appState.currentCompany);
+  }
 
   // Các tk trừ quản lý (staff), chỉ hiện các việc mình được giao 
   // (CVC hiện tại không có assignedBy nên ta chỉ check assigneeId, 

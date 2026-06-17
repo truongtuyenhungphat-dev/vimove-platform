@@ -31,9 +31,12 @@ function initAssignments() {
 // ============ RENDER MAIN PAGE ============
 // ============ HELPER ============
 function getFilteredAssignments() {
+  let list = appState.assignments || [];
   const company = (appState.currentCompany && appState.currentCompany !== 'all') ? appState.currentCompany : null;
-  if (!company) return appState.assignments || [];
-  return getFilteredAssignments().filter(a => a.company === company || !a.company);
+  if (company) {
+    list = list.filter(a => a.company === company);
+  }
+  return list;
 }
 
 function renderAssignments() {

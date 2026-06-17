@@ -5,9 +5,12 @@
 
 // ============ HELPER ============
 function getFilteredLeads() {
+  let leads = appState.leads || [];
   const company = (appState.currentCompany && appState.currentCompany !== 'all') ? appState.currentCompany : null;
-  if (!company) return appState.leads;
-  return getFilteredLeads().filter(l => l.company === company || !l.company);
+  if (company) {
+    leads = leads.filter(l => l.company === company);
+  }
+  return leads;
 }
 
 function renderCRM() {
