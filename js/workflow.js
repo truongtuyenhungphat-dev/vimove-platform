@@ -25,6 +25,7 @@ function renderWorkflow() {
   if (currentView === 'kanban') renderKanban(tasks);
   else if (currentView === 'list') renderList(tasks);
   else if (currentView === 'timeline') renderTimeline(tasks);
+  else if (currentView === 'projects') renderProjects(tasks);
   updateBadges();
 }
 
@@ -113,6 +114,19 @@ function renderTaskCard(task) {
         <div class="tc-title">${escHtml(task.title)}</div>
         <div class="tc-priority">${PRIORITIES[task.priority]?.icon}</div>
       </div>
+      ${(() => {
+        if (typeof STAGES === 'undefined') return '';
+        const sIdx = STAGES.findIndex(s => s.id === task.stage);
+        let dotsHtml = '';
+        STAGES.forEach((s, i) => {
+          let bg = 'var(--c-surface-2)';
+          if (i < sIdx) bg = '#10B981'; // done
+          else if (i === sIdx) bg = 'var(--c-primary)'; // current
+          dotsHtml += `<div style="flex:1; height:4px; border-radius:2px; background:${bg};" title="${s.name}"></div>`;
+        });
+        return `<div style="display:flex; gap:2px; margin-bottom:8px; width:100%;">${dotsHtml}</div>`;
+      })()}
+
       ${task.desc ? `<div class="tc-desc">${escHtml(task.desc)}</div>` : ''}
       <div class="tc-tags">
         <span class="tc-tag tag ${cat.cssClass || ''}">${cat.icon || ''} ${cat.name || ''}</span>
@@ -279,7 +293,7 @@ function filterWorkflow() { renderWorkflow(); }
 
 function setView(view) {
   currentView = view;
-  ['kanban','list','timeline'].forEach(v => {
+  ['kanban','list','timeline','projects'].forEach(v => {
     document.getElementById(v+'View')?.classList.add('hidden');
     document.getElementById('vBtn-'+v)?.classList.remove('active');
   });
@@ -819,4 +833,54 @@ function handleSearch(val) {
 function escHtml(str) {
   if (!str) return '';
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ---- PROJECTS VIEW ---- */
+function renderProjects(tasks) {
+  const container = document.getElementById('projectsContainer');
+  if (!container) return;
+  
+  // Group tasks by project
+  const projectsMap = {};
+  tasks.forEach(t => {
+    if (!t.project) return;
+    const pName = t.project.trim();
+    if (!projectsMap[pName]) projectsMap[pName] = { name: pName, total: 0, done: 0, tasks: [] };
+    projectsMap[pName].total++;
+    if (t.stage === 'done') projectsMap[pName].done++;
+    projectsMap[pName].tasks.push(t);
+  });
+  
+  const projects = Object.values(projectsMap).sort((a,b) => b.total - a.total);
+  
+  if (projects.length === 0) {
+    container.innerHTML = '<div class="empty-state">Chưa có CVC nào thuộc dự án. Vui lòng thêm tên Dự án khi tạo CVC.</div>';
+    return;
+  }
+  
+  container.innerHTML = projects.map(p => {
+    const pct = Math.round((p.done / p.total) * 100) || 0;
+    return `
+      <div class="card" style="padding: 16px; border-radius: 8px; border: 1px solid var(--c-border); background: var(--c-surface-1);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+          <h3 style="margin:0; font-size: 16px; display:flex; align-items:center; gap:8px;">📁 ${p.name}</h3>
+          <span style="font-size: 14px; font-weight:600; color:var(--c-text-2);">${p.done} / ${p.total} CVC hoàn thành</span>
+        </div>
+        <div style="height: 8px; background: var(--c-surface-2); border-radius: 4px; overflow:hidden; margin-bottom: 16px;">
+          <div style="height: 100%; width: ${pct}%; background: var(--c-primary); border-radius: 4px; transition: width 0.3s;"></div>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap: 8px;">
+          ${p.tasks.map(t => {
+            const isDone = t.stage === 'done';
+            const cat = typeof CATEGORIES !== 'undefined' ? (CATEGORIES[t.category] || {}) : {};
+            return `
+              <div onclick="openTaskDetail('${t.id}')" style="cursor:pointer; font-size:12px; padding: 4px 8px; border-radius:4px; border: 1px solid ${isDone ? 'var(--c-border)' : 'var(--c-border)'}; background: ${isDone ? 'var(--c-surface-2)' : '#fff'}; color: ${isDone ? 'var(--c-text-3)' : 'var(--c-text-1)'}; text-decoration: ${isDone ? 'line-through' : 'none'};">
+                ${t.title}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
