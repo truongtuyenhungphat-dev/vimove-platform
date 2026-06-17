@@ -153,7 +153,7 @@ function togglePassField(inputId) {
 }
 
 function canEdit() {
-  return currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager');
+  return currentUser != null;
 }
 
 function isAdmin() {

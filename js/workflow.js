@@ -716,8 +716,8 @@ function renderMyTasks() {
 function deleteTask(taskId) {
   const task = appState.tasks.find(t => t.id === taskId);
   if (!task) return;
-  if (currentUser?.role !== 'admin') {
-    showToast('⛔ Chỉ Admin mới có quyền xóa CVC!', 'error');
+  if (!canEdit()) {
+    showToast('⛔ Bạn không có quyền xóa CVC!', 'error');
     return;
   }
   hrConfirm(
