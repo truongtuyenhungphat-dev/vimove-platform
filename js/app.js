@@ -797,3 +797,29 @@ function startUserListener() {
 // Delegate to hr.js version which has eye toggles + admin support
 // This wrapper ensures backward compatibility with positions.js calls
 // (positions.js calls openChangePasswordModal() with no args → means "self")
+
+
+// ============ COMPANY SWITCHER ============
+window.changeGlobalCompany = function() {
+  const select = document.getElementById('globalCompanySwitcher');
+  if (select) {
+    if (!window.appState) window.appState = {};
+    window.appState.currentCompany = select.value;
+    
+    // Re-render modules
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof renderWorkflow === 'function') renderWorkflow();
+    if (typeof renderMyTasks === 'function') renderMyTasks();
+    if (typeof renderCRM === 'function') renderCRM();
+    if (typeof renderAssignments === 'function') renderAssignments();
+    if (typeof renderRequests === 'function') renderRequests();
+    if (typeof refreshAllMemberKpi === 'function') refreshAllMemberKpi();
+    
+    // Refresh currently open module properly
+    const activeModule = document.querySelector('.nav-item.active');
+    if (activeModule) {
+      const modId = activeModule.id.replace('nav-', '');
+      showModule(modId);
+    }
+  }
+};

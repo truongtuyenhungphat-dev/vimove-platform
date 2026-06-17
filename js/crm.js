@@ -3,16 +3,23 @@
    Customer pipeline: full profile, follow-up, contact history
    ================================================ */
 
+// ============ HELPER ============
+function getFilteredLeads() {
+  const company = (appState.currentCompany && appState.currentCompany !== 'all') ? appState.currentCompany : null;
+  if (!company) return appState.leads;
+  return getFilteredLeads().filter(l => l.company === company || !l.company);
+}
+
 function renderCRM() {
   const pipeline = document.getElementById('crmPipeline');
   if (!pipeline) return;
   pipeline.innerHTML = '';
 
   // Summary bar
-  const totalLeads = appState.leads.length;
-  const wonLeads   = appState.leads.filter(l => l.stage === 'won').length;
-  const hotLeads   = appState.leads.filter(l => l.stage === 'closing').length;
-  const overdueFollowup = appState.leads.filter(l => {
+  const totalLeads = getFilteredLeads().length;
+  const wonLeads   = getFilteredLeads().filter(l => l.stage === 'won').length;
+  const hotLeads   = getFilteredLeads().filter(l => l.stage === 'closing').length;
+  const overdueFollowup = getFilteredLeads().filter(l => {
     if (!l.followUpDate || l.stage === 'won') return false;
     return new Date(l.followUpDate) < new Date();
   }).length;
@@ -50,7 +57,7 @@ function renderCRM() {
   pipeline.appendChild(pipelineWrap);
 
   CRM_STAGES.forEach(stage => {
-    const leads = appState.leads.filter(l => l.stage === stage.id);
+    const leads = getFilteredLeads().filter(l => l.stage === stage.id);
     const totalValue = leads.reduce((s,l) => s + (l.dealValue || 0), 0);
     const col = document.createElement('div');
     col.className = 'crm-stage-col';
@@ -301,7 +308,7 @@ function moveLeadStage(leadId) {
 
 function deleteLead(leadId) {
   hrConfirm('Xóa khách hàng?', 'Bạn có chắc muốn xóa lead này khỏi hệ thống?', () => {
-    appState.leads = appState.leads.filter(l => l.id !== leadId);
+    appState.leads = getFilteredLeads().filter(l => l.id !== leadId);
     if (window.fbDeleteLead) window.fbDeleteLead(leadId);
     saveData();
     closeModal('requestDetailModal');

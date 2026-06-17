@@ -29,6 +29,13 @@ function initAssignments() {
 }
 
 // ============ RENDER MAIN PAGE ============
+// ============ HELPER ============
+function getFilteredAssignments() {
+  const company = (appState.currentCompany && appState.currentCompany !== 'all') ? appState.currentCompany : null;
+  if (!company) return appState.assignments || [];
+  return getFilteredAssignments().filter(a => a.company === company || !a.company);
+}
+
 function renderAssignments() {
   const page = document.getElementById('page-assignments');
   if (!page) return;
@@ -478,6 +485,7 @@ function saveAssignment() {
     asgn.priority = document.getElementById('asgnPriority').value;
     asgn.category = document.getElementById('asgnCategory').value;
     asgn.assignedTo = assigneeId;
+    asgn.company    = document.getElementById('asgnCompany')?.value || 'vimove';
     asgn.updatedAt  = new Date().toISOString();
     if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
     showToast(`✅ Đã cập nhật giao việc!`, 'success');
@@ -495,6 +503,7 @@ function saveAssignment() {
       deadline:   document.getElementById('asgnDeadline').value,
       dueTime:    document.getElementById('asgnDueTime').value,
       status:     'pending',
+      company:    document.getElementById('asgnCompany')?.value || 'vimove',
       createdAt:  new Date().toISOString(),
       updatedAt:  new Date().toISOString(),
       completedAt: null,
@@ -594,7 +603,7 @@ function promptReject(id) {
 
 function deleteAssignment(id) {
   hrConfirm('Xóa giao việc này?', 'Hành động này không thể hoàn tác.', () => {
-    appState.assignments = (appState.assignments || []).filter(a => a.id !== id);
+    appState.assignments = getFilteredAssignments().filter(a => a.id !== id);
     if (window.fbDeleteAssignment) window.fbDeleteAssignment(id);
     closeModal('asgnDetailModal');
     renderAssignments();
@@ -620,7 +629,7 @@ function updateAsgnBadge() {
   const el = document.getElementById('badge-assignments');
   if (!el) return;
   const uid = currentUser?.id;
-  const pending = (appState.assignments || []).filter(a => a.assignedTo === uid && a.status === 'pending').length;
+  const pending = getFilteredAssignments().filter(a => a.assignedTo === uid && a.status === 'pending').length;
   el.textContent = pending || '';
   el.className   = 'nav-badge' + (pending > 0 ? ' urgent' : '');
 }

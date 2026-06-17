@@ -10,6 +10,17 @@ let draggedTaskId = null;
 
 // ============ RENDER WORKFLOW ============
 function renderWorkflow() {
+  const assigneeSelect = document.getElementById('wfAssignee');
+  if (assigneeSelect && assigneeSelect.options.length <= 1) {
+    let opts = '<option value="all">Mọi nhân sự</option>';
+    if (typeof TEAM_MEMBERS !== 'undefined') {
+      TEAM_MEMBERS.forEach(m => {
+        opts += `<option value="${m.id}">${m.name}</option>`;
+      });
+    }
+    assigneeSelect.innerHTML = opts;
+  }
+
   const tasks = getFilteredTasks();
   if (currentView === 'kanban') renderKanban(tasks);
   else if (currentView === 'list') renderList(tasks);
@@ -47,6 +58,33 @@ function renderKanban(tasks) {
     `;
     board.appendChild(col);
   });
+
+  // Show Assignee KPI summary panel
+  const assigneeFilter = document.getElementById('wfAssignee')?.value || 'all';
+  const sumDiv = document.getElementById('wfAssigneeSummary');
+  if (sumDiv) {
+    if (assigneeFilter !== 'all') {
+      const member = (typeof TEAM_MEMBERS !== 'undefined') ? TEAM_MEMBERS.find(m => m.id === assigneeFilter) : null;
+      const activeTasks = tasks.filter(t => t.stage !== 'done' && t.assigneeId === assigneeFilter).length;
+      const doneTasks = tasks.filter(t => t.stage === 'done' && t.assigneeId === assigneeFilter).length;
+      const overdueTasks = tasks.filter(t => t.assigneeId === assigneeFilter && isOverdue(t)).length;
+      let kpiScore = '—';
+      if (typeof appState !== 'undefined' && appState.kpiData && appState.kpiData[assigneeFilter]) {
+        kpiScore = appState.kpiData[assigneeFilter].finalKpi + '%';
+      }
+      sumDiv.innerHTML = `
+        <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+          <div style="font-weight:700;font-size:15px;">👤 ${member?.name || 'Nhân viên'}</div>
+          <div>📋 Đang thực hiện: <strong>${activeTasks}</strong></div>
+          <div>✅ Hoàn thành: <strong>${doneTasks}</strong></div>
+          <div style="color:#EF4444;">⚠️ Trễ hạn: <strong>${overdueTasks}</strong></div>
+          <div>🎯 KPI: <strong style="color:var(--c-primary)">${kpiScore}</strong></div>
+        </div>`;
+      sumDiv.classList.remove('hidden');
+    } else {
+      sumDiv.classList.add('hidden');
+    }
+  }
 }
 
 function renderTaskCard(task) {
@@ -57,7 +95,14 @@ function renderTaskCard(task) {
   const channels = (task.channels || []).map(ch => `<div class="tc-channel-dot ${CHANNELS[ch]?.cssClass || ''}" title="${CHANNELS[ch]?.name}"></div>`).join('');
 
   return `
-    <div class="task-card priority-${task.priority} ${isOD ? 'overdue' : ''}"
+    ${(() => {
+      let cTag = '';
+      if (task.company === 'hungphat') cTag = '<span class="tag" style="background:#F59E0B">🏢 Hùng Phát</span>';
+      else if (task.company === 'vimove') cTag = '<span class="tag" style="background:#10B981">🏢 Vimove</span>';
+      let pTag = task.project ? `<span class="tag" style="background:var(--c-primary)">📁 ${task.project}</span>` : '';
+      return `<div style="margin-bottom:6px; display:flex; gap:4px; flex-wrap:wrap">${cTag}${pTag}</div>`;
+    })()}
+    <div class="task-card priority-${task.priority} ${isOD ? 'overdue' : ''}" 
          draggable="true"
          data-id="${task.id}"
          ondragstart="onDragStart(event,'${task.id}')"
@@ -216,6 +261,16 @@ function getFilteredTasks() {
     t.title.toLowerCase().includes(search) ||
     (t.desc||'').toLowerCase().includes(search)
   );
+
+  // Company filter (from global switcher)
+  const company = (typeof appState !== 'undefined' && appState.currentCompany && appState.currentCompany !== 'all')
+    ? appState.currentCompany : null;
+  if (company) tasks = tasks.filter(t => t.company === company || !t.company);
+
+  // Assignee filter
+  const catFilter = document.getElementById('wfCategory')?.value || 'all';
+  const assigneeFilter = document.getElementById('wfAssignee')?.value || 'all';
+  if (assigneeFilter !== 'all') tasks = tasks.filter(t => t.assigneeId === assigneeFilter);
 
   return tasks;
 }
@@ -434,6 +489,11 @@ function openNewTaskModal() {
   // Reset title, desc, value
   document.getElementById('taskTitle').value = '';
   document.getElementById('taskDesc').value = '';
+  if(document.getElementById('taskProject')) document.getElementById('taskProject').value = '';
+  if(document.getElementById('taskCompany')) {
+    const cc = appState.currentCompany;
+    document.getElementById('taskCompany').value = (cc && cc !== 'all') ? cc : 'vimove';
+  }
   document.getElementById('taskValue').value = '';
   document.querySelectorAll('.channel-tags input').forEach(i => i.checked = false);
   // QUAN TRỌNG: Xóa stale targetStage mỗi lần mở modal mới
@@ -511,7 +571,7 @@ function saveNewTask() {
 function deleteTask(taskId) {
   if (!isAdmin()) { showToast('❌ Chỉ Admin mới có thể xóa!', 'error'); return; }
   if (!confirm('Xóa CVC này?')) return;
-  appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+  appState.tasks = getFilteredTasks().filter(t => t.id !== taskId);
   if (window.fbDeleteTask) window.fbDeleteTask(taskId);
   saveData();
   closeModal('taskDetailModal');
@@ -565,6 +625,8 @@ function saveEditTask(taskId) {
   if (!title) { showToast('⚠️ Vui lòng nhập tên CVC!', 'error'); return; }
 
   task.title      = title;
+  task.company    = document.getElementById('taskCompany')?.value || 'vimove';
+  task.project    = document.getElementById('taskProject')?.value?.trim() || '';
   task.desc       = document.getElementById('taskDesc').value.trim();
   task.category   = document.getElementById('taskCategory').value;
   task.priority   = document.getElementById('taskPriority').value;
@@ -604,7 +666,7 @@ function renderMyTasks() {
   const today = new Date(); today.setHours(0,0,0,0);
 
   // ── SECTION 1: CVC từ Workflow Board ──
-  const myTasks  = appState.tasks.filter(t => t.assigneeId === uid && t.stage !== 'done');
+  const myTasks  = getFilteredTasks().filter(t => t.assigneeId === uid && t.stage !== 'done');
   const urgent   = myTasks.filter(t => t.priority === 'urgent' || isOverdue(t));
   const todayArr = myTasks.filter(t => {
     if (!t.deadline) return false;
@@ -724,7 +786,7 @@ function deleteTask(taskId) {
     `Xóa CVC: "${task.title}"?`,
     'Hành động này sẽ xóa vĩnh viễn công việc này khỏi hệ thống.',
     async () => {
-      appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+      appState.tasks = getFilteredTasks().filter(t => t.id !== taskId);
       if (window.fbDeleteTask) {
         await window.fbDeleteTask(taskId);
       }
@@ -737,9 +799,9 @@ function deleteTask(taskId) {
 }
 
 function updateBadges() {
-  const total = appState.tasks.filter(t => t.stage !== 'done').length;
-  const overdue = appState.tasks.filter(t => isOverdue(t)).length;
-  const mine = appState.tasks.filter(t => t.assigneeId === currentUser?.id && t.stage !== 'done' && (isOverdue(t) || t.priority === 'urgent')).length;
+  const total = getFilteredTasks().filter(t => t.stage !== 'done').length;
+  const overdue = getFilteredTasks().filter(t => isOverdue(t)).length;
+  const mine = getFilteredTasks().filter(t => t.assigneeId === currentUser?.id && t.stage !== 'done' && (isOverdue(t) || t.priority === 'urgent')).length;
 
   document.getElementById('badge-tasks').textContent = total || '';
   document.getElementById('badge-alert').textContent = overdue || '';
