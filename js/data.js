@@ -590,8 +590,15 @@ function initData() {
 }
 
 function _startFirestoreListenersImpl() {
-    // 1. Kiểm tra và bơm dữ liệu nếu mây rỗng
-    window.fbCheckAndSeed();
+    // 1. Kiểm tra và bơm dữ liệu nếu mây rỗng — CHỈ khi vẫn dùng auth.js cũ.
+    // fbCheckAndSeed()/fbEnsureAllUsers() ghi mật khẩu plaintext từ DEMO_USERS lên
+    // Firestore theo mô hình cũ; với Firebase Auth thật, hồ sơ viwork_users/{uid}
+    // không còn field password, khiến fbEnsureAllUsers() ghi `password: undefined`
+    // và bị Firestore từ chối. Tài khoản giờ được tạo qua Cloud Function
+    // fbAdminCreateUser, không cần seed kiểu này nữa.
+    if (!(window.firebase && typeof firebase.auth === 'function')) {
+      window.fbCheckAndSeed();
+    }
 
     // 2. Lắng nghe Dữ liệu Công việc (Tasks)
     window.fbListenTasks(tasks => {
