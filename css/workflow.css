@@ -16,8 +16,13 @@
 }
 
 .kanban-column {
-  flex-shrink: 0;
-  width: 280px;
+  /* Giãn đều theo không gian còn trống (thay vì width cố định dồn hết sang trái
+     trên màn hình rộng), nhưng chặn ở 420px để card không bị kéo quá khổ, mất
+     cân đối khi số giai đoạn ít. min-width giữ cột không co lại quá chật khi
+     có nhiều giai đoạn hơn — lúc đó .kanban-board tự cuộn ngang. */
+  flex: 1 1 300px;
+  min-width: 280px;
+  max-width: 420px;
   background: var(--c-surface);
   border-radius: var(--r-lg);
   border: 1px solid var(--c-border-subtle);
