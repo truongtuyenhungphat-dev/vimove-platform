@@ -563,6 +563,33 @@ function persistAppConfig() {
 // ============ INIT DATA (CLOUD FIRESTORE) ============
 function initData() {
   if (window.firebaseDB) {
+    // firestore.rules yêu cầu đăng nhập (request.auth != null) để đọc. Nếu mở các
+    // listener onSnapshot này ngay lập tức (trước khi Firebase Auth xác thực xong),
+    // lần gọi đầu tiên sẽ bị permission-denied — và Firestore KHÔNG tự động thử lại
+    // sau khi đăng nhập xong, khiến toàn bộ app trống dữ liệu vĩnh viễn.
+    // Nếu đã có Firebase Auth (js/auth-firebase.js), đợi có user thật rồi mới mở
+    // listener; nếu chưa (vẫn dùng js/auth.js cũ), giữ hành vi cũ — mở ngay lập tức.
+    let _fsListenersStarted = false;
+    const startFirestoreListeners = () => {
+      if (_fsListenersStarted) return;
+      _fsListenersStarted = true;
+      _startFirestoreListenersImpl();
+    };
+    if (window.firebase && typeof firebase.auth === 'function') {
+      firebase.auth().onAuthStateChanged(user => { if (user) startFirestoreListeners(); });
+    } else {
+      startFirestoreListeners();
+    }
+  } else {
+    // Dự phòng khi mất kết nối Firebase, sài Data tĩnh
+    appState.tasks = [...INITIAL_TASKS];
+    appState.leads = [...INITIAL_LEADS];
+    appState.assignments = typeof INITIAL_ASSIGNMENTS !== 'undefined' ? [...INITIAL_ASSIGNMENTS] : [];
+    generateNotifications();
+  }
+}
+
+function _startFirestoreListenersImpl() {
     // 1. Kiểm tra và bơm dữ liệu nếu mây rỗng
     window.fbCheckAndSeed();
 
@@ -659,13 +686,6 @@ function initData() {
         }
       });
     }
-  } else {
-    // Dự phòng khi mất kết nối Firebase, sài Data tĩnh
-    appState.tasks = [...INITIAL_TASKS];
-    appState.leads = [...INITIAL_LEADS];
-    appState.assignments = typeof INITIAL_ASSIGNMENTS !== 'undefined' ? [...INITIAL_ASSIGNMENTS] : [];
-    generateNotifications();
-  }
 }
 
 function resetAllData() {
