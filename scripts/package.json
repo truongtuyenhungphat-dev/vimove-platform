@@ -1,0 +1,8 @@
+{
+  "name": "vimove-migration-scripts",
+  "private": true,
+  "description": "Script di trú một lần (firebase-admin) — không thuộc app chính, không deploy.",
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

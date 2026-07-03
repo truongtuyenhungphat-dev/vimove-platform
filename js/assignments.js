@@ -82,6 +82,15 @@ function renderAssignments() {
   if (priority !== 'all') filtered = filtered.filter(a => a.priority === priority);
   if (status !== 'all')   filtered = filtered.filter(a => a.status === status);
 
+  // Dùng chung ô tìm kiếm ở header (globalSearch) để tìm theo tiêu đề/mô tả việc giao
+  const search = (document.getElementById('globalSearch')?.value || '').trim().toLowerCase();
+  if (search) {
+    filtered = filtered.filter(a =>
+      (a.title || '').toLowerCase().includes(search) ||
+      (a.desc || '').toLowerCase().includes(search)
+    );
+  }
+
   // Stats
   const myCount = {
     pending:    all.filter(a => a.assignedTo === uid && a.status === 'pending').length,
@@ -641,7 +650,11 @@ function updateAsgnBadge() {
 function isInMyTeam(userId) {
   if (!currentUser) return false;
   const myDept = currentUser.department || '';
+  if (!myDept) return false;
   const m = TEAM_MEMBERS.find(m => m.id === userId);
   if (!m) return false;
-  return m.department?.includes(myDept.split(' ')[0]);
+  // So khớp chính xác tên phòng ban — so khớp theo từ đầu tiên (substring)
+  // từng gộp nhầm các phòng ban khác nhau có chung từ đầu (VD: "Kinh doanh Online"
+  // và "Kinh doanh Offline" đều khớp "Kinh doanh").
+  return m.department === myDept;
 }

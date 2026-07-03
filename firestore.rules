@@ -1,0 +1,145 @@
+rules_version = '2';
+
+// ================================================================
+// Vimove Operations Platform — Firestore Security Rules
+//
+// Trước khi có file này, ứng dụng KHÔNG có rules nào trong repo — mọi phân
+// quyền Admin/Manager/Staff chỉ được kiểm tra ở phía client (JS), nghĩa là
+// bất kỳ ai gọi thẳng Firestore SDK/REST API cũng có thể đọc/ghi bất kỳ dữ
+// liệu nào, kể cả tự đổi role của mình thành admin.
+//
+// File này bắt buộc: (1) phải đăng nhập qua Firebase Authentication,
+// (2) mọi thao tác nhạy cảm phải khớp đúng role lưu trong viwork_users/{uid}.
+//
+// YÊU CẦU: phải hoàn tất di chuyển sang Firebase Authentication trước khi
+// deploy rules này (xem SECURITY_DEPLOY_GUIDE.md) — rules dựa vào
+// request.auth.uid trỏ đúng tới một document trong viwork_users.
+//
+// Khuyến nghị: chạy `firebase emulators:start` và thử các luồng chính
+// (đăng nhập, tạo/sửa/xoá CVC, duyệt đơn, chấm công) trước khi deploy thật,
+// vì bộ rules này được viết dựa trên đọc lại logic client — chưa được test
+// trực tiếp trên project Firebase thật.
+// ================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/viwork_users/$(request.auth.uid)).data;
+    }
+
+    function myRole() {
+      return isSignedIn() ? myProfile().role : null;
+    }
+
+    function isAdmin()          { return isSignedIn() && myRole() == 'admin'; }
+    function isManagerOrAdmin() { return isSignedIn() && (myRole() == 'admin' || myRole() == 'manager'); }
+
+    // ---------- VIWORK_USERS (hồ sơ nhân viên, không còn chứa mật khẩu) ----------
+    match /viwork_users/{uid} {
+      allow read: if isSignedIn();
+      // Tạo tài khoản: chỉ Admin (tài khoản Auth thật do Cloud Function tạo — xem functions/).
+      allow create: if isAdmin();
+      // Sửa: Admin sửa bất kỳ ai; một người có thể tự sửa hồ sơ mình NHƯNG không được
+      // tự đổi field `role` của chính mình (chặn tự nâng quyền qua console/REST API).
+      allow update: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == uid &&
+         request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- VIWORK_TASKS (CVC / Kanban workflow) ----------
+    match /viwork_tasks/{taskId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      // Xoá CVC: chỉ Admin (khớp nút xoá trên thẻ Kanban) — List view trong index.html
+      // cũng đã được siết lại admin-only cho khớp.
+      allow delete: if isAdmin();
+    }
+
+    // ---------- VIWORK_LEADS (CRM) ----------
+    match /viwork_leads/{leadId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      // Xoá khách hàng hiện đang cho phép mọi nhân viên đã đăng nhập (khớp hành vi UI hiện tại).
+      // Cân nhắc siết còn Admin/Manager trong tương lai nếu CRM cần audit chặt hơn.
+      allow delete: if isSignedIn();
+    }
+
+    // ---------- VIWORK_ASSIGNMENTS (giao việc nội bộ) ----------
+    match /viwork_assignments/{asgnId} {
+      allow read: if isSignedIn();
+      // Tạo: chỉ được tạo giao việc đứng tên chính mình là người giao.
+      allow create: if isSignedIn() && request.resource.data.assignedBy == request.auth.uid;
+      // Sửa: người giao, người nhận, hoặc Admin.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.assignedBy == request.auth.uid ||
+        resource.data.assignedTo == request.auth.uid
+      );
+      // Xoá: người giao, người nhận, hoặc Admin (khớp isOwner trong assignments.js).
+      allow delete: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.assignedBy == request.auth.uid ||
+        resource.data.assignedTo == request.auth.uid
+      );
+    }
+
+    // ---------- VIWORK_REQUESTS (đề xuất/phê duyệt) ----------
+    match /viwork_requests/{reqId} {
+      allow read: if isSignedIn();
+      // Tạo: chỉ được tạo đề xuất đứng tên chính mình.
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      // Sửa (bao gồm duyệt/từ chối từng bước): người tạo, Admin, hoặc Manager
+      // (logic chi tiết "đúng vai trò của bước duyệt hiện tại" nằm ở client;
+      // rule này chặn người ngoài cuộc hoàn toàn không liên quan tới đề xuất).
+      allow update: if isSignedIn() && (
+        isManagerOrAdmin() || resource.data.requesterId == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ---------- VIWORK_ATTENDANCE (chấm công) ----------
+    match /viwork_attendance/{recordId} {
+      allow read: if isSignedIn();
+      // Check-in: chỉ được tạo bản ghi đứng tên chính mình.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Sửa/xoá: chính chủ bản ghi, hoặc Admin/Manager (điều chỉnh/dọn trùng lặp).
+      allow update: if isSignedIn() && (
+        isManagerOrAdmin() || resource.data.userId == request.auth.uid
+      );
+      allow delete: if isManagerOrAdmin();
+    }
+
+    // ---------- VIWORK_TRAINING / VIWORK_COURSES ----------
+    match /viwork_training/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn(); // tiến độ học tập cá nhân — không nhạy cảm
+    }
+    match /viwork_courses/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin(); // nội dung khoá học do Admin biên soạn
+    }
+
+    // ---------- VIWORK_CONFIG (giai đoạn/danh mục CVC, cấu hình app, danh sách đã xoá) ----------
+    match /viwork_config/deleted_users {
+      allow read: if isSignedIn();
+      allow write: if isManagerOrAdmin(); // khớp quyền xoá thành viên (Admin + Manager xoá staff)
+    }
+    match /viwork_config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin(); // giai đoạn/danh mục CVC, tên công ty, mục tiêu doanh thu...
+    }
+
+    // Mặc định: từ chối mọi collection không được khai báo rõ ở trên.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

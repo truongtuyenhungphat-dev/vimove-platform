@@ -178,7 +178,7 @@ function renderList(tasks) {
         <td><span class="tag priority-${t.priority}">${PRIORITIES[t.priority]?.icon} ${PRIORITIES[t.priority]?.name}</span></td>
         <td>
           <button class="btn-outline sm" onclick="event.stopPropagation();openTaskDetail('${t.id}')">Xem</button>
-          ${canEdit() ? `<button class="btn-danger sm" onclick="event.stopPropagation();deleteTask('${t.id}')">Xóa</button>` : ''}
+          ${isAdmin() ? `<button class="btn-danger sm" onclick="event.stopPropagation();deleteTask('${t.id}')">Xóa</button>` : ''}
         </td>
       </tr>
     `;
@@ -250,13 +250,15 @@ function renderTimeline(tasks) {
 // ============ FILTER / VIEW ============
 function getFilteredTasks() {
   let tasks = [...appState.tasks];
-  
-  // Filter by global company
+
+  // Filter by global company. Tasks created before the company field existed
+  // (or via a code path that forgot to set it) have no `company` — treat them
+  // as the default company ('vimove') instead of silently hiding them.
   if (appState.currentCompany && appState.currentCompany !== 'all') {
-    tasks = tasks.filter(t => t.company === appState.currentCompany);
+    tasks = tasks.filter(t => (t.company || 'vimove') === appState.currentCompany);
   }
 
-  // Các tk trừ quản lý (staff), chỉ hiện các việc mình được giao 
+  // Các tk trừ quản lý (staff), chỉ hiện các việc mình được giao
   // (CVC hiện tại không có assignedBy nên ta chỉ check assigneeId, 
   // hoặc người comment đầu tiên nếu coi đó là người tạo)
   if (currentUser?.role === 'staff') {
@@ -280,11 +282,6 @@ function getFilteredTasks() {
     t.title.toLowerCase().includes(search) ||
     (t.desc||'').toLowerCase().includes(search)
   );
-
-  // Company filter (from global switcher)
-  const company = (typeof appState !== 'undefined' && appState.currentCompany && appState.currentCompany !== 'all')
-    ? appState.currentCompany : null;
-  if (company) tasks = tasks.filter(t => t.company === company || !t.company);
 
   // Assignee filter
   const catFilter = document.getElementById('wfCategory')?.value || 'all';
@@ -556,6 +553,8 @@ function saveNewTask() {
   const task = {
     id:             generateId('t'),
     title,
+    company:        document.getElementById('taskCompany')?.value || 'vimove',
+    project:        document.getElementById('taskProject')?.value?.trim() || '',
     desc:           document.getElementById('taskDesc').value.trim(),
     category:       document.getElementById('taskCategory').value,
     priority:       document.getElementById('taskPriority').value,
@@ -576,7 +575,7 @@ function saveNewTask() {
   saveData();
 
   // Reset form
-  ['taskTitle','taskDesc','taskValue'].forEach(id => document.getElementById(id).value = '');
+  ['taskTitle','taskDesc','taskValue','taskProject'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.querySelectorAll('.channel-tags input').forEach(i => i.checked = false);
   delete document.getElementById('newTaskModal').dataset.targetStage;
 
@@ -585,18 +584,6 @@ function saveNewTask() {
   renderDashboard();
   renderMyTasks();
   showToast(`🎉 CVC "${title}" đã được tạo!`, 'success');
-}
-
-function deleteTask(taskId) {
-  if (!isAdmin()) { showToast('❌ Chỉ Admin mới có thể xóa!', 'error'); return; }
-  if (!confirm('Xóa CVC này?')) return;
-  appState.tasks = getFilteredTasks().filter(t => t.id !== taskId);
-  if (window.fbDeleteTask) window.fbDeleteTask(taskId);
-  saveData();
-  closeModal('taskDetailModal');
-  renderWorkflow();
-  renderDashboard();
-  showToast('🗑️ Đã xóa CVC', 'info');
 }
 
 function editTask(taskId) {
@@ -609,6 +596,8 @@ function editTask(taskId) {
 
   // Pre-fill all fields with current task data
   document.getElementById('taskTitle').value    = task.title;
+  if (document.getElementById('taskCompany')) document.getElementById('taskCompany').value = task.company || 'vimove';
+  if (document.getElementById('taskProject')) document.getElementById('taskProject').value = task.project || '';
   document.getElementById('taskDesc').value     = task.desc || '';
   document.getElementById('taskCategory').value = task.category;
   document.getElementById('taskPriority').value = task.priority;
@@ -797,8 +786,9 @@ function renderMyTasks() {
 function deleteTask(taskId) {
   const task = appState.tasks.find(t => t.id === taskId);
   if (!task) return;
-  if (!canEdit()) {
-    showToast('⛔ Bạn không có quyền xóa CVC!', 'error');
+  // Chỉ Admin — khớp với nút xoá trên thẻ Kanban/List và firestore.rules (delete: isAdmin()).
+  if (!isAdmin()) {
+    showToast('⛔ Chỉ Admin mới có quyền xóa CVC!', 'error');
     return;
   }
   hrConfirm(
@@ -828,9 +818,18 @@ function updateBadges() {
 }
 
 // ============ SEARCH ============
+// Ô tìm kiếm dùng chung ở header — lọc theo trang đang mở (CVC, khách hàng CRM,
+// hoặc giao việc). Đặt ở header (không nằm trong innerHTML được render lại của
+// từng trang) nên gõ tìm không bị mất focus.
 function handleSearch(val) {
   if (document.getElementById('page-workflow')?.classList.contains('active')) {
     renderWorkflow();
+  }
+  if (document.getElementById('page-crm')?.classList.contains('active')) {
+    renderCRM();
+  }
+  if (document.getElementById('page-assignments')?.classList.contains('active')) {
+    renderAssignments();
   }
 }
 

@@ -89,63 +89,19 @@ function getMemberActuals(userId, yearMonth) {
 }
 
 /**
- * Tính % KPI tự động từ data thực tế theo từng metric của position
- * THAY THẾ member.kpi cứng bằng tính toán live
+ * Tính % KPI tự động từ data thực tế theo từng metric của position.
+ * Nguồn công thức duy nhất là calcKpiScore() (hr.js) — dùng chung cho dashboard/
+ * leaderboard (hàm này) và bảng lương chính thức, để hai nơi không bao giờ lệch số.
  * @param {string} userId
  * @param {string} yearMonth - 'YYYY-MM'
  * @returns {number} kpiPct 0-130
  */
 function calcLiveKpiPct(userId, yearMonth) {
   const ym     = yearMonth || getCurrentYearMonth();
-  const pos    = getUserPosition(userId);
   const member = TEAM_MEMBERS.find(m => m.id === userId);
-  if (!member || !pos) return 0;
-
-  // Nếu KPI tháng này đã được Admin phê duyệt → dùng giá trị đó
-  const key     = `${userId}_${ym}`;
-  const actuals = KPI_ACTUALS[key] || {};
-  if (actuals.approved) {
-    // Tính lại điểm từ actuals đã approve
-    const score = calcKpiScore(userId, ym);
-    return score?.kpiTotal ?? member.kpi;
-  }
-
-  // Chưa phê duyệt → tính live từ data thực tế
-  const liveActuals = getMemberActuals(userId, ym);
-  const kpiTargets  = pos.kpiTargets || [];
-
-  if (kpiTargets.length === 0) {
-    // Không có kpiTargets → dùng tasks_done vs target 10
-    const target = 10;
-    return Math.min(Math.round((liveActuals.tasksDone / target) * 100), 130);
-  }
-
-  let totalWeight = 0, totalScore = 0;
-  kpiTargets.forEach(k => {
-    const w = k.weight || Math.round(100 / kpiTargets.length);
-    let pct = 0;
-
-    if (k.metric === 'tasks_done') {
-      const target = k.target || 10;
-      pct = Math.min(Math.round((liveActuals.tasksDone / target) * 100), 130);
-    } else if (k.metric === 'assignments_done') {
-      const target = k.target || 5;
-      pct = Math.min(Math.round((liveActuals.assignDone / target) * 100), 130);
-    } else if (k.metric === 'revenue') {
-      const target = k.target || 1;
-      pct = Math.min(Math.round((liveActuals.revenue / target) * 100), 130);
-    } else {
-      // Metric thủ công: lấy từ KPI_ACTUALS nếu có, không thì 0
-      const actual = actuals[k.metric] ?? null;
-      pct = actual !== null ? Math.min(Math.round((actual / k.target) * 100), 130) : 0;
-    }
-
-    const score = Math.round(pct * w / 100 * 10) / 10;
-    totalWeight += w;
-    totalScore  += score;
-  });
-
-  return Math.min(Math.round(totalScore), 130);
+  if (!member) return 0;
+  const score = calcKpiScore(userId, ym);
+  return score?.kpiTotal ?? member.kpi ?? 0;
 }
 
 /**

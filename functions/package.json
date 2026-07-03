@@ -1,0 +1,11 @@
+{
+  "name": "vimove-functions",
+  "description": "Cloud Functions cho Vimove Operations Platform — quản lý tài khoản Firebase Auth (Admin SDK) và token chấm công QR ký số, những việc client SDK không đủ quyền làm.",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "private": true
+}

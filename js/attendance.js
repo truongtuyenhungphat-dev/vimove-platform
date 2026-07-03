@@ -11,9 +11,9 @@ const ATT_CONFIG = {
   reminderHour:  18,
   // GPS văn phòng — cấu hình tại đây
   office: {
-    name:    'Văn phòng Vimove — Đại Mỗ, Hà Nội',
-    lat:     20.9996875,  // XQPW+QGR Đại Mỗ, Nam Từ Liêm, Hà Nội
-    lng:     105.7594375, // XQPW+QGR Đại Mỗ, Nam Từ Liêm, Hà Nội
+    name:    'Văn phòng Vimove — 266-290 QL6, Đại Mỗ, Hà Nội',
+    lat:     20.986883,  // 266-290 QL6, Đại Mỗ, Hà Nội (khớp OFFICE_LAT trong functions/index.js)
+    lng:     105.796556, // 266-290 QL6, Đại Mỗ, Hà Nội (khớp OFFICE_LNG trong functions/index.js)
     radius:  500,         // mét cho phép ± (check-in trong vòng 500m từ văn phòng)
   },
   qrSecret: 'VIWORK_OFFICE_2026',  // Mã bí mật QR
@@ -266,7 +266,7 @@ function isInOfficeRange(lat, lng) {
 }
 
 // ============ CHECK-IN (GPS văn phòng) ============
-async function doCheckIn(isOnline, gpsData, viaQR) {
+async function doCheckIn(isOnline, gpsData, viaQR, outOfRangeOverride) {
   const user = currentUser;
   if (!user) return;
 
@@ -283,6 +283,15 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
   const lateLimit = 8 * 60 + ATT_CONFIG.lateThreshold;
   const isLate = ciMins > lateLimit;
 
+  // "Xác nhận vẫn check-in" dù ngoài phạm vi văn phòng KHÔNG còn là một lối thoát âm thầm —
+  // ghi lại cờ + khoảng cách + lý do để Admin/Manager có thể rà soát sau (audit trail),
+  // thay vì chấp nhận vô điều kiện như trước.
+  const flagFields = outOfRangeOverride ? {
+    flaggedOutOfRange: true,
+    gpsDistance:       outOfRangeOverride.distance,
+    overrideReason:    outOfRangeOverride.reason || '',
+  } : {};
+
   let record;
   if (existing) {
     record = {
@@ -294,6 +303,7 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
       status:     'working',
       checkInMethod: viaQR ? 'qr' : (isOnline ? 'online' : 'manual'),
       gps:        gpsData || null,
+      ...flagFields,
     };
     const idx = ATTENDANCE_RECORDS.findIndex(r => r.id === existing.id);
     if (idx > -1) ATTENDANCE_RECORDS[idx] = record;
@@ -312,6 +322,7 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
       status:     'working',
       checkInMethod: viaQR ? 'qr' : (isOnline ? 'online' : 'manual'),
       gps:        gpsData || null,
+      ...flagFields,
     };
     ATTENDANCE_RECORDS.push(record);
   }
@@ -328,11 +339,12 @@ async function doCheckIn(isOnline, gpsData, viaQR) {
   }
 
   let msg;
-  if (viaQR)       msg = `✅ QR Check-in lúc ${formatTime(now)} — Tại văn phòng`;
+  if (outOfRangeOverride) msg = `⚠️ Đã check-in lúc ${formatTime(now)} — NGOÀI văn phòng (${outOfRangeOverride.distance}m), đã ghi nhận để Admin rà soát`;
+  else if (viaQR)       msg = `✅ QR Check-in lúc ${formatTime(now)} — Tại văn phòng`;
   else if (isLate) msg = `🟡 Đã check-in lúc ${formatTime(now)} (Muộn ${ciMins - 8*60 - ATT_CONFIG.lateThreshold} phút)`;
   else             msg = `✅ Check-in lúc ${formatTime(now)}${isOnline ? ' — Online' : ' — Văn phòng' + (gpsData ? ` (±${Math.round(gpsData.acc||0)}m)` : '')}`;
 
-  showToast(msg, isLate ? 'info' : 'success');
+  showToast(msg, outOfRangeOverride ? 'info' : (isLate ? 'info' : 'success'));
   renderAttendance();
 }
 
@@ -369,6 +381,7 @@ async function checkInOffice() {
 /** Dialog khi o ngoai pham vi van phong */
 function showGpsOutOfRangeDialog(distance, gps) {
   document.getElementById('gpsDialog')?.remove();
+  window._gpsOverrideCtx = { distance, gps }; // tránh nhồi JSON lớn vào onclick inline
   const el = document.createElement('div');
   el.id = 'gpsDialog';
   el.className = 'modal-overlay';
@@ -382,16 +395,31 @@ function showGpsOutOfRangeDialog(distance, gps) {
           Bạn đang cách văn phòng <strong style="color:#EF4444">${distance}m</strong><br>
           Phạm vi cho phép: <strong>±${ATT_CONFIG.office.radius}m</strong>
         </div>
-        <div style="font-size:12px;color:var(--c-text-3);margin-bottom:20px">
-          Nếu bạn đang ở văn phòng, GPS có thể chưa chính xác. Bạn có muốn tiếp tục không?
+        <div style="font-size:12px;color:var(--c-text-3);margin-bottom:12px">
+          Nếu bạn đang ở văn phòng, GPS có thể chưa chính xác. Việc check-in ngoài phạm vi
+          sẽ được đánh dấu để Admin/Manager rà soát — vui lòng ghi rõ lý do.
         </div>
+        <textarea id="gpsOverrideReason" rows="2" placeholder="Lý do (bắt buộc), VD: đang gặp khách hàng gần văn phòng..."
+          style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--c-border-subtle);background:var(--c-surface-2);color:var(--c-text-1);font-size:13px;margin-bottom:14px;box-sizing:border-box"></textarea>
         <div style="display:flex;gap:10px;justify-content:center">
           <button class="btn btn-cancel" onclick="document.getElementById('gpsDialog').remove()">Hủy</button>
-          <button class="btn btn-save" onclick='document.getElementById("gpsDialog").remove(); doCheckIn(false, ${JSON.stringify(gps)}, false)'>✔️ Xác nhận check-in</button>
+          <button class="btn btn-save" onclick="confirmGpsOverride()">✔️ Xác nhận check-in</button>
         </div>
       </div>
     </div>`;
   document.body.appendChild(el);
+}
+
+function confirmGpsOverride() {
+  const reason = document.getElementById('gpsOverrideReason')?.value.trim() || '';
+  if (!reason) {
+    showToast('⚠️ Vui lòng nhập lý do check-in ngoài văn phòng!', 'error');
+    return;
+  }
+  const ctx = window._gpsOverrideCtx || {};
+  document.getElementById('gpsDialog')?.remove();
+  doCheckIn(false, ctx.gps, false, { distance: ctx.distance, reason });
+  window._gpsOverrideCtx = null;
 }
 
 /** Dialog khi GPS khong kha dung */
@@ -817,7 +845,10 @@ function renderTeamAttendanceSection() {
             </div>
           </div>
         </td>
-        <td class="att-time">${rec?.checkIn ? formatTime(rec.checkIn) : '—'}</td>
+        <td class="att-time">
+          ${rec?.checkIn ? formatTime(rec.checkIn) : '—'}
+          ${rec?.flaggedOutOfRange ? `<span class="tag" style="background:rgba(239,68,68,0.15);color:#EF4444;font-size:10px;margin-left:4px" title="Check-in cách văn phòng ${rec.gpsDistance || '?'}m — Lý do: ${escHtml(rec.overrideReason || '—')}">⚠️ Ngoài VP</span>` : ''}
+        </td>
         <td class="att-time">${rec?.checkOut ? formatTime(rec.checkOut) : '—'}</td>
         <td>${rec?.duration ? formatDuration(rec.duration) : '—'}</td>
         <td><span class="att-loc-tag">${locIcon}</span></td>

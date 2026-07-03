@@ -159,7 +159,7 @@ function renderKPIList() {
     { name: '🎯 Doanh thu tích lũy', current: parseFloat(totalRev.toFixed(1)), target: parseFloat(targetRevMo.toFixed(1)), unit: 'tỷ', color: '#10B981' },
     { name: '✅ CVC hoàn thành', current: doneTasks.length, target: Math.max(tasks.length, 10), unit: 'task', color: '#3B82F6' },
     { name: '👥 Khách đã chốt (Won)', current: wonLeads, target: Math.max(totalLeads, 5), unit: 'KH', color: '#7C3AED' },
-    { name: '📱 Leads Facebook', current: fbLeads, target: Math.max(fbLeads + 20, 30), unit: 'leads', color: '#1877F2' },
+    { name: '📱 Leads Facebook', current: fbLeads, target: APP_CONFIG.monthlyFbLeadsTarget || 30, unit: 'leads', color: '#1877F2' },
     { name: '📊 Tỷ lệ chốt đơn', current: closedRate, target: 35, unit: '%', color: '#F59E0B' },
     { name: '📄 CVC đang xử lý', current: tasks.filter(t => t.stage === 'inprogress').length, target: Math.max(tasks.length, 5), unit: 'CVC', color: '#5AB800' },
   ];

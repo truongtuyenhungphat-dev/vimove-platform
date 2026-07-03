@@ -41,30 +41,33 @@ function calcKpiScore(userId, yearMonth) {
     return d.getFullYear() === year && d.getMonth() + 1 === month;
   });
 
+  const kpiTargets = pos.kpiTargets || [];
+  if (kpiTargets.length === 0) {
+    // Vị trí chưa cấu hình kpiTargets → fallback: CVC hoàn thành / 10
+    const kpiTotal = pctFromTarget(tasks.length, 10);
+    return { kpiTotal, tier: getKpiTier(kpiTotal), breakdown: [], approved: actuals.approved || false,
+             approvedBy: actuals.approvedBy, approvedAt: actuals.approvedAt, yearMonth: `${year}-${String(month).padStart(2,'0')}` };
+  }
+
   let totalWeight = 0, totalScore = 0;
-  const breakdown = pos.kpiTargets.map(k => {
+  const breakdown = kpiTargets.map(k => {
     let actual, pct;
     if (k.metric === 'tasks_done') {
-      // Dùng k.target từ kpiTargets, fallback 10 nếu không có
-      const target = k.target && k.target > 0 ? k.target : 10;
       actual = tasks.length;
-      pct    = Math.min(Math.round((actual / target) * 100), 130);
+      pct    = pctFromTarget(actual, k.target || 10);
     } else if (k.metric === 'assignments_done') {
-      const target = k.target && k.target > 0 ? k.target : 5;
       actual = assignsDone.length;
-      pct    = Math.min(Math.round((actual / target) * 100), 130);
+      pct    = pctFromTarget(actual, k.target || 5);
     } else if (k.metric === 'revenue' || k.metric === 'revenue_personal') {
       // Thử tính từ tasks có value trước, rồi fallback actuals Admin nhập
       const taskRevenue = tasks.reduce((sum, t) => sum + (t.value || 0), 0);
       actual = taskRevenue > 0 ? taskRevenue : (actuals[k.metric] ?? null);
-      pct    = actual !== null && actual > 0
-        ? Math.min(Math.round((actual / k.target) * 100), 130)
-        : 0;
+      pct    = (actual !== null && actual > 0) ? pctFromTarget(actual, k.target) : 0;
     } else {
       actual = actuals[k.metric] ?? null;
-      pct    = actual !== null ? Math.min(Math.round((actual / k.target) * 100), 130) : 0;
+      pct    = pctFromTarget(actual, k.target);
     }
-    const w     = k.weight || Math.round(100 / pos.kpiTargets.length);
+    const w     = k.weight || Math.round(100 / kpiTargets.length);
     const score = Math.round(pct * w / 100 * 10) / 10;
     totalWeight += w;
     totalScore  += score;

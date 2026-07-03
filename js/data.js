@@ -9,6 +9,7 @@ const APP_CONFIG = {
   revenueTarget: 150,
   opMonths: 17,
   startDate: new Date('2025-01-01'),
+  monthlyFbLeadsTarget: 30, // Mục tiêu leads Facebook/tháng — cố định, không tính theo số hiện tại
   version: '2.0.0'
 };
 
@@ -518,6 +519,47 @@ function loadHrConfig() {
 // Gọi hàm ngay khi file data.js load để ghi đè dữ liệu mặc định
 loadHrConfig();
 
+// ===== CẤU HÌNH APP_CONFIG & STAGES/CATEGORIES (offline fallback) =====
+// Nguồn sự thật là Firestore (viwork_config/*, xem fbListenAppConfig/fbListenWorkflowConfig
+// trong initData() bên dưới) — localStorage chỉ là fallback khi mất kết nối, để cấu hình
+// do Admin thêm (vd: giai đoạn CVC mới) không biến mất khi tải lại trang hay đổi thiết bị.
+function loadAppConfigLocal() {
+  try {
+    const saved = localStorage.getItem('viwork_app_config');
+    if (saved) Object.assign(APP_CONFIG, JSON.parse(saved));
+  } catch (err) { console.error('Error loading app config', err); }
+}
+loadAppConfigLocal();
+
+function loadWorkflowConfigLocal() {
+  try {
+    const saved = localStorage.getItem('viwork_workflow_taxonomy');
+    if (!saved) return;
+    const cfg = JSON.parse(saved);
+    if (Array.isArray(cfg.stages) && cfg.stages.length) {
+      STAGES.length = 0;
+      cfg.stages.forEach(s => STAGES.push(s));
+    }
+    if (cfg.categories && Object.keys(cfg.categories).length) {
+      Object.keys(CATEGORIES).forEach(k => delete CATEGORIES[k]);
+      Object.assign(CATEGORIES, cfg.categories);
+    }
+  } catch (err) { console.error('Error loading workflow config', err); }
+}
+loadWorkflowConfigLocal();
+
+/** Lưu STAGES/CATEGORIES hiện tại — gọi sau mỗi lần Admin thêm/xoá giai đoạn/danh mục */
+function persistWorkflowConfig() {
+  try { localStorage.setItem('viwork_workflow_taxonomy', JSON.stringify({ stages: STAGES, categories: CATEGORIES })); } catch(e) {}
+  if (window.fbSaveWorkflowConfig) window.fbSaveWorkflowConfig(STAGES, CATEGORIES);
+}
+
+/** Lưu APP_CONFIG hiện tại — gọi sau khi Admin sửa Settings */
+function persistAppConfig() {
+  try { localStorage.setItem('viwork_app_config', JSON.stringify(APP_CONFIG)); } catch(e) {}
+  if (window.fbSaveAppConfig) window.fbSaveAppConfig(APP_CONFIG);
+}
+
 // ============ INIT DATA (CLOUD FIRESTORE) ============
 function initData() {
   if (window.firebaseDB) {
@@ -588,6 +630,35 @@ function initData() {
         if (pgHome && pgHome.classList.contains('active')) renderMyTasks();
       }
     });
+
+    // 7. Lắng nghe cấu hình giai đoạn/danh mục CVC (Admin thêm/xoá) — đồng bộ real-time
+    // giữa các thiết bị thay vì chỉ tồn tại trong bộ nhớ của người vừa sửa.
+    if (window.fbListenWorkflowConfig) {
+      window.fbListenWorkflowConfig(cfg => {
+        if (Array.isArray(cfg.stages) && cfg.stages.length) {
+          STAGES.length = 0;
+          cfg.stages.forEach(s => STAGES.push(s));
+        }
+        if (cfg.categories && Object.keys(cfg.categories).length) {
+          Object.keys(CATEGORIES).forEach(k => delete CATEGORIES[k]);
+          Object.assign(CATEGORIES, cfg.categories);
+        }
+        try { localStorage.setItem('viwork_workflow_taxonomy', JSON.stringify({ stages: STAGES, categories: CATEGORIES })); } catch(e) {}
+        if (typeof renderWorkflow === 'function') renderWorkflow();
+        if (typeof renderSettingsPanel === 'function') renderSettingsPanel();
+      });
+    }
+
+    // 8. Lắng nghe cấu hình chung của App (tên công ty, mục tiêu doanh thu...)
+    if (window.fbListenAppConfig) {
+      window.fbListenAppConfig(cfg => {
+        Object.assign(APP_CONFIG, cfg);
+        try { localStorage.setItem('viwork_app_config', JSON.stringify(APP_CONFIG)); } catch(e) {}
+        if (document.getElementById('page-dashboard')?.classList.contains('active') && typeof renderDashboard === 'function') {
+          renderDashboard();
+        }
+      });
+    }
   } else {
     // Dự phòng khi mất kết nối Firebase, sài Data tĩnh
     appState.tasks = [...INITIAL_TASKS];
@@ -764,6 +835,50 @@ function getUserById(id) {
   return TEAM_MEMBERS.find(m => m.id === id) || { name: 'Người dùng', avatar: '👤' };
 }
 
+/* ========================================================
+   EMPLOYEE MODEL SYNC HELPERS
+   TEAM_MEMBERS (hồ sơ hiển thị) và DEMO_USERS (tài khoản đăng nhập, keyed
+   theo email) là hai bảng độc lập cho cùng một nhân viên. Đây là các điểm
+   sửa DUY NHẤT khi tạo/sửa/xoá nhân viên, để hai bảng — và POSITIONS.members
+   — không bao giờ lệch nhau như khi mỗi nơi gọi code tự đồng bộ tay riêng.
+   ======================================================== */
+function findUserEmailById(userId) {
+  const entry = Object.entries(DEMO_USERS).find(([, u]) => u.id === userId);
+  return entry ? entry[0] : null;
+}
+
+function upsertMemberProfile(userId, patch) {
+  const idx = TEAM_MEMBERS.findIndex(m => m.id === userId);
+  if (idx > -1) TEAM_MEMBERS[idx] = { ...TEAM_MEMBERS[idx], ...patch };
+
+  const email = findUserEmailById(userId);
+  if (email) DEMO_USERS[email] = { ...DEMO_USERS[email], ...patch };
+
+  return { email, member: idx > -1 ? TEAM_MEMBERS[idx] : null };
+}
+
+function setMemberPosition(userId, newPositionId) {
+  if (typeof POSITIONS === 'undefined') return;
+  const oldPos = POSITIONS.find(p => p.members?.includes(userId));
+  if (oldPos && oldPos.id !== newPositionId) {
+    oldPos.members = oldPos.members.filter(id => id !== userId);
+  }
+  if (newPositionId) {
+    const newPos = POSITIONS.find(p => p.id === newPositionId);
+    if (newPos && !newPos.members.includes(userId)) newPos.members.push(userId);
+  }
+}
+
+function removeMemberEverywhere(userId) {
+  Object.keys(DEMO_USERS).forEach(em => { if (DEMO_USERS[em]?.id === userId) delete DEMO_USERS[em]; });
+  const idx = TEAM_MEMBERS.findIndex(m => m.id === userId);
+  if (idx > -1) TEAM_MEMBERS.splice(idx, 1);
+  if (typeof POSITIONS !== 'undefined') {
+    POSITIONS.forEach(p => { if (p.members?.includes(userId)) p.members = p.members.filter(id => id !== userId); });
+  }
+  if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[userId];
+}
+
 function getStageById(id) {
   return STAGES.find(s => s.id === id) || STAGES[0];
 }
@@ -780,6 +895,17 @@ function formatCurrency(val) {
   if (!val) return '—';
   if (val >= 1000) return (val/1000).toFixed(1) + ' tỷ';
   return val.toLocaleString('vi-VN') + ' triệu';
+}
+
+/**
+ * Quy đổi actual/target thành % KPI (0-cap), dùng chung bởi calcKpiScore (hr.js)
+ * và calcLiveKpiPct (kpi-engine.js) — một nguồn công thức duy nhất, tránh lệch số
+ * giữa dashboard/leaderboard và bảng lương chính thức.
+ * target <= 0/undefined trả về 0 thay vì chia cho 0 (tránh false-positive 130%).
+ */
+function pctFromTarget(actual, target, cap = 130) {
+  if (!target || target <= 0 || actual == null) return 0;
+  return Math.min(Math.round((actual / target) * 100), cap);
 }
 
 // ============ TRAINING COURSES (Sprint 7: L&D) ============

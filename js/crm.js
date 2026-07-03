@@ -7,9 +7,24 @@
 function getFilteredLeads() {
   let leads = appState.leads || [];
   const company = (appState.currentCompany && appState.currentCompany !== 'all') ? appState.currentCompany : null;
+  // Leads created before the company field existed have no `company` — treat them as
+  // belonging to the default company ('vimove') instead of silently hiding them.
   if (company) {
-    leads = leads.filter(l => l.company === company);
+    leads = leads.filter(l => (l.company || 'vimove') === company);
   }
+
+  // Dùng chung ô tìm kiếm ở header (globalSearch) — trước đây chỉ lọc CVC dù placeholder
+  // ghi "Tìm CVC, khách hàng...", khiến tìm khách hàng ở CRM không hoạt động.
+  const search = (document.getElementById('globalSearch')?.value || '').trim().toLowerCase();
+  if (search) {
+    leads = leads.filter(l =>
+      (l.name || '').toLowerCase().includes(search) ||
+      (l.phone || '').toLowerCase().includes(search) ||
+      (l.email || '').toLowerCase().includes(search) ||
+      (l.product || '').toLowerCase().includes(search)
+    );
+  }
+
   return leads;
 }
 
@@ -261,6 +276,11 @@ function setLeadStage(leadId, stageId) {
 }
 
 function openNewLeadModal() {
+  const companySel = document.getElementById('leadCompany');
+  if (companySel) {
+    const cc = appState.currentCompany;
+    companySel.value = (cc && cc !== 'all') ? cc : 'vimove';
+  }
   document.getElementById('newLeadModal').classList.remove('hidden');
 }
 
@@ -271,6 +291,7 @@ function saveNewLead() {
   const lead = {
     id:             generateId('l'),
     name,
+    company:        document.getElementById('leadCompany')?.value || 'vimove',
     phone:          document.getElementById('leadPhone').value.trim(),
     email:          document.getElementById('leadEmail')?.value.trim() || '', // Bug 3 Fix
     channel:        document.getElementById('leadChannel').value,

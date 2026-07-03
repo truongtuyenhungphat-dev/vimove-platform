@@ -34,12 +34,29 @@ function verifyQrPayload(payload) {
 }
 
 /** Mở modal hiển thị QR cho Admin in/hiển thị tại VP */
-function openQrDisplayModal() {
+async function openQrDisplayModal() {
   if (currentUser?.role !== 'admin' && currentUser?.role !== 'manager') {
     showToast('⚠️ Chỉ Admin/Manager mới có thể xem mã QR văn phòng!', 'error');
     return;
   }
-  const payload = generateQrPayload();
+
+  // Nếu đã deploy Cloud Function, dùng token do SERVER sinh (không thể tự tạo lại
+  // chỉ bằng cách đọc source JS công khai). Nếu chưa, dùng payload tĩnh cũ (yếu hơn)
+  // để không phá vỡ tính năng khi chưa hoàn tất di chuyển bảo mật.
+  let payload;
+  if (window.fbGenerateAttendanceQrToken) {
+    try {
+      const { token } = await window.fbGenerateAttendanceQrToken();
+      payload = token;
+    } catch (e) {
+      console.error('[QR] generateAttendanceQrToken lỗi, dùng fallback tĩnh:', e);
+      payload = generateQrPayload();
+    }
+  } else {
+    console.warn('[QR] Cloud Function generateAttendanceQrToken chưa triển khai — đang dùng mã tĩnh kém an toàn hơn. Xem SECURITY_DEPLOY_GUIDE.md.');
+    payload = generateQrPayload();
+  }
+
   const today   = new Date();
   const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
 
@@ -202,11 +219,29 @@ function startQrScan(video) {
   }, 300);
 }
 
-function handleQrResult(payload) {
+async function handleQrResult(payload) {
   closeQrScanModal();
 
+  // Đường đi an toàn: xác thực + ghi check-in ở SERVER (Cloud Function), userId lấy
+  // từ phiên đăng nhập hiện tại — không thể giả mạo chấm công hộ người khác.
+  if (window.fbVerifyAndCheckInWithQr) {
+    try {
+      let coords = null;
+      try { coords = await getCurrentGPS(); } catch(e) { /* không bắt buộc phải có GPS để quét QR */ }
+      await window.fbVerifyAndCheckInWithQr(payload, coords ? { lat: coords.lat, lng: coords.lng } : null);
+      showToast('✅ Check-in QR thành công!', 'success');
+      if (typeof renderAttendance === 'function') renderAttendance();
+      if (typeof loadAttendanceData === 'function') loadAttendanceData();
+    } catch (e) {
+      console.error('[QR] verifyAndCheckInWithQr lỗi:', e);
+      showToast('❌ ' + (e.message || 'Mã QR không hợp lệ hoặc đã hết hạn!'), 'error');
+    }
+    return;
+  }
+
+  // Fallback (chưa deploy Cloud Function): xác thực tĩnh phía client — kém an toàn hơn,
+  // xem SECURITY_DEPLOY_GUIDE.md để nâng cấp.
   if (verifyQrPayload(payload)) {
-    // QR hop le — check-in
     doCheckIn(false, null, true);
   } else {
     showToast('❌ Mã QR không hợp lệ hoặc đã hết hạn! Liên hệ Admin để lấy mã mới.', 'error');

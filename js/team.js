@@ -217,48 +217,22 @@ async function saveEditMember() {
   if (!name) { showToast('⚠️ Tên không được để trống!', 'error'); return; }
   if (kpi < 0 || kpi > 200) { showToast('⚠️ KPI phải từ 0–200%!', 'error'); return; }
 
-  // Cập nhật POSITIONS.members: xóa khỏi vị trí cũ, thêm vào vị trí mới
-  if (typeof POSITIONS !== 'undefined') {
-    // Tìm vị trí cũ
-    const oldPos = POSITIONS.find(p => p.members?.includes(memberId));
-    if (oldPos && oldPos.id !== positionId) {
-      oldPos.members = oldPos.members.filter(id => id !== memberId);
-    }
-    // Thêm vào vị trí mới
-    if (positionId) {
-      const newPos = POSITIONS.find(p => p.id === positionId);
-      if (newPos && !newPos.members.includes(memberId)) {
-        newPos.members.push(memberId);
-      }
-    }
-  }
+  // Cập nhật vị trí (POSITIONS.members) — xóa khỏi vị trí cũ, thêm vào vị trí mới
+  setMemberPosition(memberId, positionId);
 
-  // Cập nhật TEAM_MEMBERS
-  const idx = TEAM_MEMBERS.findIndex(m => m.id === memberId);
-  if (idx > -1) {
-    TEAM_MEMBERS[idx] = {
-      ...TEAM_MEMBERS[idx],
-      name, department: dept, kpi, revenue, role,
-      avatar: getInitials(name),
-      positionId, jobTitle,
-    };
-  }
+  // Cập nhật TEAM_MEMBERS + DEMO_USERS từ MỘT điểm sửa duy nhất, để hai bảng
+  // không thể lệch nhau (trước đây mỗi bảng được ghi tay riêng biệt).
+  const { email } = upsertMemberProfile(memberId, {
+    name, department: dept, kpi, revenue, role,
+    avatar: getInitials(name),
+    positionId, jobTitle,
+    ...(newPass ? { password: newPass } : {}),
+  });
 
-  // Cập nhật DEMO_USERS
-  const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
-  if (userEntry) {
-    const [email, user] = userEntry;
-    DEMO_USERS[email] = {
-      ...user,
-      name, department: dept, role,
-      avatar: getInitials(name),
-      positionId, jobTitle,
-      ...(newPass ? { password: newPass } : {}),
-    };
-    if (window.fbSaveUser) {
-      await window.fbSaveUser({ ...DEMO_USERS[email], email });
-    }
+  if (email && window.fbSaveUser) {
+    await window.fbSaveUser({ ...DEMO_USERS[email], email });
   }
+  const userEntry = email ? [email, DEMO_USERS[email]] : null;
 
   // Nếu edit chính mình
   if (currentUser?.id === memberId) {
@@ -343,8 +317,7 @@ function confirmDeleteMember(memberId) {
 }
 
 async function doDeleteMember(memberId, member) {
-  const userEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === memberId);
-  const email = userEntry ? userEntry[0] : null;
+  const email = findUserEmailById(memberId);
 
   // 1. Xóa trên Firebase + đánh dấu deleted để đồng bộ máy khác
   if (email && window.fbDeleteUser) {
@@ -356,22 +329,9 @@ async function doDeleteMember(memberId, member) {
     window.fbMarkUserDeleted(memberId).catch(e => console.warn('[fbMarkUserDeleted]', e));
   }
 
-  // 2. Xóa tất cả DEMO_USERS entries có cùng ID (kể cả alias)
-  Object.keys(DEMO_USERS).forEach(em => {
-    if (DEMO_USERS[em]?.id === memberId) delete DEMO_USERS[em];
-  });
-
-  // 3. Xóa TEAM_MEMBERS
-  const idx = TEAM_MEMBERS.findIndex(m => m.id === memberId);
-  if (idx > -1) TEAM_MEMBERS.splice(idx, 1);
-
-  // 4. Xóa khỏi POSITIONS.members
-  if (typeof POSITIONS !== 'undefined') {
-    POSITIONS.forEach(p => {
-      if (p.members?.includes(memberId))
-        p.members = p.members.filter(id => id !== memberId);
-    });
-  }
+  // 2-4, 7. Xóa khỏi DEMO_USERS, TEAM_MEMBERS, POSITIONS.members, USER_ALLOWANCES
+  // — một điểm xoá duy nhất, để không sót bảng nào (từng bị xoá tay riêng lẻ ở đây).
+  removeMemberEverywhere(memberId);
 
   // 5. Un-assign tasks
   if (typeof appState !== 'undefined') {
@@ -388,9 +348,6 @@ async function doDeleteMember(memberId, member) {
     if (!deleted.includes(memberId)) deleted.push(memberId);
     localStorage.setItem('viwork_deleted_ids', JSON.stringify(deleted));
   } catch(e) {}
-
-  // 7. Xóa phụ cấp
-  if (typeof USER_ALLOWANCES !== 'undefined') delete USER_ALLOWANCES[memberId];
 
   // 8. Refresh toàn bộ views
   try { if (typeof renderTeamPage === 'function') renderTeamPage(); } catch(e) {}

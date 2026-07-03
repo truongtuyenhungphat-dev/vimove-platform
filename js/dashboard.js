@@ -26,15 +26,39 @@ function updateGreeting() {
   if (el) el.innerHTML = `Chào ${greeting}, <strong>${currentUser?.name?.split(' ').pop() || ''}</strong>! Hôm nay có <strong style="color:var(--c-danger)">${hotCount}</strong> CVC cần xử lý.`;
 }
 
+// Ngày bắt đầu của kỳ đang chọn ở #dashPeriod (today/week/month), dùng để
+// đếm số CVC "hoàn thành trong kỳ" thay vì luôn hiển thị tổng mọi thời điểm.
+function getDashPeriodStart(period) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  if (period === 'today') return start;
+  if (period === 'month') { start.setDate(1); return start; }
+  // week (mặc định): lùi về thứ 2 đầu tuần
+  const day = start.getDay(); // 0=CN..6=T7
+  start.setDate(start.getDate() - (day === 0 ? 6 : day - 1));
+  return start;
+}
+
 function updateMetrics() {
   const tasks   = appState.tasks;
   const active  = tasks.filter(t => t.stage !== 'done');
   const overdue = tasks.filter(t => isOverdue(t));
-  const done    = tasks.filter(t => t.stage === 'done');
+
+  const period       = document.getElementById('dashPeriod')?.value || 'week';
+  const periodStart  = getDashPeriodStart(period);
+  const done = tasks.filter(t => {
+    if (t.stage !== 'done') return false;
+    const completedAt = new Date(t.stageEnteredAt || t.updatedAt || t.deadline || t.createDate || 0);
+    return completedAt >= periodStart;
+  });
 
   animateNumber('m-totalCVC', active.length);
   animateNumber('m-overdue',  overdue.length);
   animateNumber('m-done',     done.length);
+
+  const periodLabel = { today: 'hôm nay', week: 'tuần này', month: 'tháng này' }[period] || 'tuần này';
+  const doneLabelEl = document.querySelector('#mc-done .metric-label');
+  if (doneLabelEl) doneLabelEl.textContent = `Hoàn thành ${periodLabel}`;
 
   const rev = getTotalActualRevenue().toFixed(1);
   TOTAL_ACTUAL_REVENUE = getTotalActualRevenue(); // sync global
@@ -548,5 +572,6 @@ function saveSettings() {
   APP_CONFIG.revenueTarget = parseFloat(document.getElementById('revenueTarget')?.value) || 150;
   APP_CONFIG.opMonths      = parseInt(document.getElementById('opMonths')?.value) || 17;
   renderRevenueProgress();
+  persistAppConfig(); // Lưu Firestore + localStorage — trước đây chỉ ở bộ nhớ, mất khi tải lại trang
   showToast('✅ Đã lưu cài đặt!', 'success');
 }

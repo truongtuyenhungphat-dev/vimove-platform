@@ -225,6 +225,7 @@ function _doAddStage() {
   if (!name) { showToast('⚠️ Nhập tên giai đoạn!', 'error'); return; }
   const id = 'stage_' + name.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,16) + '_' + Date.now().toString(36);
   STAGES.push({ id, name, icon, color, order: STAGES.length });
+  persistWorkflowConfig();
   document.getElementById('_dlg_stage')?.remove();
   renderSettingsPanel();
   showToast(`✅ Đã thêm giai đoạn "${icon} ${name}"`, 'success');
@@ -240,6 +241,7 @@ function removeStage(id) {
   hrConfirm(`Xóa giai đoạn "${stage.icon} ${stage.name}"?`, 'Hành động không thể hoàn tác.', () => {
     const idx = STAGES.findIndex(s => s.id === id);
     if (idx > -1) STAGES.splice(idx, 1);
+    persistWorkflowConfig();
     renderSettingsPanel();
     showToast(`🗑️ Đã xóa giai đoạn "${stage.name}"`, 'info');
   });
@@ -272,6 +274,7 @@ function _doAddCategory() {
   const key = name.toLowerCase().replace(/[\s\W]+/g,'_').replace(/[^a-z0-9_]/g,'').substring(0,20);
   if (CATEGORIES[key]) { showToast('⚠️ Danh mục đã tồn tại!', 'error'); return; }
   CATEGORIES[key] = { name, icon, cssClass: 'cat-custom' };
+  persistWorkflowConfig();
   document.getElementById('_dlg_cat')?.remove();
   renderSettingsPanel();
   showToast(`✅ Đã thêm danh mục "${icon} ${name}"`, 'success');
@@ -286,6 +289,7 @@ function removeCategory(key) {
   if (!cat) return;
   hrConfirm(`Xóa danh mục "${cat.icon} ${cat.name}"?`, 'Hành động không thể hoàn tác.', () => {
     delete CATEGORIES[key];
+    persistWorkflowConfig();
     renderSettingsPanel();
     showToast(`🗑️ Đã xóa danh mục "${cat.name}"`, 'info');
   });
@@ -535,14 +539,9 @@ function loadSavedUsers() {
     // Lay danh sach ID da xoa
     const deletedIds = new Set(JSON.parse(localStorage.getItem('viwork_deleted_ids') || '[]'));
 
-    // Xoa nhung user hardcoded bi xoa khoi TEAM_MEMBERS va DEMO_USERS
+    // Xoa nhung user hardcoded bi xoa khoi TEAM_MEMBERS, DEMO_USERS va POSITIONS.members
     if (deletedIds.size > 0) {
-      deletedIds.forEach(id => {
-        const tmIdx = TEAM_MEMBERS.findIndex(m => m.id === id);
-        if (tmIdx > -1) TEAM_MEMBERS.splice(tmIdx, 1);
-        const duEntry = Object.entries(DEMO_USERS).find(([,u]) => u.id === id);
-        if (duEntry) delete DEMO_USERS[duEntry[0]];
-      });
+      deletedIds.forEach(id => removeMemberEverywhere(id));
     }
 
     // Them user moi tu localStorage (nguoi dung tu tao) - offline fallback only
@@ -574,14 +573,9 @@ function loadSavedUsers() {
  */
 let _deletedUserIds = new Set();
 
-/** Ap dung _deletedUserIds vao TEAM_MEMBERS va DEMO_USERS */
+/** Ap dung _deletedUserIds vao TEAM_MEMBERS, DEMO_USERS va POSITIONS.members */
 function _applyDeletedIds() {
-  for (let i = TEAM_MEMBERS.length - 1; i >= 0; i--) {
-    if (_deletedUserIds.has(TEAM_MEMBERS[i].id)) TEAM_MEMBERS.splice(i, 1);
-  }
-  Object.keys(DEMO_USERS).forEach(em => {
-    if (_deletedUserIds.has(DEMO_USERS[em]?.id)) delete DEMO_USERS[em];
-  });
+  _deletedUserIds.forEach(id => removeMemberEverywhere(id));
 }
 
 /**

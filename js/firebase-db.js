@@ -118,6 +118,39 @@ window.fbSaveUser = async (userObj) => {
   return getDB().collection('viwork_users').doc(userObj.email.replace(/[@.]/g,'_')).set(userObj, { merge: true });
 };
 
+// ============ VIWORK_CONFIG (giai đoạn/danh mục CVC, cấu hình app) ============
+// Trước đây STAGES/CATEGORIES/APP_CONFIG do Admin sửa chỉ tồn tại trong bộ nhớ trình
+// duyệt — mất khi tải lại trang, không đồng bộ giữa các thiết bị. Lưu vào Firestore để
+// khớp với thiết kế real-time của phần còn lại của app.
+window.fbSaveWorkflowConfig = async (stages, categories) => {
+  const db = getDB();
+  if (!db) return;
+  return db.collection('viwork_config').doc('workflow_taxonomy').set({ stages, categories }, { merge: true });
+};
+
+window.fbListenWorkflowConfig = (callback) => {
+  return getDB().collection('viwork_config').doc('workflow_taxonomy').onSnapshot(
+    snap => { if (snap.exists) callback(snap.data()); },
+    err  => console.warn('[fbListenWorkflowConfig]', err)
+  );
+};
+
+window.fbSaveAppConfig = async (config) => {
+  const db = getDB();
+  if (!db) return;
+  const { companyName, revenueTarget, opMonths, monthlyFbLeadsTarget } = config;
+  return db.collection('viwork_config').doc('app_settings').set(
+    { companyName, revenueTarget, opMonths, monthlyFbLeadsTarget }, { merge: true }
+  );
+};
+
+window.fbListenAppConfig = (callback) => {
+  return getDB().collection('viwork_config').doc('app_settings').onSnapshot(
+    snap => { if (snap.exists) callback(snap.data()); },
+    err  => console.warn('[fbListenAppConfig]', err)
+  );
+};
+
 window.fbDeleteUser = async (email) => {
   return getDB().collection('viwork_users').doc(email.replace(/[@.]/g,'_')).delete();
 };
@@ -249,6 +282,8 @@ window.fbCleanupAttendanceDuplicates = async (records) => {
   const db = getDB();
   if (!db) return records;
   const map = {};
+  // { id, expectedNoCheckIn } — expectedNoCheckIn=true nghĩa là bản ghi này CHƯA có
+  // check-in tại thời điểm quét; chỉ an toàn xoá nếu điều đó vẫn đúng lúc commit.
   const toDelete = [];
   const validRecords = [];
 
@@ -257,7 +292,7 @@ window.fbCleanupAttendanceDuplicates = async (records) => {
     const recordId = r.id;
     if (!recordId) {
       console.warn('[ATT] Found record without ID, skipping:', r);
-      return; 
+      return;
     }
 
     const key = r.userId + '_' + r.date;
@@ -267,24 +302,36 @@ window.fbCleanupAttendanceDuplicates = async (records) => {
     } else {
       const existing = map[key];
       if (r.checkIn && !existing.checkIn) {
-        toDelete.push(existing.id);
+        toDelete.push({ id: existing.id, expectedNoCheckIn: true });
         Object.assign(existing, r); // Update in place to keep the reference in validRecords
       } else if (!r.checkIn && existing.checkIn) {
-        toDelete.push(recordId);
+        toDelete.push({ id: recordId, expectedNoCheckIn: true });
       } else {
-        toDelete.push(recordId);
+        // Cả hai bản đều có (hoặc đều thiếu) check-in — bản trùng thật sự, an toàn xoá.
+        toDelete.push({ id: recordId, expectedNoCheckIn: false });
       }
     }
   });
 
   if (toDelete.length > 0) {
-    console.log('[ATT] Found duplicates, cleaning up...', toDelete);
+    console.log('[ATT] Found duplicates, cleaning up (transactional)...', toDelete);
     try {
-      const batch = db.batch();
-      toDelete.forEach(id => {
-        if (id) batch.delete(db.collection('viwork_attendance').doc(id));
+      // Dùng transaction thay vì batch delete mù theo ID: đọc lại từng doc ngay trước khi
+      // xoá để không xoá đè lên bản ghi vừa được một thiết bị khác cập nhật (VD: vừa check-in
+      // vào đúng lúc job dọn dẹp này đang chạy).
+      await db.runTransaction(async (tx) => {
+        const refs  = toDelete.map(d => db.collection('viwork_attendance').doc(d.id));
+        const snaps = await Promise.all(refs.map(ref => tx.get(ref)));
+        snaps.forEach((snap, i) => {
+          const d = toDelete[i];
+          if (!snap.exists) return; // đã bị xoá từ trước
+          if (d.expectedNoCheckIn && snap.data().checkIn) {
+            console.warn('[ATT] Skip deleting', d.id, '— updated concurrently, no longer a stale duplicate');
+            return;
+          }
+          tx.delete(refs[i]);
+        });
       });
-      await batch.commit();
       console.log('[ATT] Cleaned up ' + toDelete.length + ' duplicates');
     } catch (e) {
       console.warn('[ATT] Failed to cleanup duplicates', e);
