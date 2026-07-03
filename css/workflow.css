@@ -98,6 +98,11 @@
   position: relative;
   overflow: hidden;
   user-select: none;
+  /* Card là flex item trong .kanban-cards (flex-direction:column, chiều cao giới hạn).
+     overflow:hidden (để bo góc thanh màu ưu tiên bên trái) khiến trình duyệt bỏ qua
+     min-height tự nhiên của flex item, làm mọi card bị bóp co lại vừa khít cột thay vì
+     dùng thanh cuộn — chỉ còn thấy tiêu đề. flex-shrink:0 giữ đúng chiều cao nội dung. */
+  flex-shrink: 0;
 }
 
 .task-card::before {
