@@ -53,32 +53,34 @@ const CHANNELS = {
 // ============ DEMO ACCOUNTS ============
 /* ========================================================
    DEMO USERS — Nhân viên thật Vimove (v2.2)
-   Primary Admin: ngan@vimove.net / ngan123  (⇒ Phê duyệt, quản trị)
-   Tech Admin:    tuyen@vimove.net / tuyen123 (⇒ Hỗ trợ kỹ thuật)
+   Đã chuyển đăng nhập sang Firebase Authentication (js/auth-firebase.js) —
+   KHÔNG còn trường password ở đây. Danh sách này giờ chỉ còn dùng làm
+   fallback hồ sơ hiển thị (tên/role/avatar/department) khi Firestore chưa
+   load xong, và làm nguồn "danh sách nhân viên gốc" cho các hàm đồng bộ.
    ======================================================== */
 const DEMO_USERS = {
   // ===== PRIMARY ADMIN =====
-  'ngan@vimove.net': { id: 'u002', name: 'Nguyễn Thị Thanh Ngân', role: 'admin', password: 'ngan123', avatar: 'NTN', department: 'Quản trị & Phê duyệt' },
-  'tuyen@vimove.net': { id: 'u001', name: 'Trương Ngọc Tuyền', role: 'admin', password: 'tuyen123', avatar: 'TNT', department: 'Digital & Hỗ trợ kỹ thuật' },
-  'chi@vimove.net': { id: 'u013', name: 'Trịnh Linh Chi', role: 'admin', password: 'chi123', avatar: 'TL', department: 'HR' },
-  
+  'ngan@vimove.net': { id: 'u002', name: 'Nguyễn Thị Thanh Ngân', role: 'admin', avatar: 'NTN', department: 'Quản trị & Phê duyệt' },
+  'tuyen@vimove.net': { id: 'u001', name: 'Trương Ngọc Tuyền', role: 'admin', avatar: 'TNT', department: 'Digital & Hỗ trợ kỹ thuật' },
+  'chi@vimove.net': { id: 'u013', name: 'Trịnh Linh Chi', role: 'admin', avatar: 'TL', department: 'HR' },
+
   // ===== MANAGER =====
-  'trang@vimove.net': { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', password: 'trang123', avatar: 'NQT', department: 'HR & MKT & Sale' },
-  'phuong@vimove.net': { id: 'u005', name: 'Hoàng Quỳnh Phương', role: 'manager', password: 'phuong123', avatar: 'HQP', department: 'Content Lead' },
-  'dung.tx@vimove.net': { id: 'u006', name: 'Trương Xuân Dũng', role: 'manager', password: 'dung123', avatar: 'TXD', department: 'Lead Sản phẩm' },
-  'hanh@vimove.net': { id: 'u007', name: 'Vũ Phương Hạnh', role: 'manager', password: 'hanh123', avatar: 'VPH', department: 'Lead Sản phẩm' },
-  'loi@vimove.net': { id: 'u008', name: 'Nguyễn Văn Lợi', role: 'manager', password: 'loi123', avatar: 'NV', department: 'Kênh cá nhân' },
-  
+  'trang@vimove.net': { id: 'u003', name: 'Nguyễn Thị Quỳnh Trang', role: 'manager', avatar: 'NQT', department: 'HR & MKT & Sale' },
+  'phuong@vimove.net': { id: 'u005', name: 'Hoàng Quỳnh Phương', role: 'manager', avatar: 'HQP', department: 'Content Lead' },
+  'dung.tx@vimove.net': { id: 'u006', name: 'Trương Xuân Dũng', role: 'manager', avatar: 'TXD', department: 'Lead Sản phẩm' },
+  'hanh@vimove.net': { id: 'u007', name: 'Vũ Phương Hạnh', role: 'manager', avatar: 'VPH', department: 'Lead Sản phẩm' },
+  'loi@vimove.net': { id: 'u008', name: 'Nguyễn Văn Lợi', role: 'manager', avatar: 'NV', department: 'Kênh cá nhân' },
+
   // ===== STAFF =====
 
-  'thai@vimove.net': { id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff', password: 'thai123', avatar: 'LTAT', department: 'Content' },
-  'mai@vimove.net': { id: 'u011', name: 'Phạm Thanh Mai', role: 'staff', password: 'mai123', avatar: 'PTM', department: 'Thiết kế' },
-  'dung.kt@vimove.net': { id: 'u012', name: 'Khuất Thị Dung', role: 'staff', password: 'dung456', avatar: 'KT', department: 'Design' },
-  'duyen@vimove.net': { id: 'u014', name: 'Phạm Mỹ Duyên', role: 'staff', password: 'duyen123', avatar: 'PM', department: 'Media' },
-  'ngan.le@vimove.net': { id: 'u009', name: 'Lê Ngân', role: 'staff', password: 'nganle123', avatar: 'LN', department: 'Content Marketing' },
-  'sang@vimove.net': { id: 'u015', name: 'Bùi Thị Ngọc Sang', role: 'staff', password: 'sang123', avatar: 'BT', department: 'Content Marketing' },
-  'phong@vimove.net': { id: 'u016', name: 'Lương Văn Phong', role: 'staff', password: 'phong123', avatar: 'LV', department: 'Media' },
-  'bac@vimove.net': { id: 'u017', name: 'Lý Việt Bắc', role: 'staff', password: 'bac123', avatar: 'LV', department: 'Content Marketing' },
+  'thai@vimove.net': { id: 'u010', name: 'Lê Thị Anh Thái', role: 'staff', avatar: 'LTAT', department: 'Content' },
+  'mai@vimove.net': { id: 'u011', name: 'Phạm Thanh Mai', role: 'staff', avatar: 'PTM', department: 'Thiết kế' },
+  'dung.kt@vimove.net': { id: 'u012', name: 'Khuất Thị Dung', role: 'staff', avatar: 'KT', department: 'Design' },
+  'duyen@vimove.net': { id: 'u014', name: 'Phạm Mỹ Duyên', role: 'staff', avatar: 'PM', department: 'Media' },
+  'ngan.le@vimove.net': { id: 'u009', name: 'Lê Ngân', role: 'staff', avatar: 'LN', department: 'Content Marketing' },
+  'sang@vimove.net': { id: 'u015', name: 'Bùi Thị Ngọc Sang', role: 'staff', avatar: 'BT', department: 'Content Marketing' },
+  'phong@vimove.net': { id: 'u016', name: 'Lương Văn Phong', role: 'staff', avatar: 'LV', department: 'Media' },
+  'bac@vimove.net': { id: 'u017', name: 'Lý Việt Bắc', role: 'staff', avatar: 'LV', department: 'Content Marketing' },
 };
 
 /* ========================================================
@@ -635,7 +637,7 @@ function _startFirestoreListenersImpl() {
         // Nếu user hiện tại bị thay đổi thông tin từ thiết bị khác, cập nhật session ngay lập tức
         if (typeof currentUser !== 'undefined' && currentUser && currentUser.id === users[k].id) {
           const oldRole = currentUser.role;
-          currentUser = { ...users[k], password: currentUser.password }; // Giữ password session local
+          currentUser = { ...users[k] }; // Firebase Auth quản lý mật khẩu — hồ sơ không còn field này
           sessionStorage.setItem('vw_user', JSON.stringify(currentUser));
           if (oldRole !== currentUser.role) window.location.reload(); // Reload nếu đổi Role
         }

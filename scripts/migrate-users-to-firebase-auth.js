@@ -62,7 +62,11 @@ async function migrateOne(email, u) {
   }
 
   const profile = {
-    id: userRecord.uid, name: u.name, email, role: u.role,
+    // QUAN TRỌNG: `id` phải giữ nguyên ID lịch sử (u001, u002...), KHÔNG dùng
+    // userRecord.uid — toàn bộ CVC/Lead/Giao việc/Chấm công hiện có đều tham
+    // chiếu tới các ID này qua assigneeId/assignedTo/userId. Nếu dùng UID mới,
+    // sau khi đăng nhập lại, currentUser.id sẽ không khớp bất kỳ dữ liệu cũ nào.
+    id: u.id, name: u.name, email, role: u.role,
     department: u.department || '', avatar: u.avatar || '',
     positionId: u.positionId || '', jobTitle: u.jobTitle || '',
     kpi: 0, revenue: 0, tasks: 0,
