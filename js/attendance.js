@@ -259,10 +259,20 @@ function getCurrentGPS() {
   });
 }
 
-/** Kiểm tra GPS có trong phạm vi văn phòng không */
-function isInOfficeRange(lat, lng) {
+/** Kiểm tra GPS có trong phạm vi văn phòng không.
+ * Máy tính bàn/laptop không có chip GPS thật — định vị qua WiFi/IP của trình duyệt
+ * thường sai số vài trăm đến vài nghìn mét (accuracy trả về từ Geolocation API),
+ * trong khi điện thoại có GPS thật nên chính xác hơn nhiều. So khoảng cách với bán
+ * kính CỐ ĐỊNH 500m mà bỏ qua sai số này khiến máy tính gần như luôn bị báo "ngoài
+ * phạm vi" dù đang đứng đúng tại văn phòng. Cộng thêm biên độ sai số (accuracy) vào
+ * bán kính cho phép — giới hạn ở 2000m để không biến việc kiểm tra vị trí thành vô
+ * nghĩa nếu định vị lỗi nặng (vd: IP-lookup nhầm sang khu vực khác cách xa hàng chục km).
+ */
+function isInOfficeRange(lat, lng, accuracy) {
   const d = calcDistance(lat, lng, ATT_CONFIG.office.lat, ATT_CONFIG.office.lng);
-  return { inRange: d <= ATT_CONFIG.office.radius, distance: Math.round(d) };
+  const accuracyMargin = Math.min(accuracy || 0, 2000);
+  const allowedRadius = ATT_CONFIG.office.radius + accuracyMargin;
+  return { inRange: d <= allowedRadius, distance: Math.round(d) };
 }
 
 // ============ CHECK-IN (GPS văn phòng) ============
@@ -363,7 +373,7 @@ async function checkInOffice() {
 
   try {
     const gps = await getCurrentGPS(); // Dùng hàm đã có sẵn trong file
-    const { inRange, distance } = isInOfficeRange(gps.lat, gps.lng);
+    const { inRange, distance } = isInOfficeRange(gps.lat, gps.lng, gps.acc);
 
     if (inRange) {
       await doCheckIn(false, gps, false);
