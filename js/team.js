@@ -137,7 +137,6 @@ function openEditMemberModal(memberId) {
   document.getElementById('editMemberDept').value     = member.department || '';
   document.getElementById('editMemberKpi').value      = member.kpi || 0;
   document.getElementById('editMemberRevenue').value  = member.revenue || 0;
-  document.getElementById('editMemberPass').value     = '';
   document.getElementById('editMemberJobTitle').value = userData.jobTitle || member.jobTitle || '';
 
   // Role select
