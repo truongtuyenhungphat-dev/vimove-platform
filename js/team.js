@@ -209,7 +209,6 @@ async function saveEditMember() {
   const dept       = document.getElementById('editMemberDept').value.trim();
   const kpi        = parseInt(document.getElementById('editMemberKpi').value) || 0;
   const revenue    = parseFloat(document.getElementById('editMemberRevenue').value) || 0;
-  const newPass    = document.getElementById('editMemberPass').value;
   const role       = document.getElementById('editMemberRole').value;
   const positionId = document.getElementById('editMemberPosition')?.value || '';
   const jobTitle   = document.getElementById('editMemberJobTitle')?.value.trim() || '';
@@ -222,15 +221,25 @@ async function saveEditMember() {
 
   // Cập nhật TEAM_MEMBERS + DEMO_USERS từ MỘT điểm sửa duy nhất, để hai bảng
   // không thể lệch nhau (trước đây mỗi bảng được ghi tay riêng biệt).
+  // KHÔNG còn ghi password ở đây — đổi mật khẩu đi qua nút "Đặt lại mật khẩu"
+  // riêng (saveChangePassword → Cloud Function fbAdminResetPassword), không
+  // bao giờ đi qua đường lưu hồ sơ này.
   const { email } = upsertMemberProfile(memberId, {
     name, department: dept, kpi, revenue, role,
     avatar: getInitials(name),
     positionId, jobTitle,
-    ...(newPass ? { password: newPass } : {}),
   });
 
-  if (email && window.fbSaveUser) {
-    await window.fbSaveUser({ ...DEMO_USERS[email], email });
+  // Ghi thẳng đúng document Firestore theo Firebase Auth UID thật (không phải
+  // theo email-sanitized doc-id cũ của fbSaveUser — dùng sai sẽ tạo document
+  // "mồ côi", không phải hồ sơ mà firestore.rules/Cloud Functions thực sự đọc).
+  // Whitelist rõ field — không bao giờ gửi password qua đây.
+  const authUid = findAuthUidById(memberId);
+  if (authUid && window.firebaseDB) {
+    await window.firebaseDB.collection('viwork_users').doc(authUid).set({
+      name, department: dept, kpi, revenue, role, positionId, jobTitle,
+      avatar: getInitials(name),
+    }, { merge: true });
   }
   const userEntry = email ? [email, DEMO_USERS[email]] : null;
 
@@ -258,7 +267,6 @@ async function saveEditMember() {
       id: memberId, name, department: dept, role,
       avatar: getInitials(name), positionId, jobTitle,
       ...(userEntry ? { email: userEntry[0] } : {}),
-      ...(newPass ? { password: newPass } : {}),
     };
     if (sIdx > -1) {
       saved[sIdx] = { ...saved[sIdx], ...updatedData };

@@ -400,7 +400,11 @@ window.fbListenUsers = (callback) => {
       snapshot.forEach(doc => {
         // Dữ liệu trong document chứa email thực
         const data = doc.data();
-        if (data && data.email) obj[data.email] = data;
+        // doc.id LUÔN là Firebase Auth UID thật (đúng cho cả nhân viên đã di trú lẫn
+        // người tạo mới qua fbAdminCreateUser) — khác với `member.id` nội bộ app, vốn
+        // vẫn là ID lịch sử (u001..u017) cho nhân viên gốc. Gắn authUid để mọi nơi ghi
+        // hồ sơ/xoá tài khoản dùng đúng document Firestore + đúng tài khoản Auth.
+        if (data && data.email) obj[data.email] = { ...data, authUid: doc.id };
       });
       callback(obj);
     },

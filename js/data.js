@@ -876,6 +876,18 @@ function findUserEmailById(userId) {
   return entry ? entry[0] : null;
 }
 
+/**
+ * Trả về Firebase Auth UID thật của một nhân viên, từ ID nội bộ app (userId).
+ * Với nhân viên tạo mới qua fbAdminCreateUser, userId === authUid (giống nhau).
+ * Với 16 nhân viên gốc di trú, userId là ID lịch sử (u001..u017) khác authUid —
+ * PHẢI dùng authUid (không phải userId) khi gọi Cloud Function hoặc ghi thẳng
+ * document viwork_users/{uid}, nếu không sẽ thao tác nhầm document/tài khoản.
+ */
+function findAuthUidById(userId) {
+  const email = findUserEmailById(userId);
+  return (email && DEMO_USERS[email]?.authUid) || userId;
+}
+
 function upsertMemberProfile(userId, patch) {
   const idx = TEAM_MEMBERS.findIndex(m => m.id === userId);
   if (idx > -1) TEAM_MEMBERS[idx] = { ...TEAM_MEMBERS[idx], ...patch };

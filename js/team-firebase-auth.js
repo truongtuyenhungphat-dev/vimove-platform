@@ -73,8 +73,15 @@ async function doDeleteMember(memberId, member) {
     return;
   }
 
+  // memberId là ID nội bộ app (u001..u017 cho nhân viên gốc di trú, khác Firebase
+  // Auth UID). Dùng nhầm memberId khiến fbAdminDeleteUser xoá một document/tài khoản
+  // không tồn tại — UI báo "đã xoá" nhưng tài khoản Auth thật của người đó vẫn còn,
+  // vẫn đăng nhập được. Với user tạo mới qua fbAdminCreateUser, id === authUid nên
+  // findAuthUidById() sẽ trả về đúng memberId (fallback an toàn).
+  const authUid = findAuthUidById(memberId);
+
   try {
-    await window.fbAdminDeleteUser(memberId);
+    await window.fbAdminDeleteUser(authUid);
   } catch (e) {
     console.error('[doDeleteMember]', e);
     showToast('⚠️ Xoá tài khoản thất bại: ' + (e.message || e.code || 'Lỗi không xác định'), 'error');

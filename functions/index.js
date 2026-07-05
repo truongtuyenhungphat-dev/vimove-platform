@@ -79,7 +79,14 @@ exports.fbAdminDeleteUser = onCall(async (request) => {
   if (!uid) throw new HttpsError('invalid-argument', 'Thiếu uid.');
   if (uid === auth.uid) throw new HttpsError('failed-precondition', 'Không thể tự xoá tài khoản đang đăng nhập.');
 
-  try { await admin.auth().deleteUser(uid); } catch (e) { /* đã bị xoá từ trước thì bỏ qua */ }
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (e) {
+    // Chỉ bỏ qua nếu tài khoản đã bị xoá từ trước — lỗi khác (vd uid sai/không tồn
+    // tại vì client gửi nhầm ID nội bộ thay vì Auth UID thật) phải báo lỗi thật ra,
+    // để không báo "đã xoá thành công" giả trong khi tài khoản Auth vẫn còn nguyên.
+    if (e.code !== 'auth/user-not-found') throw e;
+  }
   await db.collection('viwork_users').doc(uid).delete();
   await db.collection('viwork_config').doc('deleted_users').set(
     { ids: admin.firestore.FieldValue.arrayUnion(uid) }, { merge: true }

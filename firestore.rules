@@ -37,6 +37,7 @@ service cloud.firestore {
     }
 
     function isAdmin()          { return isSignedIn() && myRole() == 'admin'; }
+    function isManager()        { return isSignedIn() && myRole() == 'manager'; }
     function isManagerOrAdmin() { return isSignedIn() && (myRole() == 'admin' || myRole() == 'manager'); }
 
     // ---------- VIWORK_USERS (hồ sơ nhân viên, không còn chứa mật khẩu) ----------
@@ -44,10 +45,14 @@ service cloud.firestore {
       allow read: if isSignedIn();
       // Tạo tài khoản: chỉ Admin (tài khoản Auth thật do Cloud Function tạo — xem functions/).
       allow create: if isAdmin();
-      // Sửa: Admin sửa bất kỳ ai; một người có thể tự sửa hồ sơ mình NHƯNG không được
+      // Sửa: Admin sửa bất kỳ ai. Một người có thể tự sửa hồ sơ mình NHƯNG không được
       // tự đổi field `role` của chính mình (chặn tự nâng quyền qua console/REST API).
+      // Manager sửa được hồ sơ người KHÔNG PHẢI admin (khớp UI js/team.js canEditMember),
+      // nhưng không được đổi field `role` của người đó (chỉ Admin mới đổi role).
       allow update: if isAdmin() ||
         (isSignedIn() && request.auth.uid == uid &&
+         request.resource.data.role == resource.data.role) ||
+        (isManager() && resource.data.role != 'admin' &&
          request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
     }

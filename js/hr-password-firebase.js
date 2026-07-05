@@ -44,7 +44,11 @@ async function saveChangePassword(userId, requireOld) {
       if (!window.fbAdminResetPassword) {
         throw new Error('Chưa triển khai Cloud Function fbAdminResetPassword — xem functions/index.js và SECURITY_DEPLOY_GUIDE.md');
       }
-      await window.fbAdminResetPassword(userId, newPass);
+      // userId ở đây là ID nội bộ app (u001..u017 cho nhân viên gốc di trú, khác
+      // Firebase Auth UID) — phải quy đổi sang authUid thật trước khi gọi Cloud
+      // Function, nếu không sẽ đổi mật khẩu nhầm tài khoản (hoặc lỗi user-not-found).
+      const targetAuthUid = (typeof findAuthUidById === 'function') ? findAuthUidById(userId) : userId;
+      await window.fbAdminResetPassword(targetAuthUid, newPass);
     }
 
     document.getElementById('changePassModal')?.remove();
