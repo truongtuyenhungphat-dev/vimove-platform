@@ -659,10 +659,14 @@ function applyFirebaseUsers(snapshot) {
   }
 
   // BUOC 1: Doc snapshot, dedup theo ID
+  // authUid = doc.id (Firebase Auth UID thật) — PHẢI dùng tên field giống hệt
+  // fbListenUsers (js/firebase-db.js) vì cả hai cùng ghi vào DEMO_USERS[email];
+  // đường nào chạy sau sẽ merge đè lên đường trước, tên field lệch nhau sẽ làm
+  // mất authUid (đã gặp bug thật: saveEditMember ghi nhầm document vì thiếu authUid).
   const fbAllDocs = {};
   snapshot.forEach(doc => {
     const u = doc.data();
-    if (u && u.email) fbAllDocs[u.email] = { ...u, _docId: doc.id };
+    if (u && u.email) fbAllDocs[u.email] = { ...u, authUid: doc.id };
   });
 
   const demoEmailForId = {};
