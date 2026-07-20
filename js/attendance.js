@@ -343,8 +343,14 @@ async function doCheckIn(isOnline, gpsData, viaQR, outOfRangeOverride) {
   // 3. Đẩy lên Firebase (Optimistic)
   if (window.fbSaveAttendance) {
     window.fbSaveAttendance(record).catch(e => {
-      console.warn('[ATT] Firebase save failed, will retry on next sync:', e);
-      showToast('⚠️ Chấm công đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
+      console.error('[ATT] Firebase save failed:', e);
+      if (e.code === 'permission-denied') {
+        // Lỗi vĩnh viễn (rules từ chối) — KHÔNG tự khỏi khi có mạng lại, retry im lặng
+        // sẽ thất bại vô hạn. Phải báo rõ để không tưởng nhầm là đã chấm công thành công.
+        showToast('❌ Chấm công KHÔNG lưu được lên hệ thống (bị từ chối quyền). Vui lòng báo Admin, đừng chỉ dựa vào máy này.', 'error');
+      } else {
+        showToast('⚠️ Chấm công đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
+      }
     });
   }
 
@@ -489,8 +495,12 @@ async function doCheckOut() {
   // 3. Đồng bộ nền lên Firebase (Optimistic UI)
   if (window.fbSaveAttendance) {
     window.fbSaveAttendance(updated).catch(e => {
-      console.warn('[ATT] Firebase checkout save failed, will retry:', e);
-      showToast('⚠️ Check-out đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
+      console.error('[ATT] Firebase checkout save failed:', e);
+      if (e.code === 'permission-denied') {
+        showToast('❌ Check-out KHÔNG lưu được lên hệ thống (bị từ chối quyền). Vui lòng báo Admin, đừng chỉ dựa vào máy này.', 'error');
+      } else {
+        showToast('⚠️ Check-out đã ghi nhận cục bộ. Sẽ đồng bộ Cloud khi có kết nối.', 'info');
+      }
     });
   }
 

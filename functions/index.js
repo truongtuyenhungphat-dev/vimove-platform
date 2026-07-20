@@ -156,6 +156,16 @@ exports.verifyAndCheckInWithQr = onCall(async (request) => {
     throw new HttpsError('deadline-exceeded', 'Mã QR đã hết hạn, vui lòng lấy mã mới từ Admin/Manager.');
   }
 
+  // userId ghi vào viwork_attendance phải khớp field `id` trong hồ sơ
+  // viwork_users/{auth.uid} — đây là ID nội bộ (vd "u003") mà phần còn lại của
+  // app (đọc lịch sử chấm công phía client, rules) dùng để nhận diện nhân
+  // viên, KHÔNG phải request.auth.uid thô. Hai giá trị này chỉ tình cờ trùng
+  // nhau với tài khoản tạo mới qua fbAdminCreateUser — ghi nhầm auth.uid khiến
+  // bản ghi check-in "biến mất" trên UI vì không khớp truy vấn theo userId.
+  const userSnap = await db.collection('viwork_users').doc(auth.uid).get();
+  if (!userSnap.exists) throw new HttpsError('failed-precondition', 'Không tìm thấy hồ sơ nhân viên.');
+  const userId = userSnap.data().id || auth.uid;
+
   // Double-check GPS ở server nếu client gửi kèm toạ độ (không bắt buộc, nhưng
   // nếu có thì đối chiếu lại thay vì chỉ tin xác nhận phía client).
   let withinOffice = null;
@@ -173,7 +183,7 @@ exports.verifyAndCheckInWithQr = onCall(async (request) => {
 
   const nowIso = new Date().toISOString();
   await attRef.set({
-    id: recordId, userId: auth.uid, date: today,
+    id: recordId, userId, date: today,
     checkIn: nowIso, method: 'qr', withinOffice,
   }, { merge: true });
 

@@ -36,6 +36,10 @@ service cloud.firestore {
       return isSignedIn() ? myProfile().role : null;
     }
 
+    function myId() {
+      return isSignedIn() ? myProfile().id : null;
+    }
+
     function isAdmin()          { return isSignedIn() && myRole() == 'admin'; }
     function isManager()        { return isSignedIn() && myRole() == 'manager'; }
     function isManagerOrAdmin() { return isSignedIn() && (myRole() == 'admin' || myRole() == 'manager'); }
@@ -81,18 +85,18 @@ service cloud.firestore {
     match /viwork_assignments/{asgnId} {
       allow read: if isSignedIn();
       // Tạo: chỉ được tạo giao việc đứng tên chính mình là người giao.
-      allow create: if isSignedIn() && request.resource.data.assignedBy == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.assignedBy == myId();
       // Sửa: người giao, người nhận, hoặc Admin.
       allow update: if isSignedIn() && (
         isAdmin() ||
-        resource.data.assignedBy == request.auth.uid ||
-        resource.data.assignedTo == request.auth.uid
+        resource.data.assignedBy == myId() ||
+        resource.data.assignedTo == myId()
       );
       // Xoá: người giao, người nhận, hoặc Admin (khớp isOwner trong assignments.js).
       allow delete: if isSignedIn() && (
         isAdmin() ||
-        resource.data.assignedBy == request.auth.uid ||
-        resource.data.assignedTo == request.auth.uid
+        resource.data.assignedBy == myId() ||
+        resource.data.assignedTo == myId()
       );
     }
 
@@ -100,12 +104,12 @@ service cloud.firestore {
     match /viwork_requests/{reqId} {
       allow read: if isSignedIn();
       // Tạo: chỉ được tạo đề xuất đứng tên chính mình.
-      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.requesterId == myId();
       // Sửa (bao gồm duyệt/từ chối từng bước): người tạo, Admin, hoặc Manager
       // (logic chi tiết "đúng vai trò của bước duyệt hiện tại" nằm ở client;
       // rule này chặn người ngoài cuộc hoàn toàn không liên quan tới đề xuất).
       allow update: if isSignedIn() && (
-        isManagerOrAdmin() || resource.data.requesterId == request.auth.uid
+        isManagerOrAdmin() || resource.data.requesterId == myId()
       );
       allow delete: if isAdmin();
     }
@@ -114,10 +118,10 @@ service cloud.firestore {
     match /viwork_attendance/{recordId} {
       allow read: if isSignedIn();
       // Check-in: chỉ được tạo bản ghi đứng tên chính mình.
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == myId();
       // Sửa/xoá: chính chủ bản ghi, hoặc Admin/Manager (điều chỉnh/dọn trùng lặp).
       allow update: if isSignedIn() && (
-        isManagerOrAdmin() || resource.data.userId == request.auth.uid
+        isManagerOrAdmin() || resource.data.userId == myId()
       );
       allow delete: if isManagerOrAdmin();
     }

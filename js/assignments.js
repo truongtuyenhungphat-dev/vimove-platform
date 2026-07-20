@@ -431,17 +431,29 @@ function renderAsgnComments(asgn) {
   }).join('');
 }
 
-function addAsgnComment(id) {
+async function addAsgnComment(id) {
   const text = document.getElementById('asgnNewComment')?.value.trim();
   if (!text) return;
   const asgn = (appState.assignments || []).find(a => a.id === id);
   if (!asgn) return;
   asgn.comments = asgn.comments || [];
-  asgn.comments.push({ author: currentUser.id, text, date: new Date().toISOString().split('T')[0] });
+  const comment = { author: currentUser.id, text, date: new Date().toISOString().split('T')[0] };
+  asgn.comments.push(comment);
+  const prevUpdatedAt = asgn.updatedAt;
   asgn.updatedAt = new Date().toISOString();
   document.getElementById('asgnNewComment').value = '';
-  if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
   document.getElementById('asgnComments').innerHTML = renderAsgnComments(asgn);
+  if (window.fbSaveAssignment) {
+    try {
+      await window.fbSaveAssignment(asgn);
+    } catch (e) {
+      console.error('[ASGN] Lỗi lưu bình luận:', e);
+      asgn.comments = asgn.comments.filter(c => c !== comment);
+      asgn.updatedAt = prevUpdatedAt;
+      document.getElementById('asgnComments').innerHTML = renderAsgnComments(asgn);
+      showToast('❌ Không thể lưu bình luận (lỗi kết nối/quyền). Vui lòng thử lại.', 'error');
+    }
+  }
 }
 
 // ============ CREATE / EDIT MODAL ============
@@ -475,7 +487,7 @@ function editAssignment(id) {
   openNewAssignmentModal(id);
 }
 
-function saveAssignment() {
+async function saveAssignment() {
   const title = document.getElementById('asgnTitle').value.trim();
   if (!title) { showToast('⚠️ Vui lòng nhập tiêu đề!', 'error'); return; }
 
@@ -489,6 +501,7 @@ function saveAssignment() {
     // Update
     const asgn = (appState.assignments || []).find(a => a.id === editId);
     if (!asgn) return;
+    const prev = { ...asgn };
     asgn.title    = title;
     asgn.desc     = document.getElementById('asgnDesc').value.trim();
     asgn.note     = document.getElementById('asgnNote').value.trim();
@@ -499,7 +512,16 @@ function saveAssignment() {
     asgn.assignedTo = assigneeId;
     asgn.company    = document.getElementById('asgnCompany')?.value || 'vimove';
     asgn.updatedAt  = new Date().toISOString();
-    if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
+    if (window.fbSaveAssignment) {
+      try {
+        await window.fbSaveAssignment(asgn);
+      } catch (e) {
+        console.error('[ASGN] Lỗi cập nhật giao việc:', e);
+        Object.assign(asgn, prev);
+        showToast('❌ Không thể cập nhật giao việc (lỗi kết nối/quyền). Vui lòng thử lại.', 'error');
+        return;
+      }
+    }
     showToast(`✅ Đã cập nhật giao việc!`, 'success');
   } else {
     // Create
@@ -523,7 +545,20 @@ function saveAssignment() {
     };
     appState.assignments = appState.assignments || [];
     appState.assignments.push(newAsgn);
-    if (window.fbSaveAssignment) window.fbSaveAssignment(newAsgn);
+    if (window.fbSaveAssignment) {
+      try {
+        await window.fbSaveAssignment(newAsgn);
+      } catch (e) {
+        console.error('[ASGN] Lỗi tạo giao việc:', e);
+        appState.assignments = appState.assignments.filter(a => a.id !== newAsgn.id);
+        showToast('❌ Không thể giao việc (lỗi kết nối/quyền). Vui lòng thử lại.', 'error');
+        closeModal('asgnModal');
+        renderAssignments();
+        renderMyTasks();
+        updateAsgnBadge();
+        return;
+      }
+    }
 
     // Thông báo cho người giao việc
     const assigneeName = getUserById(assigneeId)?.name || 'Nhân viên';
@@ -543,10 +578,11 @@ function saveAssignment() {
 }
 
 // ============ STATUS ACTIONS ============
-function updateAsgnStatus(id, newStatus) {
+async function updateAsgnStatus(id, newStatus) {
   const asgn = (appState.assignments || []).find(a => a.id === id);
   if (!asgn) return;
 
+  const prev = { ...asgn, comments: (asgn.comments || []).slice() };
   const old = asgn.status;
   asgn.status    = newStatus;
   asgn.updatedAt = new Date().toISOString();
@@ -560,7 +596,19 @@ function updateAsgnStatus(id, newStatus) {
     date: new Date().toISOString().split('T')[0],
   });
 
-  if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
+  if (window.fbSaveAssignment) {
+    try {
+      await window.fbSaveAssignment(asgn);
+    } catch (e) {
+      console.error('[ASGN] Lỗi cập nhật trạng thái:', e);
+      Object.assign(asgn, prev);
+      showToast('❌ Không thể cập nhật trạng thái (lỗi kết nối/quyền). Vui lòng thử lại.', 'error');
+      renderAssignments();
+      renderMyTasks();
+      updateAsgnBadge();
+      return;
+    }
+  }
   showToast(`${st?.icon} ${st?.name}`, 'success');
   closeModal('asgnDetailModal');
   renderAssignments();
@@ -593,17 +641,30 @@ function promptReject(id) {
     </div>`;
   document.body.appendChild(dlg);
 
-  document.getElementById('rejectConfirmBtn').onclick = () => {
+  document.getElementById('rejectConfirmBtn').onclick = async () => {
     const reason = document.getElementById('rejectReason').value.trim() || 'Không có lý do';
     dlg.remove();
     const asgn = (appState.assignments || []).find(a => a.id === id);
     if (!asgn) return;
+    const prev = { ...asgn, comments: (asgn.comments || []).slice() };
     asgn.status    = 'rejected';
     asgn.note      = reason;
     asgn.updatedAt = new Date().toISOString();
     asgn.comments  = asgn.comments || [];
     asgn.comments.push({ author: currentUser.id, text: `❌ Từ chối: ${reason}`, date: new Date().toISOString().split('T')[0] });
-    if (window.fbSaveAssignment) window.fbSaveAssignment(asgn);
+    if (window.fbSaveAssignment) {
+      try {
+        await window.fbSaveAssignment(asgn);
+      } catch (e) {
+        console.error('[ASGN] Lỗi từ chối giao việc:', e);
+        Object.assign(asgn, prev);
+        showToast('❌ Không thể từ chối giao việc (lỗi kết nối/quyền). Vui lòng thử lại.', 'error');
+        renderAssignments();
+        renderMyTasks();
+        updateAsgnBadge();
+        return;
+      }
+    }
     showToast('❌ Đã từ chối giao việc', 'info');
     closeModal('asgnDetailModal');
     renderAssignments();
@@ -614,13 +675,26 @@ function promptReject(id) {
 }
 
 function deleteAssignment(id) {
-  hrConfirm('Xóa giao việc này?', 'Hành động này không thể hoàn tác.', () => {
-    appState.assignments = getFilteredAssignments().filter(a => a.id !== id);
-    if (window.fbDeleteAssignment) window.fbDeleteAssignment(id);
+  hrConfirm('Xóa giao việc này?', 'Hành động này không thể hoàn tác.', async () => {
+    const removed = (appState.assignments || []).find(a => a.id === id);
+    appState.assignments = (appState.assignments || []).filter(a => a.id !== id);
     closeModal('asgnDetailModal');
     renderAssignments();
     renderMyTasks();
     updateAsgnBadge();
+    if (window.fbDeleteAssignment) {
+      try {
+        await window.fbDeleteAssignment(id);
+      } catch (e) {
+        console.error('[ASGN] Lỗi xóa giao việc:', e);
+        if (removed) appState.assignments.push(removed);
+        renderAssignments();
+        renderMyTasks();
+        updateAsgnBadge();
+        showToast('❌ Không thể xóa giao việc (lỗi kết nối/quyền). Vui lòng thử lại.', 'error');
+        return;
+      }
+    }
     showToast('🗑️ Đã xóa giao việc', 'info');
   });
 }
